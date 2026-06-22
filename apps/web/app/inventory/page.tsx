@@ -75,15 +75,12 @@ export default function InventoryPage() {
   const [sellDate, setSellDate] = useState(new Date().toISOString().split('T')[0])
   const [sellNote, setSellNote] = useState('')
 
-  const [adjustDialog, setAdjustDialog] = useState<{
+  const [removeDialog, setRemoveDialog] = useState<{
     open: boolean
     item: InventoryItem | null
-    mode: 'remove'
-  }>({ open: false, item: null, mode: 'remove' })
-  const [adjustQty, setAdjustQty] = useState('')
-  const [adjustPrice, setAdjustPrice] = useState('')
-  const [adjustDate, setAdjustDate] = useState(new Date().toISOString().split('T')[0])
-  const [adjustNote, setAdjustNote] = useState('')
+  }>({ open: false, item: null })
+  const [removeQty, setRemoveQty] = useState('')
+  const [removeNote, setRemoveNote] = useState('')
 
   const [addDialog, setAddDialog] = useState<{ open: boolean; item: InventoryItem | null }>({
     open: false,
@@ -128,14 +125,7 @@ export default function InventoryPage() {
     cardId: '',
     isNewCard: false,
   })
-  const [removeConfirm, setRemoveConfirm] = useState<{ open: boolean; item: InventoryItem | null; qty: number; price: number; date: string; note: string }>({
-    open: false,
-    item: null,
-    qty: 0,
-    price: 0,
-    date: '',
-    note: '',
-  })
+
 
   const years = useMemo(
     () => Array.from({ length: 5 }, (_, i) => (new Date().getFullYear() - 2 + i).toString()),
@@ -188,16 +178,14 @@ export default function InventoryPage() {
     setSellDialog({ open: false, item: null })
   }
 
-  const openAdjust = (item: InventoryItem) => {
-    setAdjustDialog({ open: true, item, mode: 'remove' })
-    setAdjustQty('1')
-    setAdjustPrice('0')
-    setAdjustDate(new Date().toISOString().split('T')[0])
-    setAdjustNote('stock out')
+  const openRemove = (item: InventoryItem) => {
+    setRemoveDialog({ open: true, item })
+    setRemoveQty('1')
+    setRemoveNote('')
   }
 
-  const closeAdjust = () => {
-    setAdjustDialog({ open: false, item: null, mode: 'remove' })
+  const closeRemove = () => {
+    setRemoveDialog({ open: false, item: null })
   }
 
   const openAdd = (item: InventoryItem | null = null) => {
@@ -271,28 +259,13 @@ export default function InventoryPage() {
     setIsSubmitting(false)
   }
 
-  const handleAdjust = (e: React.FormEvent) => {
+  const handleRemove = async (e: React.FormEvent) => {
     e.preventDefault()
-    const item = adjustDialog.item
-    if (!item) return
-
-    const qty = Number(adjustQty)
-    const price = Number(adjustPrice || 0)
-    if (!qty || qty <= 0 || qty > item.quantity) return
-
-    setRemoveConfirm({
-      open: true,
-      item,
-      qty,
-      price,
-      date: adjustDate,
-      note: adjustNote,
-    })
-  }
-
-  const executeRemove = async () => {
-    const { item, qty, price, date, note } = removeConfirm
+    const item = removeDialog.item
     if (!item || isSubmitting) return
+
+    const qty = Number(removeQty)
+    if (!qty || qty <= 0 || qty > item.quantity) return
 
     setIsSubmitting(true)
     const res = await fetch('/api/transactions', {
@@ -302,15 +275,14 @@ export default function InventoryPage() {
         cardId: item.cardId,
         type: 'SELL',
         quantity: qty,
-        pricePerUnit: price,
-        date: new Date(date).toISOString(),
-        note: note || undefined,
+        pricePerUnit: 0,
+        date: new Date().toISOString(),
+        note: removeNote || undefined,
       }),
     })
 
     if (res.ok) {
-      setRemoveConfirm({ open: false, item: null, qty: 0, price: 0, date: '', note: '' })
-      closeAdjust()
+      closeRemove()
       fetchInventory()
     }
     setIsSubmitting(false)
@@ -876,7 +848,7 @@ export default function InventoryPage() {
                                   title="quick remove"
                                   onClick={(e) => {
                                     e.stopPropagation()
-                                    openAdjust(item)
+                                    openRemove(item)
                                   }}
                                   className="h-7 w-7 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
                                 >
@@ -979,7 +951,7 @@ export default function InventoryPage() {
                             size="sm"
                             variant="outline"
                             className="h-8 flex-1 gap-1"
-                            onClick={() => openAdjust(item)}
+                            onClick={() => openRemove(item)}
                           >
                             <Minus className="h-3.5 w-3.5" /> remove
                           </Button>
@@ -1161,68 +1133,55 @@ export default function InventoryPage() {
         </form>
       </Dialog>
 
-      <Dialog open={adjustDialog.open} onOpenChange={closeAdjust}>
-        <form onSubmit={handleAdjust}>
+      <Dialog open={removeDialog.open} onOpenChange={closeRemove}>
+        <form onSubmit={handleRemove}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Minus className="h-4 w-4 text-zinc-400" />
-              remove stock · {adjustDialog.item?.cardName}
+              remove stock · {removeDialog.item?.cardName}
             </DialogTitle>
             <DialogDescription>
-              creates a SELL transaction for the removed quantity.
+              enter the quantity to remove from stock.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <label className="font-mono text-xs text-zinc-400">quantity</label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={adjustDialog.item?.quantity ?? 1}
-                  value={adjustQty}
-                  onChange={(e) => setAdjustQty(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="font-mono text-xs text-zinc-400">sell price / unit</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  value={adjustPrice}
-                  onChange={(e) => setAdjustPrice(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
             <div className="space-y-2">
-              <label className="font-mono text-xs text-zinc-400">date</label>
-              <Input type="date" value={adjustDate} onChange={(e) => setAdjustDate(e.target.value)} required />
+              <label className="font-mono text-xs text-zinc-400">quantity</label>
+              <Input
+                type="number"
+                min={1}
+                max={removeDialog.item?.quantity ?? 1}
+                value={removeQty}
+                onChange={(e) => setRemoveQty(e.target.value)}
+                required
+                autoFocus
+              />
             </div>
 
             <div className="space-y-2">
               <label className="font-mono text-xs text-zinc-400">note</label>
               <Input
-                value={adjustNote}
-                onChange={(e) => setAdjustNote(e.target.value)}
+                value={removeNote}
+                onChange={(e) => setRemoveNote(e.target.value)}
                 placeholder="optional"
               />
             </div>
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="ghost" size="sm" onClick={closeAdjust}>
+            <Button type="button" variant="ghost" size="sm" onClick={closeRemove}>
               cancel
             </Button>
-            <Button type="submit" size="sm" className="gap-2">
-              <>
-                <Minus className="h-3.5 w-3.5" />
-                remove stock
-              </>
+            <Button type="submit" disabled={isSubmitting} size="sm" className="gap-2">
+              {isSubmitting ? (
+                <span className="font-mono text-xs">processing...</span>
+              ) : (
+                <>
+                  <Minus className="h-3.5 w-3.5" />
+                  remove stock
+                </>
+              )}
             </Button>
           </DialogFooter>
         </form>
@@ -1469,69 +1428,6 @@ export default function InventoryPage() {
               <>
                 <Tag className="h-3.5 w-3.5" />
                 confirm sell
-              </>
-            )}
-          </Button>
-        </DialogFooter>
-      </Dialog>
-
-      <Dialog open={removeConfirm.open} onOpenChange={() => {
-        setIsSubmitting(false)
-        setRemoveConfirm({ open: false, item: null, qty: 0, price: 0, date: '', note: '' })
-      }}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Minus className="h-4 w-4 text-zinc-400" />
-            confirm remove stock
-          </DialogTitle>
-          <DialogDescription>please review the stock removal before confirming.</DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-3 font-mono text-sm">
-          <div className="flex justify-between border-b border-zinc-800 pb-2">
-            <span className="text-zinc-500">card</span>
-            <span className="text-zinc-200">{removeConfirm.item?.cardName}</span>
-          </div>
-          <div className="flex justify-between border-b border-zinc-800 pb-2">
-            <span className="text-zinc-500">quantity</span>
-            <span className="text-zinc-200">{removeConfirm.qty}</span>
-          </div>
-          <div className="flex justify-between border-b border-zinc-800 pb-2">
-            <span className="text-zinc-500">price / unit</span>
-            <span className="text-zinc-200">{formatCurrency(removeConfirm.price)}</span>
-          </div>
-          <div className="flex justify-between border-b border-zinc-800 pb-2">
-            <span className="text-zinc-500">date</span>
-            <span className="text-zinc-200">{removeConfirm.date}</span>
-          </div>
-          {removeConfirm.note && (
-            <div className="flex justify-between border-b border-zinc-800 pb-2">
-              <span className="text-zinc-500">note</span>
-              <span className="text-zinc-200">{removeConfirm.note}</span>
-            </div>
-          )}
-          <div className="flex justify-between pt-1 font-bold text-zinc-200">
-            <span>total</span>
-            <span>{formatCurrency(removeConfirm.qty * removeConfirm.price)}</span>
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setRemoveConfirm({ open: false, item: null, qty: 0, price: 0, date: '', note: '' })}
-          >
-            cancel
-          </Button>
-          <Button type="button" size="sm" className="gap-2" onClick={executeRemove} disabled={isSubmitting}>
-            {isSubmitting ? (
-              <span className="font-mono text-xs">processing...</span>
-            ) : (
-              <>
-                <Minus className="h-3.5 w-3.5" />
-                confirm remove
               </>
             )}
           </Button>

@@ -35,10 +35,13 @@ const transactionSchema = z.object({
   cardId: z.string().min(1),
   type: z.enum(['BUY', 'SELL']),
   quantity: z.number().int().positive(),
-  pricePerUnit: z.number().positive(),
+  pricePerUnit: z.number().nonnegative(),
   shippingCost: z.number().nonnegative().optional(),
   date: z.string().datetime(),
   note: z.string().optional(),
+}).refine((data) => data.type !== 'BUY' || data.pricePerUnit > 0, {
+  message: 'BUY price must be positive',
+  path: ['pricePerUnit'],
 })
 
 export async function GET(req: NextRequest) {
