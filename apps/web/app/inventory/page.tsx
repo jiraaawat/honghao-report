@@ -32,6 +32,8 @@ import {
   Minus,
   Tag,
   PlusCircle,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react'
 
 interface InventoryResponse {
@@ -103,6 +105,7 @@ export default function InventoryPage() {
   const [addNote, setAddNote] = useState('')
 
   const [editingValue, setEditingValue] = useState<{ cardId: string; value: string } | null>(null)
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
 
   const [sellConfirm, setSellConfirm] = useState<{ open: boolean; item: InventoryItem | null; qty: number; price: number; shipping: number; date: string; note: string }>({
     open: false,
@@ -381,6 +384,15 @@ export default function InventoryPage() {
       closeAdd()
       fetchInventory()
     }
+  }
+
+  const toggleExpanded = (cardId: string) => {
+    setExpandedCards((prev) => {
+      const next = new Set(prev)
+      if (next.has(cardId)) next.delete(cardId)
+      else next.add(cardId)
+      return next
+    })
   }
 
   const updateCurrentValue = async (cardId: string, value: string) => {
@@ -864,119 +876,155 @@ export default function InventoryPage() {
                   </tbody>
                 </table>
               </div>
-              <div className="space-y-3 md:hidden">
-                {sortedItems.map((item) => (
-                  <div
-                    key={item.cardId}
-                    onClick={() => item.status === 'in_stock' && item.quantity > 0 && openSell(item)}
-                    className={`rounded-lg border border-zinc-800 bg-zinc-950/50 p-4 ${
-                      item.status === 'in_stock' && item.quantity > 0 ? 'cursor-pointer active:bg-zinc-800/40' : ''
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="font-mono font-medium text-zinc-200">{item.cardName}</div>
-                        <div className="font-mono text-xs text-zinc-500">
-                          {[item.setCode, item.cardNumber, item.rarity].filter(Boolean).join(' · ')}
+              <div className="space-y-2 md:hidden">
+                {sortedItems.map((item) => {
+                  const isExpanded = expandedCards.has(item.cardId)
+                  return (
+                    <div
+                      key={item.cardId}
+                      className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate font-mono font-medium text-sm text-zinc-200">
+                            {item.cardName}
+                          </div>
+                          <div className="truncate font-mono text-[10px] text-zinc-500">
+                            {[item.setCode, item.cardNumber, item.rarity].filter(Boolean).join(' · ')}
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1">
+                          {item.condition && (
+                            <Badge variant="outline" className="px-1.5 py-0 text-[10px]">
+                              {item.condition}
+                            </Badge>
+                          )}
+                          <span className="font-mono text-[10px] text-zinc-500">{item.game}</span>
                         </div>
                       </div>
-                      <div className="flex shrink-0 gap-1">
-                        {item.status === 'in_stock' && item.quantity > 0 && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              title="quick add"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                openAdd(item)
-                              }}
-                              className="h-7 w-7 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-400"
-                            >
-                              <Plus className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              title="quick remove"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                openAdjust(item)
-                              }}
-                              className="h-7 w-7 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
-                            >
-                              <Minus className="h-3.5 w-3.5" />
-                            </Button>
-                          </>
-                        )}
+
+                      <div className="mt-2 flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          {item.status === 'grading' ? (
+                            <Badge variant="grading" className="gap-1 text-[10px]">
+                              <Gem className="h-3 w-3" /> grading
+                            </Badge>
+                          ) : item.quantity > 0 ? (
+                            <Badge variant="buy" className="gap-1 text-[10px]">
+                              <Package className="h-3 w-3" /> in stock
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="gap-1 text-[10px]">
+                              <PackageX className="h-3 w-3" /> sold out
+                            </Badge>
+                          )}
+                          <span className="font-mono text-xs text-zinc-300">qty {item.quantity}</span>
+                        </div>
+                        <div className="font-mono text-xs font-medium text-zinc-200">
+                          {formatCurrency(item.currentValue)}
+                        </div>
                       </div>
-                    </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      {item.status === 'grading' ? (
-                        <Badge variant="grading" className="gap-1">
-                          <Gem className="h-3 w-3" /> grading
-                        </Badge>
-                      ) : item.quantity > 0 ? (
-                        <Badge variant="buy" className="gap-1">
-                          <Package className="h-3 w-3" /> in stock
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="gap-1">
-                          <PackageX className="h-3 w-3" /> sold out
-                        </Badge>
-                      )}
-                      {item.condition && (
-                        <Badge variant="outline" className="text-xs">
-                          {item.condition}
-                        </Badge>
-                      )}
-                      <span className="font-mono text-xs text-zinc-500">{item.game}</span>
-                    </div>
-                    <div className="mt-3 grid grid-cols-2 gap-y-2 font-mono text-xs">
-                      <div>
-                        <div className="text-zinc-500">qty</div>
-                        <div className="text-zinc-300">{item.quantity}</div>
-                      </div>
-                      <div>
-                        <div className="text-zinc-500">avg cost</div>
-                        <div className="text-zinc-300">{formatCurrency(item.averageCost)}</div>
-                      </div>
-                      <div>
-                        <div className="text-zinc-500">market value</div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setEditingValue({ cardId: item.cardId, value: String(item.marketValuePerUnit) })
-                          }}
-                          className="text-zinc-300 hover:text-zinc-100"
-                        >
-                          {formatCurrency(item.marketValuePerUnit)}
-                        </button>
-                      </div>
-                      <div>
-                        <div className="text-zinc-500">total value</div>
-                        <div className="text-zinc-300">{formatCurrency(item.currentValue)}</div>
-                      </div>
-                      <div>
-                        <div className="text-zinc-500">profit</div>
-                        <div className={item.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+
+                      <div className="mt-1 flex items-center justify-between font-mono text-xs">
+                        <span className="text-zinc-500">profit</span>
+                        <span className={item.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}>
                           {formatCurrency(item.profit)}
-                        </div>
+                        </span>
                       </div>
-                      <div className="col-span-2">
-                        <div className="text-zinc-500">
-                          {item.status === 'sold_out' ? 'sold at' : 'created at'}
+
+                      {item.status === 'in_stock' && item.quantity > 0 && (
+                        <div className="mt-2 flex gap-2">
+                          <Button
+                            size="sm"
+                            className="h-8 flex-1 gap-1 bg-emerald-600 hover:bg-emerald-700"
+                            onClick={() => openSell(item)}
+                          >
+                            <Tag className="h-3.5 w-3.5" /> sell
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 flex-1 gap-1"
+                            onClick={() => openAdd(item)}
+                          >
+                            <Plus className="h-3.5 w-3.5" /> add
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 flex-1 gap-1"
+                            onClick={() => openAdjust(item)}
+                          >
+                            <Minus className="h-3.5 w-3.5" /> remove
+                          </Button>
+                          <Link href={`/grading/send?cardId=${item.cardId}`}>
+                            <Button size="sm" variant="outline" className="h-8 px-2">
+                              <Gem className="h-3.5 w-3.5" />
+                            </Button>
+                          </Link>
                         </div>
-                        <div className="text-zinc-300">
-                          {item.status === 'sold_out' && item.soldAt
-                            ? formatDate(item.soldAt)
-                            : formatDate(item.createdAt)}
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => toggleExpanded(item.cardId)}
+                        className="mt-2 flex w-full items-center justify-center gap-1 rounded border border-zinc-800 bg-zinc-900/50 py-1 font-mono text-[10px] text-zinc-500 hover:text-zinc-300"
+                      >
+                        {isExpanded ? 'hide details' : 'show details'}
+                        {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      </button>
+
+                      {isExpanded && (
+                        <div className="mt-2 grid grid-cols-2 gap-y-2 border-t border-zinc-800 pt-2 font-mono text-xs">
+                          <div>
+                            <div className="text-zinc-500">avg cost</div>
+                            <div className="text-zinc-300">{formatCurrency(item.averageCost)}</div>
+                          </div>
+                          <div>
+                            <div className="text-zinc-500">market value</div>
+                            {editingValue?.cardId === item.cardId ? (
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min={0}
+                                autoFocus
+                                defaultValue={item.marketValuePerUnit}
+                                onBlur={(e) => updateCurrentValue(item.cardId, e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    updateCurrentValue(item.cardId, (e.target as HTMLInputElement).value)
+                                  }
+                                  if (e.key === 'Escape') setEditingValue(null)
+                                }}
+                                className="h-6 w-24 text-right font-mono text-xs"
+                              />
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setEditingValue({ cardId: item.cardId, value: String(item.marketValuePerUnit) })
+                                }
+                                className="text-zinc-300 hover:text-zinc-100"
+                              >
+                                {formatCurrency(item.marketValuePerUnit)}
+                              </button>
+                            )}
+                          </div>
+                          <div className="col-span-2">
+                            <div className="text-zinc-500">
+                              {item.status === 'sold_out' ? 'sold at' : 'created at'}
+                            </div>
+                            <div className="text-zinc-300">
+                              {item.status === 'sold_out' && item.soldAt
+                                ? formatDate(item.soldAt)
+                                : formatDate(item.createdAt)}
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </>
           )}
