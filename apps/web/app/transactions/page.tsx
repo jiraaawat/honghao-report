@@ -15,21 +15,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { TransactionDto, CardDto, CARD_TYPES, GAMES } from '@/types'
+import { TransactionDto, CARD_TYPES, GAMES } from '@/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { Trash2, Plus, Package, Search, Calendar, Pencil } from 'lucide-react'
-
-interface CardWithInventory extends CardDto {
-  inventory?: {
-    quantity: number
-    averageCost: number
-  } | null
-}
+import { Trash2, Search, Calendar, Pencil, ChevronUp, ChevronDown } from 'lucide-react'
 
 export default function TransactionsPage() {
   const { status } = useSession()
   const [transactions, setTransactions] = useState<TransactionDto[]>([])
-  const [cards, setCards] = useState<CardWithInventory[]>([])
   const [loading, setLoading] = useState(true)
 
   const [filterYear, setFilterYear] = useState('')
@@ -38,16 +30,7 @@ export default function TransactionsPage() {
   const [filterType, setFilterType] = useState('')
   const [filterCardType, setFilterCardType] = useState('')
   const [filterGame, setFilterGame] = useState('')
-
-  const [txForm, setTxForm] = useState({
-    cardId: '',
-    type: 'BUY' as 'BUY' | 'SELL',
-    quantity: '',
-    pricePerUnit: '',
-    shippingCost: '',
-    date: new Date().toISOString().split('T')[0],
-    note: '',
-  })
+  const [showFilters, setShowFilters] = useState(false)
 
   const [editDialog, setEditDialog] = useState<{ open: boolean; tx: TransactionDto | null }>({
     open: false,
@@ -61,17 +44,7 @@ export default function TransactionsPage() {
     note: '',
   })
 
-  const [cardForm, setCardForm] = useState({
-    name: '',
-    setCode: '',
-    cardNumber: '',
-    rarity: '',
-    cardType: 'Single',
-    game: 'Pokemon',
-    imageUrl: '',
-  })
-
-  const [showCardForm, setShowCardForm] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const years = useMemo(
     () => Array.from({ length: 5 }, (_, i) => (new Date().getFullYear() - 2 + i).toString()),
@@ -90,11 +63,6 @@ export default function TransactionsPage() {
     return params
   }, [filterYear, filterMonth, search, filterType, filterCardType, filterGame])
 
-  const fetchCards = useCallback(async () => {
-    const res = await fetch('/api/cards')
-    return (await res.json()) as CardWithInventory[]
-  }, [])
-
   const fetchTransactions = useCallback(async () => {
     setLoading(true)
     const res = await fetch(`/api/transactions?${buildTxParams()}`)
@@ -109,9 +77,8 @@ export default function TransactionsPage() {
     let cancelled = false
 
     const load = async () => {
-      const [cardsData, txData] = await Promise.all([fetchCards(), fetchTransactions()])
+      const txData = await fetchTransactions()
       if (!cancelled) {
-        setCards(cardsData)
         setTransactions(txData)
       }
     }
@@ -121,72 +88,18 @@ export default function TransactionsPage() {
     return () => {
       cancelled = true
     }
-  }, [status, fetchCards, fetchTransactions])
-
-  const handleCreateTransaction = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const res = await fetch('/api/transactions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        cardId: txForm.cardId,
-        type: txForm.type,
-        quantity: Number(txForm.quantity),
-        pricePerUnit: Number(txForm.pricePerUnit),
-        shippingCost: txForm.shippingCost ? Number(txForm.shippingCost) : undefined,
-        date: new Date(txForm.date).toISOString(),
-        note: txForm.note,
-      }),
-    })
-
-    if (res.ok) {
-      setTxForm({
-        cardId: '',
-        type: 'BUY',
-        quantity: '',
-        pricePerUnit: '',
-        shippingCost: '',
-        date: new Date().toISOString().split('T')[0],
-        note: '',
-      })
-      const [txData, cardsData] = await Promise.all([fetchTransactions(), fetchCards()])
-      setTransactions(txData)
-      setCards(cardsData)
-    }
-  }
-
-  const handleCreateCard = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const res = await fetch('/api/cards', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(cardForm),
-    })
-
-    if (res.ok) {
-      setCardForm({
-        name: '',
-        setCode: '',
-        cardNumber: '',
-        rarity: '',
-        cardType: 'Single',
-        game: 'Pokemon',
-        imageUrl: '',
-      })
-      setShowCardForm(false)
-      const cardsData = await fetchCards()
-      setCards(cardsData)
-    }
-  }
+  }, [status, fetchTransactions])
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this transaction?')) return
+    if (isSubmitting) return
+    setIsSubmitting(true)
     const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' })
     if (res.ok) {
-      const [txData, cardsData] = await Promise.all([fetchTransactions(), fetchCards()])
+      const txData = await fetchTransactions()
       setTransactions(txData)
-      setCards(cardsData)
     }
+    setIsSubmitting(false)
   }
 
   const openEdit = (tx: TransactionDto) => {
@@ -207,7 +120,8 @@ export default function TransactionsPage() {
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault()
     const tx = editDialog.tx
-    if (!tx) return
+    if (!tx || isSubmitting) return
+    setIsSubmitting(true)
 
     const res = await fetch(`/api/transactions/${tx.id}`, {
       method: 'PUT',
@@ -223,10 +137,10 @@ export default function TransactionsPage() {
 
     if (res.ok) {
       closeEdit()
-      const [txData, cardsData] = await Promise.all([fetchTransactions(), fetchCards()])
+      const txData = await fetchTransactions()
       setTransactions(txData)
-      setCards(cardsData)
     }
+    setIsSubmitting(false)
   }
 
   const clearFilters = () => {
@@ -251,16 +165,26 @@ export default function TransactionsPage() {
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-4 p-3 md:space-y-6 md:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="font-mono text-2xl font-bold text-zinc-100">$ transactions</h1>
       </div>
 
       <Card className="border-zinc-800 bg-zinc-900/50">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="font-mono text-sm">filters</CardTitle>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowFilters((v) => !v)}
+            className="gap-1 md:hidden font-mono text-xs"
+          >
+            {showFilters ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            filters
+          </Button>
         </CardHeader>
-        <CardContent>
+        <CardContent className={!showFilters ? 'hidden md:block' : ''}>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
@@ -320,163 +244,7 @@ export default function TransactionsPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="border-zinc-800 bg-zinc-900/50 lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="font-mono text-sm">new transaction</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCreateTransaction} className="space-y-4">
-              <div className="space-y-2">
-                <label className="font-mono text-xs text-zinc-400">card</label>
-                <Select
-                  value={txForm.cardId}
-                  onChange={(e) => setTxForm({ ...txForm, cardId: e.target.value })}
-                  required
-                >
-                  <option value="">select card</option>
-                  {cards.map((card) => (
-                    <option key={card.id} value={card.id}>
-                      {card.name} [{card.game}] ({card.inventory?.quantity ?? 0} in stock)
-                    </option>
-                  ))}
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="font-mono text-xs text-zinc-400">type</label>
-                <Select
-                  value={txForm.type}
-                  onChange={(e) => setTxForm({ ...txForm, type: e.target.value as 'BUY' | 'SELL' })}
-                >
-                  <option value="BUY">BUY</option>
-                  <option value="SELL">SELL</option>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <label className="font-mono text-xs text-zinc-400">quantity</label>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={txForm.quantity}
-                    onChange={(e) => setTxForm({ ...txForm, quantity: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="font-mono text-xs text-zinc-400">price/unit</label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min={0}
-                    value={txForm.pricePerUnit}
-                    onChange={(e) => setTxForm({ ...txForm, pricePerUnit: e.target.value })}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="font-mono text-xs text-zinc-400">shipping cost</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  value={txForm.shippingCost}
-                  onChange={(e) => setTxForm({ ...txForm, shippingCost: e.target.value })}
-                  placeholder="0.00 (optional, SELL only)"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="font-mono text-xs text-zinc-400">date</label>
-                <Input
-                  type="date"
-                  value={txForm.date}
-                  onChange={(e) => setTxForm({ ...txForm, date: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="font-mono text-xs text-zinc-400">note</label>
-                <Input
-                  value={txForm.note}
-                  onChange={(e) => setTxForm({ ...txForm, note: e.target.value })}
-                  placeholder="optional"
-                />
-              </div>
-
-              <Button type="submit" className="w-full gap-2">
-                <Plus className="h-4 w-4" />
-                add transaction
-              </Button>
-            </form>
-
-            <div className="mt-6 border-t border-zinc-800 pt-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowCardForm(!showCardForm)}
-                className="gap-2 font-mono text-xs"
-              >
-                <Package className="h-3.5 w-3.5" />
-                {showCardForm ? 'cancel' : 'new card'}
-              </Button>
-
-              {showCardForm && (
-                <form onSubmit={handleCreateCard} className="mt-4 space-y-3">
-                  <Input
-                    placeholder="card name"
-                    value={cardForm.name}
-                    onChange={(e) => setCardForm({ ...cardForm, name: e.target.value })}
-                    required
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <Select
-                      value={cardForm.cardType}
-                      onChange={(e) => setCardForm({ ...cardForm, cardType: e.target.value })}
-                    >
-                      {CARD_TYPES.map((t) => (
-                        <option key={t} value={t}>{t}</option>
-                      ))}
-                    </Select>
-                    <Select
-                      value={cardForm.game}
-                      onChange={(e) => setCardForm({ ...cardForm, game: e.target.value })}
-                    >
-                      {GAMES.map((g) => (
-                        <option key={g} value={g}>{g}</option>
-                      ))}
-                    </Select>
-                  </div>
-                  <Input
-                    placeholder="set code"
-                    value={cardForm.setCode}
-                    onChange={(e) => setCardForm({ ...cardForm, setCode: e.target.value })}
-                  />
-                  <Input
-                    placeholder="card number"
-                    value={cardForm.cardNumber}
-                    onChange={(e) => setCardForm({ ...cardForm, cardNumber: e.target.value })}
-                  />
-                  <Input
-                    placeholder="rarity"
-                    value={cardForm.rarity}
-                    onChange={(e) => setCardForm({ ...cardForm, rarity: e.target.value })}
-                  />
-                  <Button type="submit" size="sm" className="w-full">
-                    create card
-                  </Button>
-                </form>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-zinc-800 bg-zinc-900/50 lg:col-span-2">
+      <Card className="border-zinc-800 bg-zinc-900/50">
           <CardHeader>
             <CardTitle className="font-mono text-sm">
               transactions ({transactions.length})
@@ -596,7 +364,6 @@ export default function TransactionsPage() {
             )}
           </CardContent>
         </Card>
-      </div>
 
       <Dialog open={editDialog.open} onOpenChange={closeEdit}>
         <form onSubmit={handleEdit}>
@@ -671,7 +438,7 @@ export default function TransactionsPage() {
             <Button type="button" variant="ghost" size="sm" onClick={closeEdit}>
               cancel
             </Button>
-            <Button type="submit" size="sm" className="gap-2">
+            <Button type="submit" disabled={isSubmitting} size="sm" className="gap-2">
               <Pencil className="h-3.5 w-3.5" />
               save changes
             </Button>

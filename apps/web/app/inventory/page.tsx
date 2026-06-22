@@ -63,6 +63,7 @@ export default function InventoryPage() {
   const [year, setYear] = useState('')
   const [month, setMonth] = useState('')
   const [sortBy, setSortBy] = useState<'lastTransaction_desc' | 'createdAt_desc' | 'createdAt_asc' | 'name_asc' | 'name_desc' | 'quantity_desc' | 'quantity_asc'>('lastTransaction_desc')
+  const [showFilters, setShowFilters] = useState(false)
 
   const [sellDialog, setSellDialog] = useState<{ open: boolean; item: InventoryItem | null }>({
     open: false,
@@ -106,6 +107,7 @@ export default function InventoryPage() {
 
   const [editingValue, setEditingValue] = useState<{ cardId: string; value: string } | null>(null)
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [sellConfirm, setSellConfirm] = useState<{ open: boolean; item: InventoryItem | null; qty: number; price: number; shipping: number; date: string; note: string }>({
     open: false,
@@ -244,8 +246,9 @@ export default function InventoryPage() {
 
   const executeSell = async () => {
     const { item, qty, price, shipping, date, note } = sellConfirm
-    if (!item) return
+    if (!item || isSubmitting) return
 
+    setIsSubmitting(true)
     const res = await fetch('/api/transactions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -265,6 +268,7 @@ export default function InventoryPage() {
       closeSell()
       fetchInventory()
     }
+    setIsSubmitting(false)
   }
 
   const handleAdjust = (e: React.FormEvent) => {
@@ -288,8 +292,9 @@ export default function InventoryPage() {
 
   const executeRemove = async () => {
     const { item, qty, price, date, note } = removeConfirm
-    if (!item) return
+    if (!item || isSubmitting) return
 
+    setIsSubmitting(true)
     const res = await fetch('/api/transactions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -308,6 +313,7 @@ export default function InventoryPage() {
       closeAdjust()
       fetchInventory()
     }
+    setIsSubmitting(false)
   }
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -344,6 +350,9 @@ export default function InventoryPage() {
     const { qty, price, date, note, isNewCard } = addConfirm
     let cardId = addConfirm.cardId
 
+    if (isSubmitting) return
+    setIsSubmitting(true)
+
     if (isNewCard) {
       const res = await fetch('/api/cards', {
         method: 'POST',
@@ -358,13 +367,19 @@ export default function InventoryPage() {
           condition: addCard.condition || undefined,
         }),
       })
-      if (!res.ok) return
+      if (!res.ok) {
+        setIsSubmitting(false)
+        return
+      }
       const newCard = await res.json()
       cardId = newCard.id
       fetchCards()
     }
 
-    if (!cardId) return
+    if (!cardId) {
+      setIsSubmitting(false)
+      return
+    }
 
     const res = await fetch('/api/transactions', {
       method: 'POST',
@@ -384,6 +399,7 @@ export default function InventoryPage() {
       closeAdd()
       fetchInventory()
     }
+    setIsSubmitting(false)
   }
 
   const toggleExpanded = (cardId: string) => {
@@ -539,7 +555,7 @@ export default function InventoryPage() {
   ]
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-4 p-3 md:space-y-6 md:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="font-mono text-2xl font-bold text-zinc-100">$ inventory</h1>
@@ -556,7 +572,7 @@ export default function InventoryPage() {
               }}
             >
               <PackageCheck className="h-4 w-4" />
-              view in stock
+              <span className="hidden sm:inline">view in stock</span>
             </Button>
           ) : (
             <Button
@@ -568,23 +584,23 @@ export default function InventoryPage() {
               }}
             >
               <PackageX className="h-4 w-4" />
-              view sold cards
+              <span className="hidden sm:inline">view sold cards</span>
             </Button>
           )}
           <Button className="gap-2" onClick={() => openAdd(null)}>
             <PlusCircle className="h-4 w-4" />
-            add card
+            <span className="hidden sm:inline">add card</span>
           </Button>
           <Link href="/grading/send">
             <Button className="gap-2">
               <Gem className="h-4 w-4" />
-              send to grade
+              <span className="hidden sm:inline">send to grade</span>
             </Button>
           </Link>
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
         {statCards.map((s) => {
           const Icon = s.icon
           return (
@@ -607,10 +623,20 @@ export default function InventoryPage() {
       </div>
 
       <Card className="border-zinc-800 bg-zinc-900/50">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="font-mono text-sm">filters</CardTitle>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowFilters((v) => !v)}
+            className="gap-1 md:hidden font-mono text-xs"
+          >
+            {showFilters ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            filters
+          </Button>
         </CardHeader>
-        <CardContent>
+        <CardContent className={!showFilters ? 'hidden md:block' : ''}>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
@@ -1382,7 +1408,10 @@ export default function InventoryPage() {
         </form>
       </Dialog>
 
-      <Dialog open={sellConfirm.open} onOpenChange={() => setSellConfirm({ open: false, item: null, qty: 0, price: 0, shipping: 0, date: '', note: '' })}>
+      <Dialog open={sellConfirm.open} onOpenChange={() => {
+        setIsSubmitting(false)
+        setSellConfirm({ open: false, item: null, qty: 0, price: 0, shipping: 0, date: '', note: '' })
+      }}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Tag className="h-4 w-4 text-emerald-400" />
@@ -1433,14 +1462,23 @@ export default function InventoryPage() {
           >
             cancel
           </Button>
-          <Button type="button" size="sm" className="gap-2" onClick={executeSell}>
-            <Tag className="h-3.5 w-3.5" />
-            confirm sell
+          <Button type="button" size="sm" className="gap-2" onClick={executeSell} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <span className="font-mono text-xs">processing...</span>
+            ) : (
+              <>
+                <Tag className="h-3.5 w-3.5" />
+                confirm sell
+              </>
+            )}
           </Button>
         </DialogFooter>
       </Dialog>
 
-      <Dialog open={removeConfirm.open} onOpenChange={() => setRemoveConfirm({ open: false, item: null, qty: 0, price: 0, date: '', note: '' })}>
+      <Dialog open={removeConfirm.open} onOpenChange={() => {
+        setIsSubmitting(false)
+        setRemoveConfirm({ open: false, item: null, qty: 0, price: 0, date: '', note: '' })
+      }}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Minus className="h-4 w-4 text-zinc-400" />
@@ -1487,14 +1525,23 @@ export default function InventoryPage() {
           >
             cancel
           </Button>
-          <Button type="button" size="sm" className="gap-2" onClick={executeRemove}>
-            <Minus className="h-3.5 w-3.5" />
-            confirm remove
+          <Button type="button" size="sm" className="gap-2" onClick={executeRemove} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <span className="font-mono text-xs">processing...</span>
+            ) : (
+              <>
+                <Minus className="h-3.5 w-3.5" />
+                confirm remove
+              </>
+            )}
           </Button>
         </DialogFooter>
       </Dialog>
 
-      <Dialog open={addConfirm.open} onOpenChange={() => setAddConfirm({ open: false, cardName: '', qty: 0, price: 0, date: '', note: '', cardId: '', isNewCard: false })}>
+      <Dialog open={addConfirm.open} onOpenChange={() => {
+        setIsSubmitting(false)
+        setAddConfirm({ open: false, cardName: '', qty: 0, price: 0, date: '', note: '', cardId: '', isNewCard: false })
+      }}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Plus className="h-4 w-4 text-emerald-400" />
@@ -1553,9 +1600,15 @@ export default function InventoryPage() {
           >
             cancel
           </Button>
-          <Button type="button" size="sm" className="gap-2" onClick={executeAdd}>
-            <Plus className="h-3.5 w-3.5" />
-            confirm add
+          <Button type="button" size="sm" className="gap-2" onClick={executeAdd} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <span className="font-mono text-xs">processing...</span>
+            ) : (
+              <>
+                <Plus className="h-3.5 w-3.5" />
+                confirm add
+              </>
+            )}
           </Button>
         </DialogFooter>
       </Dialog>

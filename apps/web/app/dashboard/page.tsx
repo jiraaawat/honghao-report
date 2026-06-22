@@ -207,7 +207,7 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-4 p-3 md:space-y-6 md:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="font-mono text-2xl font-bold text-zinc-100">$ dashboard</h1>
@@ -219,13 +219,13 @@ export default function DashboardPage() {
           <Link href="/inventory">
             <Button variant="outline" className="gap-2">
               <Boxes className="h-4 w-4" />
-              inventory
+              <span className="hidden sm:inline">inventory</span>
             </Button>
           </Link>
           <Link href="/transactions">
             <Button variant="outline" className="gap-2">
               <Plus className="h-4 w-4" />
-              transaction
+              <span className="hidden sm:inline">transaction</span>
             </Button>
           </Link>
         </div>
@@ -238,7 +238,7 @@ export default function DashboardPage() {
             date range
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             {(['month', 'today', '7d', '30d', 'all'] as const).map((range) => (
               <Button
@@ -279,7 +279,7 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         {statItems.map((item) => {
           const Icon = item.icon
           return (
@@ -303,52 +303,54 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle className="font-mono text-sm">inventory snapshot</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <span className="font-mono text-xs text-zinc-400">total cards</span>
-              <span className="font-mono text-zinc-200">{inventorySummary.totalCards}</span>
-            </div>
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <span className="font-mono text-xs text-zinc-400">in stock</span>
-              <span className="font-mono text-emerald-400">{inventorySummary.inStock}</span>
-            </div>
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <span className="font-mono text-xs text-zinc-400">grading</span>
-              <span className="font-mono text-amber-400">{inventorySummary.grading}</span>
-            </div>
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <span className="font-mono text-xs text-zinc-400">sold cards</span>
-              <span className="font-mono text-amber-400">{inventorySummary.soldOut}</span>
-            </div>
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <span className="font-mono text-xs text-zinc-400">total invested</span>
-              <span className="font-mono text-zinc-200">
-                {formatCurrency(inventorySummary.totalInvested)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <span className="font-mono text-xs text-zinc-400">total value</span>
-              <span className="font-mono text-zinc-200">{formatCurrency(inventorySummary.totalValue)}</span>
-            </div>
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <span className="font-mono text-xs text-zinc-400">total profit</span>
-              <span
-                className={`font-mono ${
-                  inventorySummary.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400'
-                }`}
-              >
-                {formatCurrency(inventorySummary.totalProfit)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <span className="font-mono text-xs text-zinc-400">overall roi</span>
-              <span
-                className={`font-mono ${
-                  inventorySummary.totalROI >= 0 ? 'text-emerald-400' : 'text-red-400'
-                }`}
-              >
-                {formatNumber(inventorySummary.totalROI)}%
-              </span>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <span className="font-mono text-xs text-zinc-400">total cards</span>
+                <span className="font-mono text-zinc-200">{inventorySummary.totalCards}</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <span className="font-mono text-xs text-zinc-400">in stock</span>
+                <span className="font-mono text-emerald-400">{inventorySummary.inStock}</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <span className="font-mono text-xs text-zinc-400">grading</span>
+                <span className="font-mono text-amber-400">{inventorySummary.grading}</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <span className="font-mono text-xs text-zinc-400">sold cards</span>
+                <span className="font-mono text-amber-400">{inventorySummary.soldOut}</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <span className="font-mono text-xs text-zinc-400">total invested</span>
+                <span className="font-mono text-zinc-200">
+                  {formatCurrency(inventorySummary.totalInvested)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <span className="font-mono text-xs text-zinc-400">total value</span>
+                <span className="font-mono text-zinc-200">{formatCurrency(inventorySummary.totalValue)}</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <span className="font-mono text-xs text-zinc-400">total profit</span>
+                <span
+                  className={`font-mono ${
+                    inventorySummary.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400'
+                  }`}
+                >
+                  {formatCurrency(inventorySummary.totalProfit)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <span className="font-mono text-xs text-zinc-400">overall roi</span>
+                <span
+                  className={`font-mono ${
+                    inventorySummary.totalROI >= 0 ? 'text-emerald-400' : 'text-red-400'
+                  }`}
+                >
+                  {formatNumber(inventorySummary.totalROI)}%
+                </span>
+              </div>
             </div>
             <Link href="/inventory">
               <Button variant="ghost" size="sm" className="w-full gap-1 font-mono text-xs">
@@ -366,7 +368,7 @@ export default function DashboardPage() {
             {gameBreakdown.length === 0 ? (
               <div className="py-4 text-center font-mono text-xs text-zinc-500">no data</div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {gameBreakdown.map((g) => (
                   <div key={g.game} className="flex items-center justify-between">
                     <span className="font-mono text-xs text-zinc-400">{g.game}</span>
@@ -389,7 +391,7 @@ export default function DashboardPage() {
             {typeBreakdown.length === 0 ? (
               <div className="py-4 text-center font-mono text-xs text-zinc-500">no data</div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {typeBreakdown.map((t) => (
                   <div key={t.type} className="flex items-center justify-between">
                     <span className="font-mono text-xs text-zinc-400">{t.type}</span>

@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { GRADES } from '@/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { Plus, CheckCircle, XCircle, Gem, ArrowRight } from 'lucide-react'
+import { Plus, CheckCircle, XCircle, Gem, ArrowRight, ChevronUp, ChevronDown } from 'lucide-react'
 
 interface GradingWithCard {
   id: string
@@ -40,6 +40,7 @@ export default function GradingPage() {
   const [completed, setCompleted] = useState<GradingWithCard[]>([])
   const [loading, setLoading] = useState(true)
   const [completeForm, setCompleteForm] = useState<Record<string, { grade: string; currentValue: string }>>({})
+  const [showCompleted, setShowCompleted] = useState(false)
 
   const fetchData = useCallback(async () => {
     const [activeRes, completedRes] = await Promise.all([
@@ -122,7 +123,7 @@ export default function GradingPage() {
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-4 p-3 md:space-y-6 md:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="font-mono text-2xl font-bold text-zinc-100">$ grading</h1>
@@ -160,9 +161,9 @@ export default function GradingPage() {
               {gradings.map((g) => (
                 <div
                   key={g.id}
-                  className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-4"
+                  className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3 md:p-4"
                 >
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="font-mono font-medium text-zinc-100">{g.card?.name}</h3>
@@ -171,13 +172,13 @@ export default function GradingPage() {
                       <p className="mt-1 font-mono text-xs text-zinc-500">
                         {[g.card?.setCode, g.card?.cardNumber, g.card?.rarity].filter(Boolean).join(' · ')} · {g.card?.game}
                       </p>
-                      <p className="mt-2 font-mono text-sm text-zinc-400">
-                        grading cost: <span className="text-amber-400">{formatCurrency(Number(g.gradingCost))}</span>
-                      </p>
-                      <p className="font-mono text-xs text-zinc-500">sent: {formatDate(g.sentDate)}</p>
+                      <div className="mt-2 flex flex-wrap gap-x-3 font-mono text-xs text-zinc-400">
+                        <span>cost: <span className="text-amber-400">{formatCurrency(Number(g.gradingCost))}</span></span>
+                        <span>sent: {formatDate(g.sentDate)}</span>
+                      </div>
                     </div>
 
-                    <div className="flex flex-col gap-3 md:min-w-[280px]">
+                    <div className="flex flex-col gap-2 md:min-w-[280px]">
                       <div className="grid grid-cols-2 gap-2">
                         <Select
                           value={completeForm[g.id]?.grade || ''}
@@ -238,13 +239,23 @@ export default function GradingPage() {
 
       {completed.length > 0 && (
         <Card className="border-zinc-800 bg-zinc-900/50">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2 font-mono text-sm">
               <CheckCircle className="h-4 w-4 text-emerald-400" />
               completed gradings ({completed.length})
             </CardTitle>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowCompleted((v) => !v)}
+              className="gap-1 md:hidden font-mono text-xs"
+            >
+              {showCompleted ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              {showCompleted ? 'hide' : 'show'}
+            </Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className={!showCompleted ? 'hidden md:block' : ''}>
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-left font-mono text-sm">
                 <thead>

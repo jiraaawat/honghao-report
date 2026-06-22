@@ -39,6 +39,7 @@ export default function SendToGradeContent() {
   const [gradingCost, setGradingCost] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [loading, setLoading] = useState(false)
+  const [showOptional, setShowOptional] = useState(false)
 
   useEffect(() => {
     if (status !== 'authenticated') return
@@ -123,7 +124,7 @@ export default function SendToGradeContent() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl p-4 md:p-6">
+    <div className="mx-auto max-w-2xl p-3 md:p-6">
       <Link href="/grading">
         <Button variant="ghost" size="sm" className="mb-4 gap-1 font-mono text-xs">
           <ArrowLeft className="h-3.5 w-3.5" /> back to grading
@@ -132,14 +133,14 @@ export default function SendToGradeContent() {
 
       <Card className="border-zinc-800 bg-zinc-900/50">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10">
-            <Gem className="h-6 w-6 text-amber-400" />
+          <div className="mx-auto mb-1 flex h-10 w-10 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 md:mb-2 md:h-12 md:w-12">
+            <Gem className="h-5 w-5 text-amber-400 md:h-6 md:w-6" />
           </div>
           <CardTitle className="font-mono text-xl text-amber-400">$ send to grade</CardTitle>
           <p className="font-mono text-sm text-zinc-500">the grading cost will be added to monthly cost</p>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
             <div className="grid grid-cols-2 gap-2 rounded-lg border border-zinc-800 bg-zinc-950 p-1">
               <button
                 type="button"
@@ -210,23 +211,34 @@ export default function SendToGradeContent() {
                     ))}
                   </Select>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <Input
-                    placeholder="set code"
-                    value={newCard.setCode}
-                    onChange={(e) => setNewCard({ ...newCard, setCode: e.target.value })}
-                  />
-                  <Input
-                    placeholder="card #"
-                    value={newCard.cardNumber}
-                    onChange={(e) => setNewCard({ ...newCard, cardNumber: e.target.value })}
-                  />
-                  <Input
-                    placeholder="rarity"
-                    value={newCard.rarity}
-                    onChange={(e) => setNewCard({ ...newCard, rarity: e.target.value })}
-                  />
-                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowOptional((v) => !v)}
+                  className="w-full gap-1 font-mono text-xs text-zinc-500"
+                >
+                  {showOptional ? 'hide optional details' : 'show optional details'}
+                </Button>
+                {showOptional && (
+                  <div className="grid grid-cols-3 gap-2">
+                    <Input
+                      placeholder="set code"
+                      value={newCard.setCode}
+                      onChange={(e) => setNewCard({ ...newCard, setCode: e.target.value })}
+                    />
+                    <Input
+                      placeholder="card #"
+                      value={newCard.cardNumber}
+                      onChange={(e) => setNewCard({ ...newCard, cardNumber: e.target.value })}
+                    />
+                    <Input
+                      placeholder="rarity"
+                      value={newCard.rarity}
+                      onChange={(e) => setNewCard({ ...newCard, rarity: e.target.value })}
+                    />
+                  </div>
+                )}
               </div>
             )}
 

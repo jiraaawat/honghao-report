@@ -70,7 +70,7 @@ export default function ReportsPage() {
   const totalROI = totalBuy > 0 ? (totalProfit / totalBuy) * 100 : 0
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-4 p-3 md:space-y-6 md:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="font-mono text-2xl font-bold text-zinc-100">$ reports</h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -88,12 +88,12 @@ export default function ReportsPage() {
           </Select>
           <Button onClick={handleExport} className="gap-2">
             <Download className="h-4 w-4" />
-            export excel
+            <span className="hidden sm:inline">export excel</span>
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Card className="border-zinc-800 bg-zinc-900/50">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 font-mono text-xs font-normal text-zinc-500">
@@ -204,7 +204,7 @@ export default function ReportsPage() {
                   </tbody>
                 </table>
               </div>
-              <div className="space-y-3 md:hidden">
+              <div className="space-y-2 md:hidden">
                 {report.map((r) => (
                   <div key={`${r.year}-${r.month}`} className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3">
                     <div className="flex items-center justify-between">
