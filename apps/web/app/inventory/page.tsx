@@ -534,17 +534,31 @@ export default function InventoryPage() {
           <p className="font-mono text-sm text-zinc-500">track your cards, stock, and sold items</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            className="gap-2"
-            onClick={() => {
-              setStatusFilter('sold_out')
-              setSortBy('createdAt_desc')
-            }}
-          >
-            <PackageX className="h-4 w-4" />
-            view sold cards
-          </Button>
+          {statusFilter === 'sold_out' ? (
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => {
+                setStatusFilter('in_stock')
+                setSortBy('lastTransaction_desc')
+              }}
+            >
+              <PackageCheck className="h-4 w-4" />
+              view in stock
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => {
+                setStatusFilter('sold_out')
+                setSortBy('createdAt_desc')
+              }}
+            >
+              <PackageX className="h-4 w-4" />
+              view sold cards
+            </Button>
+          )}
           <Button className="gap-2" onClick={() => openAdd(null)}>
             <PlusCircle className="h-4 w-4" />
             add card
