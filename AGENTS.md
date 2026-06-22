@@ -1,0 +1,68 @@
+# Agent Guide: honghao-report
+
+## Project Overview
+
+This is a full-stack monorepo for tracking trading card buy/sell transactions, profit, ROI, Excel reports, and card grading workflow.
+
+## Architecture
+
+- Monorepo managed with `pnpm` workspaces and `turbo`
+- Single Next.js app at `apps/web`
+- Shared TypeScript types at `packages/shared`
+- SQLite database via Prisma ORM
+- NextAuth.js v5 with credentials provider
+
+## Conventions
+
+- Use TypeScript for all new code
+- UI follows a dark terminal/developer aesthetic
+- Prefer monospace fonts (`font-mono`) for UI text
+- Use `cn()` utility from `lib/utils.ts` for class merging
+- Use Prisma client from `lib/prisma.ts`
+- API routes should check session with `auth()` from `@/auth`
+
+## Database
+
+Schema location: `apps/web/prisma/schema.prisma`
+
+Models:
+- `User` / `Account` / `Session` / `VerificationToken` (NextAuth)
+- `Card` - trading cards with `cardType`, `game`, and `status` fields
+- `Transaction` - buy/sell records, grading costs use `isGradingCost: true`
+- `CardInventory` - computed inventory & average cost per card
+- `GradingRecord` - tracks cards sent for grading
+
+Card categories:
+- `cardType`: Single, Bundle, PSA10, PSA9, Sealed Product
+- `game`: Pokemon, OnePiece, Lorcana, ETC
+
+Card status:
+- `in_stock`
+- `grading`
+- `sold_out`
+
+After schema changes:
+```bash
+pnpm db:generate
+pnpm db:migrate
+```
+
+## UI Components
+
+Custom shadcn/ui-style components live in `apps/web/components/ui/`:
+- `Button`, `Card`, `Input`, `Select`, `Badge`
+
+Use `lucide-react` for icons.
+
+## Environment
+
+Local dev uses SQLite. Ensure `apps/web/.env.local` exists with `DATABASE_URL`, `NEXTAUTH_URL`, and `NEXTAUTH_SECRET`.
+
+## Pages
+
+- `/dashboard` - Summary stats, game/type breakdown, recent transactions
+- `/inventory` - Main card browser with search & filters
+- `/grading` - Track and manage cards being graded
+- `/grading/send` - Send a card to grading
+- `/transactions` - Add cards and record buy/sell transactions
+- `/reports` - Monthly profit/ROI reports and Excel export

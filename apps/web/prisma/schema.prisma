@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts     Account[]
+  sessions     Session[]
+  cards        Card[]
+  transactions Transaction[]
+  gradings     GradingRecord[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Card {
+  id          String   @id @default(cuid())
+  name        String
+  setCode     String?
+  cardNumber  String?
+  rarity      String?
+  cardType    String?  @default("Single")
+  game        String?  @default("Pokemon")
+  condition   String?
+  status      String   @default("in_stock")
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String
+
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  inventory    CardInventory?
+  gradings     GradingRecord[]
+
+  @@index([userId])
+  @@index([cardType])
+  @@index([game])
+  @@index([status])
+}
+
+model Transaction {
+  id           String    @id @default(cuid())
+  cardId       String
+  userId       String
+  type         String
+  quantity     Int
+  pricePerUnit Decimal
+  totalAmount  Decimal
+  shippingCost Decimal?
+  date         DateTime
+  note         String?
+  isGradingCost Boolean  @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([cardId])
+  @@index([date])
+}
+
+model CardInventory {
+  id            String   @id @default(cuid())
+  cardId        String   @unique
+  userId        String
+  quantity      Int      @default(0)
+  averageCost   Decimal  @default(0)
+  totalInvested Decimal  @default(0)
+  currentValue  Decimal?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, userId])
+}
+
+model GradingRecord {
+  id            String   @id @default(cuid())
+  cardId        String
+  userId        String
+  status        String   @default("grading")
+  gradingCost   Decimal
+  grade         String?
+  currentValue  Decimal?
+  sentDate      DateTime @default(now())
+  completedDate DateTime?
+  cancelledDate DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([cardId])
+  @@index([status])
+}

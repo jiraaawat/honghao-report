@@ -1,0 +1,92 @@
+'use client'
+
+import { useState } from 'react'
+import { signIn } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Terminal, AlertCircle } from 'lucide-react'
+
+export default function SignInPage() {
+  const router = useRouter()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+
+    const result = await signIn('credentials', {
+      email,
+      password,
+      redirect: false,
+    })
+
+    setLoading(false)
+
+    if (result?.error) {
+      setError('Invalid credentials')
+    } else {
+      router.push('/dashboard')
+      router.refresh()
+    }
+  }
+
+  return (
+    <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center p-4">
+      <Card className="w-full max-w-md border-zinc-800 bg-zinc-900/80">
+        <CardHeader className="space-y-2 text-center">
+          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10">
+            <Terminal className="h-6 w-6 text-emerald-400" />
+          </div>
+          <CardTitle className="font-mono text-xl text-emerald-400">$ honghao-report</CardTitle>
+          <CardDescription>sign in to your trading card terminal</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="flex items-center gap-2 rounded-md border border-red-500/30 bg-red-500/10 p-3 font-mono text-xs text-red-400">
+                <AlertCircle className="h-4 w-4" />
+                {error}
+              </div>
+            )}
+            <div className="space-y-2">
+              <label className="font-mono text-xs text-zinc-400">email</label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="dev@example.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="font-mono text-xs text-zinc-400">password</label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'authenticating...' : 'sign in'}
+            </Button>
+          </form>
+          <p className="mt-4 text-center font-mono text-xs text-zinc-500">
+            no account?{' '}
+            <Link href="/auth/register" className="text-emerald-400 hover:underline">
+              register
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
