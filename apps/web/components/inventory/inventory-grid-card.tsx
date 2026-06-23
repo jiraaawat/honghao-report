@@ -156,33 +156,36 @@ export function InventoryGridCard({
           <>
             <Button
               size="sm"
-              className="h-8 w-full gap-1 text-xs bg-emerald-500 font-semibold text-white shadow-sm hover:bg-emerald-400"
+              className="h-8 w-full gap-1 text-xs"
               onClick={() => onSell(item)}
             >
-              <Tag className="h-3.5 w-3.5" /> sell
+              <Tag className="h-3.5 w-3.5" /> <span className="hidden sm:inline">sell</span>
             </Button>
             <div className="flex gap-2">
               <Button
                 size="sm"
-                className="h-8 flex-1 gap-1 text-xs bg-blue-500 font-semibold text-white shadow-sm hover:bg-blue-400"
+                variant="outline"
+                className="h-8 flex-1 gap-1 text-xs"
                 onClick={() => onAdd(item)}
               >
-                <Plus className="h-3.5 w-3.5" /> add
+                <Plus className="h-3.5 w-3.5" /> <span className="hidden sm:inline">add</span>
               </Button>
               <Button
                 size="sm"
-                className="h-8 flex-1 gap-1 text-xs bg-red-500 font-semibold text-white shadow-sm hover:bg-red-400"
+                variant="outline"
+                className="h-8 flex-1 gap-1 text-xs"
                 onClick={() => onRemove(item)}
               >
-                <Minus className="h-3.5 w-3.5" /> remove
+                <Minus className="h-3.5 w-3.5" /> <span className="hidden sm:inline">remove</span>
               </Button>
             </div>
             <Link href={`/grading/send?cardId=${item.cardId}`} className="block">
               <Button
                 size="sm"
-                className="h-8 w-full gap-1 text-xs bg-amber-500 font-semibold text-white shadow-sm hover:bg-amber-400"
+                variant="outline"
+                className="h-8 w-full gap-1 text-xs text-amber-400 hover:bg-amber-500/10 hover:text-amber-400"
               >
-                <Gem className="h-3.5 w-3.5" /> send to grade
+                <Gem className="h-3.5 w-3.5" /> <span className="hidden sm:inline">send to grade</span>
               </Button>
             </Link>
           </>

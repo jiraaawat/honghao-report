@@ -936,33 +936,36 @@ export default function InventoryPage() {
                             {item.status === 'in_stock' && item.quantity > 0 ? (
                               <>
                                 <Button
+                                  variant="outline"
                                   size="icon"
                                   title="quick add"
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     openAdd(item)
                                   }}
-                                  className="h-7 w-7 shrink-0 bg-blue-500 text-white shadow-sm hover:bg-blue-400"
+                                  className="h-7 w-7 shrink-0 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-400"
                                 >
                                   <Plus className="h-3.5 w-3.5" />
                                 </Button>
                                 <Button
+                                  variant="outline"
                                   size="icon"
                                   title="quick remove"
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     openRemove(item)
                                   }}
-                                  className="h-7 w-7 shrink-0 bg-red-500 text-white shadow-sm hover:bg-red-400"
+                                  className="h-7 w-7 shrink-0 border-zinc-600 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
                                 >
                                   <Minus className="h-3.5 w-3.5" />
                                 </Button>
                                 <Link href={`/grading/send?cardId=${item.cardId}`}>
                                   <Button
+                                    variant="outline"
                                     size="icon"
                                     title="send to grade"
                                     onClick={(e) => e.stopPropagation()}
-                                    className="h-7 w-7 shrink-0 bg-amber-500 text-white shadow-sm hover:bg-amber-400"
+                                    className="h-7 w-7 shrink-0 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:text-amber-400"
                                   >
                                     <Gem className="h-3.5 w-3.5" />
                                   </Button>
@@ -1038,27 +1041,29 @@ export default function InventoryPage() {
                         <div className="mt-2 flex flex-wrap gap-2">
                           <Button
                             size="sm"
-                            className="h-8 flex-1 gap-1 bg-emerald-500 font-semibold text-white shadow-sm hover:bg-emerald-400"
+                            className="h-7 flex-1 gap-1 bg-emerald-600 text-[10px] text-white hover:bg-emerald-700"
                             onClick={() => openSell(item)}
                           >
                             <Tag className="h-3.5 w-3.5" /> sell
                           </Button>
                           <Button
                             size="sm"
-                            className="h-8 flex-1 gap-1 bg-blue-500 font-semibold text-white shadow-sm hover:bg-blue-400"
+                            variant="outline"
+                            className="h-7 flex-1 gap-1 text-[10px]"
                             onClick={() => openAdd(item)}
                           >
                             <Plus className="h-3.5 w-3.5" /> add
                           </Button>
                           <Button
                             size="sm"
-                            className="h-8 flex-1 gap-1 bg-red-500 font-semibold text-white shadow-sm hover:bg-red-400"
+                            variant="outline"
+                            className="h-7 flex-1 gap-1 text-[10px]"
                             onClick={() => openRemove(item)}
                           >
                             <Minus className="h-3.5 w-3.5" /> remove
                           </Button>
                           <Link href={`/grading/send?cardId=${item.cardId}`}>
-                            <Button size="sm" className="h-8 px-2 bg-amber-500 font-semibold text-white shadow-sm hover:bg-amber-400">
+                            <Button size="sm" variant="outline" className="h-7 px-2 text-amber-400 hover:bg-amber-500/10 hover:text-amber-400">
                               <Gem className="h-3.5 w-3.5" />
                             </Button>
                           </Link>

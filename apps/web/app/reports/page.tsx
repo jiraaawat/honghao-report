@@ -4,12 +4,20 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import {
+  Dialog,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { MonthlyReport } from '@/types'
 import { formatCurrency, formatNumber } from '@/lib/utils'
-import { Download, TrendingUp, TrendingDown, Calendar } from 'lucide-react'
+import { Download, TrendingUp, TrendingDown, Calendar, AlertTriangle, Trash2 } from 'lucide-react'
 
 export default function ReportsPage() {
   const { status } = useSession()
@@ -17,6 +25,11 @@ export default function ReportsPage() {
   const [filterYear, setFilterYear] = useState('')
   const [filterMonth, setFilterMonth] = useState('')
   const [loading, setLoading] = useState(true)
+
+  const [resetDialog, setResetDialog] = useState(false)
+  const [resetPassword, setResetPassword] = useState('')
+  const [resetConfirm, setResetConfirm] = useState('')
+  const [resetting, setResetting] = useState(false)
 
   useEffect(() => {
     if (status !== 'authenticated') return
@@ -48,6 +61,36 @@ export default function ReportsPage() {
     if (filterYear) params.append('year', filterYear)
     if (filterMonth) params.append('month', filterMonth)
     window.location.href = `/api/reports/export?${params}`
+  }
+
+  const handleReset = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (resetConfirm !== 'RESET') {
+      alert('Please type RESET to confirm')
+      return
+    }
+
+    setResetting(true)
+    try {
+      const res = await fetch('/api/portfolio/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: resetPassword, confirmation: resetConfirm }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) {
+        setResetDialog(false)
+        setResetPassword('')
+        setResetConfirm('')
+        window.location.reload()
+      } else {
+        alert(data.error || 'Failed to reset portfolio')
+      }
+    } catch {
+      alert('Failed to reset portfolio')
+    } finally {
+      setResetting(false)
+    }
   }
 
   if (status === 'loading' || loading) {
@@ -245,6 +288,85 @@ export default function ReportsPage() {
           )}
         </CardContent>
       </Card>
+
+      <Card className="border-red-900/50 bg-red-950/20">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-mono text-sm text-red-400">
+            <AlertTriangle className="h-4 w-4" />
+            danger zone
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-4 font-mono text-xs text-zinc-400">
+            Resetting your portfolio will permanently delete all cards, transactions, inventory records, and grading records. This cannot be undone.
+          </p>
+          <Button
+            variant="destructive"
+            size="sm"
+            className="gap-2"
+            onClick={() => setResetDialog(true)}
+          >
+            <Trash2 className="h-4 w-4" />
+            reset portfolio
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Dialog open={resetDialog} onOpenChange={setResetDialog}>
+        <form onSubmit={handleReset}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-400">
+              <AlertTriangle className="h-4 w-4" />
+              Reset portfolio
+            </DialogTitle>
+            <DialogDescription>
+              This will delete all your portfolio data. Enter your password and type RESET to confirm.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <label className="font-mono text-xs text-zinc-400">password</label>
+              <Input
+                type="password"
+                value={resetPassword}
+                onChange={(e) => setResetPassword(e.target.value)}
+                placeholder="your password"
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="font-mono text-xs text-zinc-400">type RESET to confirm</label>
+              <Input
+                type="text"
+                value={resetConfirm}
+                onChange={(e) => setResetConfirm(e.target.value)}
+                placeholder="RESET"
+                required
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setResetDialog(false)}
+            >
+              cancel
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              variant="destructive"
+              disabled={resetting || resetConfirm !== 'RESET' || !resetPassword}
+            >
+              {resetting ? 'resetting...' : 'yes, reset everything'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </Dialog>
     </div>
   )
 }
