@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -17,7 +18,8 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { InventoryItem, CardDto, CARD_TYPES, GAMES, CARD_CONDITIONS } from '@/types'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { InventoryGridCard } from '@/components/inventory/inventory-grid-card'
+import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import {
   Search,
   Package,
@@ -34,6 +36,8 @@ import {
   PlusCircle,
   ChevronUp,
   ChevronDown,
+  LayoutList,
+  LayoutGrid,
 } from 'lucide-react'
 
 interface InventoryResponse {
@@ -57,7 +61,9 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true)
 
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('in_stock')
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const [formatFilter, setFormatFilter] = useState<'all' | 'raw' | 'slab' | 'sealed'>('all')
   const [cardType, setCardType] = useState('')
   const [game, setGame] = useState('')
@@ -65,6 +71,7 @@ export default function InventoryPage() {
   const [month, setMonth] = useState('')
   const [sortBy, setSortBy] = useState<'lastTransaction_desc' | 'createdAt_desc' | 'createdAt_asc' | 'name_asc' | 'name_desc' | 'quantity_desc' | 'quantity_asc'>('lastTransaction_desc')
   const [showFilters, setShowFilters] = useState(false)
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
 
   const [sellDialog, setSellDialog] = useState<{ open: boolean; item: InventoryItem | null }>({
     open: false,
@@ -135,12 +142,11 @@ export default function InventoryPage() {
 
   const fetchInventory = useCallback(() => {
     const params = new URLSearchParams()
-    if (search) params.append('search', search)
+    if (debouncedSearch) params.append('search', debouncedSearch)
     if (statusFilter) params.append('status', statusFilter)
     if (cardType) params.append('cardType', cardType)
     if (game) params.append('game', game)
 
-    setLoading(true)
     fetch(`/api/inventory?${params}`)
       .then((r) => r.json())
       .then((d) => {
@@ -148,7 +154,12 @@ export default function InventoryPage() {
         setLoading(false)
       })
       .catch(() => setLoading(false))
-  }, [search, statusFilter, cardType, game])
+  }, [debouncedSearch, statusFilter, cardType, game])
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 400)
+    return () => clearTimeout(timer)
+  }, [search])
 
   const fetchCards = useCallback(() => {
     fetch('/api/cards')
@@ -400,6 +411,18 @@ export default function InventoryPage() {
 
   const items = useMemo(() => data?.items ?? [], [data])
 
+  const searchSuggestions = useMemo(() => {
+    if (!search || search.length < 1) return []
+    const term = search.toLowerCase()
+    const matches = new Set<string>()
+    items.forEach((item) => {
+      if (item.cardName.toLowerCase().includes(term)) matches.add(item.cardName)
+      if (item.setCode?.toLowerCase().includes(term)) matches.add(item.setCode)
+      if (item.cardNumber?.toLowerCase().includes(term)) matches.add(item.cardNumber)
+    })
+    return Array.from(matches).slice(0, 8)
+  }, [search, items])
+
   const formatGroups = useMemo(
     () => ({
       raw: ['Single', 'Bundle'],
@@ -548,31 +571,6 @@ export default function InventoryPage() {
           <p className="font-mono text-sm text-zinc-500">track your cards, stock, and sold items</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {statusFilter === 'sold_out' ? (
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={() => {
-                setStatusFilter('in_stock')
-                setSortBy('lastTransaction_desc')
-              }}
-            >
-              <PackageCheck className="h-4 w-4" />
-              <span className="hidden sm:inline">view in stock</span>
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={() => {
-                setStatusFilter('sold_out')
-                setSortBy('createdAt_desc')
-              }}
-            >
-              <PackageX className="h-4 w-4" />
-              <span className="hidden sm:inline">view sold cards</span>
-            </Button>
-          )}
           <Button className="gap-2" onClick={() => openAdd(null)}>
             <PlusCircle className="h-4 w-4" />
             <span className="hidden sm:inline">add card</span>
@@ -642,41 +640,61 @@ export default function InventoryPage() {
           </Button>
         </CardHeader>
         <CardContent className={!showFilters ? 'hidden md:block' : ''}>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-            <div className="relative">
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="relative w-44">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
               <Input
                 placeholder="search cards..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                 className="pl-9"
               />
+              {showSuggestions && searchSuggestions.length > 0 && (
+                <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-48 overflow-auto rounded-md border border-zinc-700 bg-zinc-900 py-1 shadow-lg">
+                  {searchSuggestions.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setSearch(s)
+                        setShowSuggestions(false)
+                      }}
+                      className="block w-full truncate px-3 py-1.5 text-left font-mono text-xs text-zinc-300 hover:bg-zinc-800"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-44">
               <option value="">all status</option>
               <option value="in_stock">in stock</option>
               <option value="grading">grading</option>
               <option value="sold_out">sold out</option>
             </Select>
 
-            <Select value={cardType} onChange={(e) => setCardType(e.target.value)}>
+            <Select value={cardType} onChange={(e) => setCardType(e.target.value)} className="w-44">
               <option value="">all types</option>
               {CARD_TYPES.map((t) => (
                 <option key={t} value={t}>{t}</option>
               ))}
             </Select>
 
-            <Select value={game} onChange={(e) => setGame(e.target.value)}>
+            <Select value={game} onChange={(e) => setGame(e.target.value)} className="w-44">
               <option value="">all games</option>
               {GAMES.map((g) => (
                 <option key={g} value={g}>{g}</option>
               ))}
             </Select>
 
-            <div className="flex items-center gap-2">
+            <div className="flex w-44 items-center gap-2">
               <Calendar className="h-4 w-4 text-zinc-500" />
-              <Select value={year} onChange={(e) => setYear(e.target.value)}>
+              <Select value={year} onChange={(e) => setYear(e.target.value)} className="flex-1">
                 <option value="">all years</option>
                 {years.map((y) => (
                   <option key={y} value={y}>{y}</option>
@@ -684,16 +702,16 @@ export default function InventoryPage() {
               </Select>
             </div>
 
-            <Select value={month} onChange={(e) => setMonth(e.target.value)}>
+            <Select value={month} onChange={(e) => setMonth(e.target.value)} className="w-44">
               <option value="">all months</option>
               {months.map((m) => (
                 <option key={m} value={m}>{m.padStart(2, '0')}</option>
               ))}
             </Select>
 
-            <div className="flex items-center gap-2">
+            <div className="flex w-44 items-center gap-2">
               <Calendar className="h-4 w-4 text-zinc-500" />
-              <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}>
+              <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)} className="flex-1">
                 <option value="lastTransaction_desc">sort: last transaction</option>
                 <option value="createdAt_desc">sort: latest created</option>
                 <option value="createdAt_asc">sort: oldest created</option>
@@ -718,7 +736,7 @@ export default function InventoryPage() {
                   setSearch('')
                   setSortBy('lastTransaction_desc')
                 }}
-                className="font-mono text-xs"
+                className="ml-auto font-mono text-xs"
               >
                 clear filters
               </Button>
@@ -728,8 +746,59 @@ export default function InventoryPage() {
       </Card>
 
       <Card className="border-zinc-800 bg-zinc-900/50">
-        <CardHeader>
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4">
           <CardTitle className="font-mono text-sm">items ({items.length})</CardTitle>
+          <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 items-center rounded-lg border border-zinc-700 bg-zinc-950 p-1 shadow-sm">
+              {(['in_stock', 'sold_out', ''] as const).map((key) => {
+                const label = key === 'in_stock' ? 'in stock' : key === 'sold_out' ? 'sold' : 'all'
+                const active = statusFilter === key
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setStatusFilter(key)}
+                    className={cn(
+                      'flex h-7 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 font-mono text-[10px] font-medium transition-all',
+                      active
+                        ? 'bg-emerald-500 text-zinc-950 shadow'
+                        : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+                    )}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+            <div className="flex shrink-0 items-center rounded-lg border border-zinc-700 bg-zinc-950 p-1 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={cn(
+                  'flex h-8 items-center gap-2 rounded-md px-3 font-mono text-xs font-medium transition-all',
+                  viewMode === 'list'
+                    ? 'bg-emerald-500 text-zinc-950 shadow'
+                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+                )}
+                title="List view"
+              >
+                <LayoutList className="h-4 w-4" /> list
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                className={cn(
+                  'flex h-8 items-center gap-2 rounded-md px-3 font-mono text-xs font-medium transition-all',
+                  viewMode === 'grid'
+                    ? 'bg-emerald-500 text-zinc-950 shadow'
+                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+                )}
+                title="Grid view"
+              >
+                <LayoutGrid className="h-4 w-4" /> grid
+              </button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {sortedItems.length === 0 ? (
@@ -738,7 +807,7 @@ export default function InventoryPage() {
             </div>
           ) : (
             <>
-              <div className="hidden overflow-x-auto md:block">
+              <div className={cn('hidden overflow-x-auto md:block', viewMode !== 'list' && 'md:hidden')}>
                 <table className="w-full text-left font-mono text-sm">
                   <thead>
                     <tr className="border-b border-zinc-800 text-zinc-500">
@@ -753,7 +822,7 @@ export default function InventoryPage() {
                       <th className="pb-2 pr-4 text-right">market value</th>
                       <th className="pb-2 pr-4 text-right">total value</th>
                       <th className="pb-2 pr-4 text-right">profit</th>
-                      <th className="pb-2">actions</th>
+                      <th className="w-28 pb-2">actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -761,7 +830,7 @@ export default function InventoryPage() {
                       <tr
                         key={item.cardId}
                         onClick={() => item.status === 'in_stock' && item.quantity > 0 && openSell(item)}
-                        className={`border-b border-zinc-800/50 last:border-0 ${
+                        className={`h-12 border-b border-zinc-800/50 last:border-0 ${
                           item.status === 'in_stock' && item.quantity > 0
                             ? 'cursor-pointer hover:bg-zinc-800/40'
                             : 'cursor-default'
@@ -769,7 +838,9 @@ export default function InventoryPage() {
                       >
                         <td className="py-3 pr-4">
                           <div className="flex flex-col">
-                            <span className="font-medium text-zinc-200">{item.cardName}</span>
+                            <span className={cn('font-medium', item.status === 'grading' ? 'text-amber-400' : 'text-zinc-200')}>
+                              {item.cardName}
+                            </span>
                             <span className="text-xs text-zinc-500">
                               {[item.setCode, item.cardNumber, item.rarity].filter(Boolean).join(' · ')}
                             </span>
@@ -860,46 +931,45 @@ export default function InventoryPage() {
                             )}
                           </div>
                         </td>
-                        <td className="py-3">
+                        <td className="w-28 py-3">
                           <div className="flex items-center gap-1">
-                            {item.status === 'in_stock' && item.quantity > 0 && (
+                            {item.status === 'in_stock' && item.quantity > 0 ? (
                               <>
                                 <Button
-                                  variant="ghost"
                                   size="icon"
                                   title="quick add"
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     openAdd(item)
                                   }}
-                                  className="h-7 w-7 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-400"
+                                  className="h-7 w-7 shrink-0 bg-blue-500 text-white shadow-sm hover:bg-blue-400"
                                 >
                                   <Plus className="h-3.5 w-3.5" />
                                 </Button>
                                 <Button
-                                  variant="ghost"
                                   size="icon"
                                   title="quick remove"
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     openRemove(item)
                                   }}
-                                  className="h-7 w-7 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                                  className="h-7 w-7 shrink-0 bg-red-500 text-white shadow-sm hover:bg-red-400"
                                 >
                                   <Minus className="h-3.5 w-3.5" />
                                 </Button>
                                 <Link href={`/grading/send?cardId=${item.cardId}`}>
                                   <Button
-                                    variant="ghost"
                                     size="icon"
                                     title="send to grade"
                                     onClick={(e) => e.stopPropagation()}
-                                    className="h-7 w-7 text-amber-400 hover:bg-amber-500/10 hover:text-amber-400"
+                                    className="h-7 w-7 shrink-0 bg-amber-500 text-white shadow-sm hover:bg-amber-400"
                                   >
                                     <Gem className="h-3.5 w-3.5" />
                                   </Button>
                                 </Link>
                               </>
+                            ) : (
+                              <span className="inline-block h-7 w-7" />
                             )}
                           </div>
                         </td>
@@ -908,7 +978,7 @@ export default function InventoryPage() {
                   </tbody>
                 </table>
               </div>
-              <div className="space-y-2 md:hidden">
+              <div className={cn('space-y-2 md:hidden', viewMode !== 'list' && 'hidden')}>
                 {sortedItems.map((item) => {
                   const isExpanded = expandedCards.has(item.cardId)
                   return (
@@ -918,7 +988,7 @@ export default function InventoryPage() {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
-                          <div className="truncate font-mono font-medium text-sm text-zinc-200">
+                          <div className={cn('truncate font-mono font-medium text-sm', item.status === 'grading' ? 'text-amber-400' : 'text-zinc-200')}>
                             {item.cardName}
                           </div>
                           <div className="truncate font-mono text-[10px] text-zinc-500">
@@ -968,29 +1038,27 @@ export default function InventoryPage() {
                         <div className="mt-2 flex flex-wrap gap-2">
                           <Button
                             size="sm"
-                            className="h-8 flex-1 gap-1 bg-emerald-600 hover:bg-emerald-700"
+                            className="h-8 flex-1 gap-1 bg-emerald-500 font-semibold text-white shadow-sm hover:bg-emerald-400"
                             onClick={() => openSell(item)}
                           >
                             <Tag className="h-3.5 w-3.5" /> sell
                           </Button>
                           <Button
                             size="sm"
-                            variant="outline"
-                            className="h-8 flex-1 gap-1"
+                            className="h-8 flex-1 gap-1 bg-blue-500 font-semibold text-white shadow-sm hover:bg-blue-400"
                             onClick={() => openAdd(item)}
                           >
                             <Plus className="h-3.5 w-3.5" /> add
                           </Button>
                           <Button
                             size="sm"
-                            variant="outline"
-                            className="h-8 flex-1 gap-1"
+                            className="h-8 flex-1 gap-1 bg-red-500 font-semibold text-white shadow-sm hover:bg-red-400"
                             onClick={() => openRemove(item)}
                           >
                             <Minus className="h-3.5 w-3.5" /> remove
                           </Button>
                           <Link href={`/grading/send?cardId=${item.cardId}`}>
-                            <Button size="sm" variant="outline" className="h-8 px-2">
+                            <Button size="sm" className="h-8 px-2 bg-amber-500 font-semibold text-white shadow-sm hover:bg-amber-400">
                               <Gem className="h-3.5 w-3.5" />
                             </Button>
                           </Link>
@@ -1059,6 +1127,28 @@ export default function InventoryPage() {
                 })}
               </div>
             </>
+          )}
+
+          {viewMode === 'grid' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+              className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+            >
+              {sortedItems.map((item) => (
+                <InventoryGridCard
+                  key={item.cardId}
+                  item={item}
+                  onSell={openSell}
+                  onAdd={openAdd}
+                  onRemove={openRemove}
+                  editing={editingValue?.cardId === item.cardId}
+                  onEdit={() => setEditingValue({ cardId: item.cardId, value: String(item.marketValuePerUnit) })}
+                  onUpdateValue={(value) => updateCurrentValue(item.cardId, value)}
+                />
+              ))}
+            </motion.div>
           )}
         </CardContent>
       </Card>

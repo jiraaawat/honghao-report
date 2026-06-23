@@ -33,6 +33,7 @@ export interface GradingRecordDto {
   id: string
   cardId: string
   status: 'grading' | 'completed' | 'cancelled'
+  quantity: number
   gradingCost: number
   grade?: string | null
   currentValue?: number | null
@@ -95,6 +96,33 @@ export interface InventoryItem {
   createdAt: string
   soldAt?: string | null
   grading?: GradingRecordDto | null
+}
+
+export interface CatalogCardDto {
+  id: string
+  cardNo: string
+  name: string
+  color?: string | null
+  cost?: number | null
+  type?: string | null
+  rarity?: string | null
+  imagePath?: string | null
+  effectText?: string | null
+  setId?: string | null
+  setName?: string | null
+  marketPrice?: number | null
+  inventoryPrice?: number | null
+  source?: string | null
+  cardPower?: number | null
+  life?: number | null
+  subTypes?: string | null
+  dateScraped?: string | null
+  cardImageId?: string | null
+}
+
+export interface CatalogSetDto {
+  setId: string
+  setName?: string | null
 }
 
 export const CARD_TYPES = ['Single', 'Bundle', 'PSA10', 'PSA9', 'Sealed Product'] as const

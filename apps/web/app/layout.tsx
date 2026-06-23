@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/providers/session-provider";
+import { PageTransition } from "@/components/providers/page-transition";
 import { Navbar } from "@/components/layout/navbar";
+import { SocialBar } from "@/components/layout/social-bar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,7 +39,10 @@ export default function RootLayout({
       <body className="min-h-full overflow-x-hidden flex flex-col bg-zinc-950 text-zinc-100">
         <SessionProvider>
           <Navbar />
-          <main className="flex-1 min-w-0">{children}</main>
+          <main className="flex-1 min-w-0 pt-14 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-10">
+            <PageTransition>{children}</PageTransition>
+          </main>
+          <SocialBar />
         </SessionProvider>
       </body>
     </html>

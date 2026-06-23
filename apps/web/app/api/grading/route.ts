@@ -16,6 +16,8 @@ const createSchema = z.object({
       rarity: z.string().optional(),
     })
     .optional(),
+  quantity: z.coerce.number().int().positive().default(1),
+  grade: z.string().optional(),
   gradingCost: z.number().positive(),
   date: z.string().datetime(),
 }).refine((data) => data.cardId || data.newCard, {
@@ -55,24 +57,86 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const data = createSchema.parse(body)
 
-    let cardId = data.cardId
+    const txDate = new Date(data.date)
 
     const result = await prisma.$transaction(async (tx) => {
+      let cardId = data.cardId
       let card
 
       if (cardId) {
-        card = await tx.card.findFirst({
+        const originalCard = await tx.card.findFirst({
           where: { id: cardId, userId },
           include: { inventory: true },
         })
-        if (!card) {
+        if (!originalCard) {
           throw new Error('Card not found')
         }
-        if (card.status !== 'in_stock') {
+        if (originalCard.status !== 'in_stock') {
           throw new Error('Card is not available for grading')
         }
+        if (!originalCard.inventory || originalCard.inventory.quantity < data.quantity) {
+          throw new Error('Not enough quantity to grade')
+        }
+
+        const avgCost = Number(originalCard.inventory.averageCost)
+        const splitInvested = avgCost * data.quantity
+
+        // Create a new card record for the graded portion
+        const gradedCard = await tx.card.create({
+          data: {
+            name: originalCard.name,
+            cardType: originalCard.cardType,
+            game: originalCard.game,
+            setCode: originalCard.setCode,
+            cardNumber: originalCard.cardNumber,
+            rarity: originalCard.rarity,
+            condition: originalCard.condition,
+            imageUrl: originalCard.imageUrl,
+            status: 'grading',
+            userId,
+          },
+        })
+
+        await tx.cardInventory.create({
+          data: {
+            cardId: gradedCard.id,
+            userId,
+            quantity: data.quantity,
+            averageCost: avgCost,
+            totalInvested: splitInvested,
+            currentValue: avgCost,
+          },
+        })
+
+        await tx.transaction.create({
+          data: {
+            cardId: gradedCard.id,
+            userId,
+            type: 'BUY',
+            quantity: data.quantity,
+            pricePerUnit: avgCost,
+            totalAmount: splitInvested,
+            shippingCost: 0,
+            date: txDate,
+            note: `Split ${data.quantity} qty for grading`,
+            isGradingCost: false,
+          },
+        })
+
+        // Reduce original card inventory
+        const newOriginalQty = originalCard.inventory.quantity - data.quantity
+        const newOriginalInvested = Number(originalCard.inventory.totalInvested) - splitInvested
+        await tx.cardInventory.update({
+          where: { cardId: originalCard.id },
+          data: {
+            quantity: newOriginalQty,
+            totalInvested: newOriginalInvested,
+          },
+        })
+
+        card = gradedCard
+        cardId = gradedCard.id
       } else if (data.newCard) {
-        // Create new card directly for grading
         card = await tx.card.create({
           data: {
             name: data.newCard.name,
@@ -90,9 +154,10 @@ export async function POST(req: NextRequest) {
           data: {
             cardId: card.id,
             userId,
-            quantity: 1,
-            averageCost: data.gradingCost,
+            quantity: data.quantity,
+            averageCost: data.gradingCost / data.quantity,
             totalInvested: data.gradingCost,
+            currentValue: data.gradingCost / data.quantity,
           },
         })
 
@@ -108,27 +173,23 @@ export async function POST(req: NextRequest) {
           cardId,
           userId,
           status: 'grading',
+          quantity: data.quantity,
+          grade: data.grade || null,
           gradingCost: data.gradingCost,
-          sentDate: new Date(data.date),
+          sentDate: txDate,
         },
       })
-
-      if (card.status !== 'grading') {
-        await tx.card.update({
-          where: { id: cardId },
-          data: { status: 'grading' },
-        })
-      }
 
       await tx.transaction.create({
         data: {
           cardId,
           userId,
           type: 'BUY',
-          quantity: 1,
-          pricePerUnit: data.gradingCost,
+          quantity: data.quantity,
+          pricePerUnit: data.gradingCost / data.quantity,
           totalAmount: data.gradingCost,
-          date: new Date(data.date),
+          shippingCost: 0,
+          date: txDate,
           note: `Grading cost for ${card.name}`,
           isGradingCost: true,
         },
@@ -146,7 +207,10 @@ export async function POST(req: NextRequest) {
       if (error.message === 'Card not found') {
         return NextResponse.json({ error: error.message }, { status: 404 })
       }
-      if (error.message === 'Card is not available for grading') {
+      if (
+        error.message === 'Card is not available for grading' ||
+        error.message === 'Not enough quantity to grade'
+      ) {
         return NextResponse.json({ error: error.message }, { status: 400 })
       }
     }

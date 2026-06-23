@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { CardDto, CARD_TYPES, GAMES } from '@/types'
+import { CardDto, CARD_TYPES, GAMES, GRADES } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 import { ArrowLeft, Gem, Send, Search, Plus } from 'lucide-react'
 
@@ -37,6 +37,8 @@ export default function SendToGradeContent() {
     rarity: '',
   })
   const [gradingCost, setGradingCost] = useState('')
+  const [quantity, setQuantity] = useState('1')
+  const [grade, setGrade] = useState('PSA10')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [loading, setLoading] = useState(false)
   const [showOptional, setShowOptional] = useState(false)
@@ -65,6 +67,8 @@ export default function SendToGradeContent() {
 
     const payload: {
       gradingCost: number
+      quantity: number
+      grade: string
       date: string
       cardId?: string
       newCard?: {
@@ -77,6 +81,8 @@ export default function SendToGradeContent() {
       }
     } = {
       gradingCost: Number(gradingCost),
+      quantity: Number(quantity),
+      grade,
       date: new Date(date).toISOString(),
     }
 
@@ -249,6 +255,10 @@ export default function SendToGradeContent() {
                   <span className="min-w-0 break-words text-right text-zinc-200">{formatCurrency(Number(selectedCard.inventory?.averageCost ?? 0))}</span>
                 </div>
                 <div className="flex justify-between gap-2">
+                  <span>in stock</span>
+                  <span className="min-w-0 break-words text-right text-zinc-200">{selectedCard.inventory?.quantity ?? 0} qty</span>
+                </div>
+                <div className="flex justify-between gap-2">
                   <span>card type</span>
                   <span className="min-w-0 break-words text-right text-zinc-200">{selectedCard.cardType}</span>
                 </div>
@@ -259,7 +269,27 @@ export default function SendToGradeContent() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="min-w-0 space-y-2">
+                <label className="font-mono text-xs text-zinc-400">quantity to grade</label>
+                <Input
+                  type="number"
+                  step="1"
+                  min={1}
+                  max={selectedCard?.inventory?.quantity ?? 1}
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="min-w-0 space-y-2">
+                <label className="font-mono text-xs text-zinc-400">target grade</label>
+                <Select value={grade} onChange={(e) => setGrade(e.target.value)}>
+                  {GRADES.map((g) => (
+                    <option key={g} value={g}>{g}</option>
+                  ))}
+                </Select>
+              </div>
               <div className="min-w-0 space-y-2">
                 <label className="font-mono text-xs text-zinc-400">grading cost</label>
                 <Input
@@ -272,15 +302,16 @@ export default function SendToGradeContent() {
                   required
                 />
               </div>
-              <div className="min-w-0 space-y-2">
-                <label className="font-mono text-xs text-zinc-400">send date</label>
-                <Input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  required
-                />
-              </div>
+            </div>
+
+            <div className="min-w-0 space-y-2">
+              <label className="font-mono text-xs text-zinc-400">send date</label>
+              <Input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+              />
             </div>
 
             <Button
@@ -289,7 +320,9 @@ export default function SendToGradeContent() {
               disabled={
                 loading ||
                 !gradingCost ||
-                (mode === 'existing' && !existingCardId) ||
+                !quantity ||
+                Number(quantity) < 1 ||
+                (mode === 'existing' && (!existingCardId || Number(quantity) > (selectedCard?.inventory?.quantity ?? 0))) ||
                 (mode === 'new' && !newCard.name.trim())
               }
             >

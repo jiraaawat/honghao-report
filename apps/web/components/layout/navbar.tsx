@@ -4,31 +4,71 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
-import { LayoutDashboard, Receipt, BarChart3, LogOut, User, Boxes, Gem } from 'lucide-react'
+import {
+  LayoutDashboard,
+  Receipt,
+  BarChart3,
+  LogOut,
+  User,
+  Boxes,
+  Gem,
+  Library,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navItems = [
   { href: '/dashboard', label: 'dashboard', icon: LayoutDashboard },
   { href: '/inventory', label: 'inventory', icon: Boxes },
+  { href: '/cards', label: 'cards', icon: Library },
   { href: '/grading', label: 'grading', icon: Gem },
   { href: '/transactions', label: 'transactions', icon: Receipt },
   { href: '/reports', label: 'reports', icon: BarChart3 },
 ]
 
+const pageTitles: Record<string, string> = {
+  '/dashboard': 'Dashboard',
+  '/inventory': 'Inventory',
+  '/cards': 'Card list',
+  '/grading': 'Grading',
+  '/grading/send': 'Send to grade',
+  '/transactions': 'Transactions',
+  '/reports': 'Reports',
+}
+
+function getPageTitle(pathname: string) {
+  if (pageTitles[pathname]) return pageTitles[pathname]
+  const match = Object.keys(pageTitles)
+    .filter((p) => p !== '/')
+    .sort((a, b) => b.length - a.length)
+    .find((p) => pathname.startsWith(p))
+  return match ? pageTitles[match] : ''
+}
+
 export function Navbar() {
   const pathname = usePathname()
   const { data: session, status } = useSession()
+  const title = getPageTitle(pathname)
 
   if (status === 'loading') return null
   if (!session) return null
 
   return (
-    <header className="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur">
-      <div className="flex h-14 items-center justify-between px-4 md:px-6">
-        <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="flex items-center gap-2 font-mono text-sm font-bold text-emerald-400">
+    <>
+      <header className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur">
+        <div className="flex h-full items-center justify-between px-4 md:px-6">
+          <Link
+            href="/dashboard"
+            className="hidden items-center gap-2 font-mono text-sm font-bold text-emerald-400 md:flex"
+          >
             <span className="text-emerald-500">$</span> honghao-report
           </Link>
+
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 md:hidden">
+            {title ? (
+              <h2 className="font-mono text-sm font-medium tracking-tight text-zinc-200">{title}</h2>
+            ) : null}
+          </div>
+
           <nav className="hidden items-center gap-1 md:flex">
             {navItems.map((item) => {
               const Icon = item.icon
@@ -50,46 +90,54 @@ export function Navbar() {
               )
             })}
           </nav>
-        </div>
 
-        <div className="flex items-center gap-3">
-          <div className="hidden items-center gap-2 font-mono text-xs text-zinc-400 md:flex">
-            <User className="h-3.5 w-3.5" />
-            {session.user?.email}
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-            className="gap-2"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            <span className="hidden md:inline">logout</span>
-          </Button>
-        </div>
-      </div>
-
-      <nav className="flex items-center gap-1 overflow-x-auto border-t border-zinc-800 px-4 py-2 md:hidden">
-        {navItems.map((item) => {
-          const Icon = item.icon
-          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex min-w-0 flex-1 items-center justify-center gap-1 rounded-md border py-2 font-mono text-[10px] transition-colors',
-                isActive
-                  ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400'
-                  : 'border-transparent text-zinc-400 hover:bg-zinc-800'
-              )}
+          <div className="flex items-center gap-3 md:ml-auto">
+            <div className="hidden items-center gap-2 font-mono text-xs text-zinc-400 lg:flex">
+              <User className="h-3.5 w-3.5" />
+              <span className="max-w-[160px] truncate">{session.user?.email}</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+              className="gap-2"
             >
-              <Icon className="h-3 w-3 shrink-0" />
-              <span className="min-w-0 truncate">{item.label}</span>
-            </Link>
-          )
-        })}
+              <LogOut className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">logout</span>
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-800 bg-zinc-950/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+        <ul className="flex items-center justify-around px-2 pt-1">
+          {navItems.map((item) => {
+            const Icon = item.icon
+            const active = pathname === item.href || pathname.startsWith(`${item.href}/`)
+            return (
+              <li key={item.href} className="flex-1">
+                <Link
+                  href={item.href}
+                  className={cn(
+                    'flex flex-col items-center gap-1 rounded-xl py-2 text-[10px] font-mono font-bold transition-colors',
+                    active ? 'text-emerald-400' : 'text-zinc-500 hover:text-zinc-300'
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'rounded-lg p-1.5 transition-colors',
+                      active && 'bg-emerald-500/15'
+                    )}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  {item.label}
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
       </nav>
-    </header>
+    </>
   )
 }

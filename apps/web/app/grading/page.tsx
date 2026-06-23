@@ -17,6 +17,7 @@ interface GradingWithCard {
   id: string
   cardId: string
   status: 'grading' | 'completed' | 'cancelled'
+  quantity: number
   gradingCost: number
   grade?: string | null
   currentValue?: number | null
@@ -166,13 +167,15 @@ export default function GradingPage() {
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="min-w-0 truncate font-mono font-medium text-zinc-100">{g.card?.name}</h3>
+                        <h3 className="min-w-0 truncate font-mono font-medium text-amber-400">{g.card?.name}</h3>
                         <Badge variant="grading" className="shrink-0">grading</Badge>
                       </div>
                       <p className="mt-1 min-w-0 truncate font-mono text-xs text-zinc-500">
                         {[g.card?.setCode, g.card?.cardNumber, g.card?.rarity].filter(Boolean).join(' · ')} · {g.card?.game}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-x-3 font-mono text-xs text-zinc-400">
+                        <span>qty: <span className="text-amber-400">{g.quantity}</span></span>
+                        <span>target: <span className="text-amber-400">{g.grade || '-'}</span></span>
                         <span>cost: <span className="text-amber-400">{formatCurrency(Number(g.gradingCost))}</span></span>
                         <span>sent: {formatDate(g.sentDate)}</span>
                       </div>
@@ -261,6 +264,7 @@ export default function GradingPage() {
                 <thead>
                   <tr className="border-b border-zinc-800 text-zinc-500">
                     <th className="pb-2 pr-4">card</th>
+                    <th className="pb-2 pr-4">qty</th>
                     <th className="pb-2 pr-4">grade</th>
                     <th className="pb-2 pr-4">cost</th>
                     <th className="pb-2 pr-4">current value</th>
@@ -271,6 +275,7 @@ export default function GradingPage() {
                   {completed.map((g) => (
                     <tr key={g.id} className="border-b border-zinc-800/50 last:border-0">
                       <td className="py-3 pr-4 text-zinc-200">{g.card?.name}</td>
+                      <td className="py-3 pr-4 text-zinc-400">{g.quantity}</td>
                       <td className="py-3 pr-4">
                         <Badge variant="default">{g.grade}</Badge>
                       </td>

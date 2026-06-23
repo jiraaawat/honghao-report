@@ -9,7 +9,7 @@ This is a full-stack monorepo for tracking trading card buy/sell transactions, p
 - Monorepo managed with `pnpm` workspaces and `turbo`
 - Single Next.js app at `apps/web`
 - Shared TypeScript types at `packages/shared`
-- SQLite database via Prisma ORM
+- SQLite database via Prisma ORM; external One Piece TCG catalog via `TCGDB_URL` (raw SQL)
 - NextAuth.js v5 with credentials provider
 
 ## Conventions
@@ -53,15 +53,20 @@ Custom shadcn/ui-style components live in `apps/web/components/ui/`:
 - `Button`, `Card`, `Input`, `Select`, `Badge`
 
 Use `lucide-react` for icons.
+- Use `framer-motion` for smooth page/card animations.
+- Page transitions are wrapped in `PageTransition` (scroll-to-top + fade/slide animation).
+- Navigation: top navbar shows the current page title; mobile uses a fixed bottom icon menu.
+- Desktop has a thin fixed bottom social bar (`components/layout/social-bar.tsx`) for social media links.
 
 ## Environment
 
-Local dev uses SQLite. Ensure `apps/web/.env.local` exists with `DATABASE_URL`, `NEXTAUTH_URL`, and `NEXTAUTH_SECRET`.
+Local dev uses SQLite. Ensure `apps/web/.env.local` exists with `DATABASE_URL`, `NEXTAUTH_URL`, and `NEXTAUTH_SECRET`. Add `TCGDB_URL` to enable the `/cards` catalog browser.
 
 ## Pages
 
 - `/dashboard` - Summary stats, game/type breakdown, recent transactions
 - `/inventory` - Main card browser with search & filters
+- `/cards` - Browse the external One Piece TCG catalog and add cards to inventory
 - `/grading` - Track and manage cards being graded
 - `/grading/send` - Send a card to grading
 - `/transactions` - Add cards and record buy/sell transactions

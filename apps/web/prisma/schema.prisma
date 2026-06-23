@@ -129,6 +129,7 @@ model GradingRecord {
   cardId        String
   userId        String
   status        String   @default("grading")
+  quantity      Int      @default(1)
   gradingCost   Decimal
   grade         String?
   currentValue  Decimal?

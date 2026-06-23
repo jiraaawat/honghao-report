@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
         },
       },
     },
-    orderBy: { date: 'desc' },
+    orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
     take: limit ? Number(limit) : undefined,
   })
 
