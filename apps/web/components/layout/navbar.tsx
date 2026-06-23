@@ -69,7 +69,7 @@ export function Navbar() {
         </div>
       </div>
 
-      <nav className="flex items-center gap-1 border-t border-zinc-800 px-4 py-2 md:hidden">
+      <nav className="flex items-center gap-1 overflow-x-auto border-t border-zinc-800 px-4 py-2 md:hidden">
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
@@ -78,14 +78,14 @@ export function Navbar() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex flex-1 items-center justify-center gap-1 rounded-md border py-2 font-mono text-[10px] transition-colors',
+                'flex min-w-0 flex-1 items-center justify-center gap-1 rounded-md border py-2 font-mono text-[10px] transition-colors',
                 isActive
                   ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400'
                   : 'border-transparent text-zinc-400 hover:bg-zinc-800'
               )}
             >
-              <Icon className="h-3 w-3" />
-              {item.label}
+              <Icon className="h-3 w-3 shrink-0" />
+              <span className="min-w-0 truncate">{item.label}</span>
             </Link>
           )
         })}

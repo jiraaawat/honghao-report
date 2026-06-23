@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
           data: {
             name: data.newCard.name,
             cardType: data.newCard.cardType || 'Single',
-            game: data.newCard.game || 'Pokemon',
+            game: data.newCard.game || 'OnePiece',
             setCode: data.newCard.setCode || null,
             cardNumber: data.newCard.cardNumber || null,
             rarity: data.newCard.rarity || null,

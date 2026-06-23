@@ -102,7 +102,7 @@ export default function ReportsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`font-mono text-xl font-bold sm:text-2xl ${totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            <div className={`min-w-0 break-words font-mono text-xl font-bold sm:text-2xl ${totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               {formatCurrency(totalProfit)}
             </div>
           </CardContent>
@@ -116,7 +116,7 @@ export default function ReportsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="font-mono text-xl font-bold text-zinc-200 sm:text-2xl">
+            <div className="min-w-0 break-words font-mono text-xl font-bold text-zinc-200 sm:text-2xl">
               {formatCurrency(totalBuy)}
             </div>
           </CardContent>
@@ -130,7 +130,7 @@ export default function ReportsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="font-mono text-xl font-bold text-blue-400 sm:text-2xl">
+            <div className="min-w-0 break-words font-mono text-xl font-bold text-blue-400 sm:text-2xl">
               {formatCurrency(report.reduce((sum, r) => sum + r.totalSell, 0))}
             </div>
           </CardContent>
@@ -144,7 +144,7 @@ export default function ReportsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`font-mono text-xl font-bold sm:text-2xl ${totalROI >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            <div className={`min-w-0 break-words font-mono text-xl font-bold sm:text-2xl ${totalROI >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               {formatNumber(totalROI)}%
             </div>
           </CardContent>
@@ -207,30 +207,30 @@ export default function ReportsPage() {
               <div className="space-y-2 md:hidden">
                 {report.map((r) => (
                   <div key={`${r.year}-${r.month}`} className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="font-mono text-sm text-zinc-200">
                         {r.month.toString().padStart(2, '0')}/{r.year}
                       </span>
-                      <Badge variant={r.roi >= 0 ? 'default' : 'destructive'}>
+                      <Badge variant={r.roi >= 0 ? 'default' : 'destructive'} className="shrink-0">
                         {formatNumber(r.roi)}%
                       </Badge>
                     </div>
                     <div className="mt-2 grid grid-cols-2 gap-2 font-mono text-xs">
-                      <div>
+                      <div className="min-w-0">
                         <div className="text-zinc-500">buy ({r.buyQty})</div>
-                        <div className="text-zinc-300">{formatCurrency(r.totalBuy)}</div>
+                        <div className="break-words text-zinc-300">{formatCurrency(r.totalBuy)}</div>
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <div className="text-zinc-500">sell ({r.sellQty})</div>
-                        <div className="text-zinc-300">{formatCurrency(r.totalSell)}</div>
+                        <div className="break-words text-zinc-300">{formatCurrency(r.totalSell)}</div>
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <div className="text-zinc-500">cost basis</div>
-                        <div className="text-zinc-400">{formatCurrency(r.costBasisSold)}</div>
+                        <div className="break-words text-zinc-400">{formatCurrency(r.costBasisSold)}</div>
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <div className="text-zinc-500">profit</div>
-                        <div className={r.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                        <div className={r.totalProfit >= 0 ? 'break-words text-emerald-400' : 'break-words text-red-400'}>
                           {formatCurrency(r.totalProfit)}
                         </div>
                       </div>

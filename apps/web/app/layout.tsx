@@ -22,8 +22,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 export default function RootLayout({
@@ -36,10 +34,10 @@ export default function RootLayout({
       lang="th"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-950 text-zinc-100">
+      <body className="min-h-full overflow-x-hidden flex flex-col bg-zinc-950 text-zinc-100">
         <SessionProvider>
           <Navbar />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 min-w-0">{children}</main>
         </SessionProvider>
       </body>
     </html>

@@ -18,7 +18,7 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
         if (e.target === e.currentTarget) onOpenChange(false)
       }}
     >
-      <div className="relative w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-900 p-6 shadow-xl">
+      <div className="relative max-h-[90vh] w-full min-w-0 max-w-md overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900 p-4 md:p-6 shadow-xl">
         <button
           type="button"
           onClick={() => onOpenChange(false)}

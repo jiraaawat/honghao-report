@@ -166,10 +166,10 @@ export default function GradingPage() {
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-mono font-medium text-zinc-100">{g.card?.name}</h3>
-                        <Badge variant="grading">grading</Badge>
+                        <h3 className="min-w-0 truncate font-mono font-medium text-zinc-100">{g.card?.name}</h3>
+                        <Badge variant="grading" className="shrink-0">grading</Badge>
                       </div>
-                      <p className="mt-1 font-mono text-xs text-zinc-500">
+                      <p className="mt-1 min-w-0 truncate font-mono text-xs text-zinc-500">
                         {[g.card?.setCode, g.card?.cardNumber, g.card?.rarity].filter(Boolean).join(' · ')} · {g.card?.game}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-x-3 font-mono text-xs text-zinc-400">
@@ -179,7 +179,7 @@ export default function GradingPage() {
                     </div>
 
                     <div className="flex flex-col gap-2 md:min-w-[280px]">
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                         <Select
                           value={completeForm[g.id]?.grade || ''}
                           onChange={(e) =>
@@ -208,7 +208,7 @@ export default function GradingPage() {
                           }
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                         <Button
                           size="sm"
                           className="gap-1"
@@ -287,21 +287,21 @@ export default function GradingPage() {
             <div className="space-y-3 md:hidden">
               {completed.map((g) => (
                 <div key={g.id} className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-sm text-zinc-200">{g.card?.name}</span>
-                    <Badge variant="default">{g.grade}</Badge>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 truncate font-mono text-sm text-zinc-200">{g.card?.name}</span>
+                    <Badge variant="default" className="shrink-0">{g.grade}</Badge>
                   </div>
                   <div className="mt-2 grid grid-cols-2 gap-2 font-mono text-xs">
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-zinc-500">cost</div>
-                      <div className="text-zinc-300">{formatCurrency(Number(g.gradingCost))}</div>
+                      <div className="break-words text-zinc-300">{formatCurrency(Number(g.gradingCost))}</div>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-zinc-500">value</div>
-                      <div className="text-emerald-400">{formatCurrency(Number(g.currentValue))}</div>
+                      <div className="break-words text-emerald-400">{formatCurrency(Number(g.currentValue))}</div>
                     </div>
                   </div>
-                  <div className="mt-1 font-mono text-xs text-zinc-500">
+                  <div className="mt-1 min-w-0 break-words font-mono text-xs text-zinc-500">
                     {g.completedDate ? formatDate(g.completedDate) : '-'}
                   </div>
                 </div>

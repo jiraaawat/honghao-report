@@ -291,7 +291,7 @@ export default function DashboardPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className={`font-mono text-xl font-bold sm:text-2xl ${item.color}`}>{item.value}</div>
+                <div className={`min-w-0 break-words font-mono text-xl font-bold sm:text-2xl ${item.color}`}>{item.value}</div>
               </CardContent>
             </Card>
           )
@@ -454,14 +454,14 @@ export default function DashboardPage() {
               <div className="space-y-3 md:hidden">
                 {recent.map((tx) => (
                   <div key={tx.id} className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="font-mono text-xs text-zinc-400">{formatDate(tx.date)}</span>
-                      <Badge variant={tx.type === 'BUY' ? 'buy' : 'sell'}>{tx.type}</Badge>
+                      <Badge variant={tx.type === 'BUY' ? 'buy' : 'sell'} className="shrink-0">{tx.type}</Badge>
                     </div>
-                    <div className="mt-1 font-mono text-sm text-zinc-200">{tx.card?.name}</div>
-                    <div className="mt-2 flex items-center justify-between font-mono text-xs">
+                    <div className="mt-1 min-w-0 break-words font-mono text-sm text-zinc-200">{tx.card?.name}</div>
+                    <div className="mt-2 flex items-center justify-between gap-2 font-mono text-xs">
                       <span className="text-zinc-500">{tx.quantity} × {formatCurrency(Number(tx.pricePerUnit))}</span>
-                      <span className="text-zinc-200">{formatCurrency(Number(tx.totalAmount))}</span>
+                      <span className="min-w-0 break-words text-right text-zinc-200">{formatCurrency(Number(tx.totalAmount))}</span>
                     </div>
                   </div>
                 ))}

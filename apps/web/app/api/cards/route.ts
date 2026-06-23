@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
         cardNumber: data.cardNumber || null,
         rarity: data.rarity || null,
         cardType: data.cardType || 'Single',
-        game: data.game || 'Pokemon',
+        game: data.game || 'OnePiece',
         condition: data.condition || null,
         imageUrl: data.imageUrl || null,
         userId,

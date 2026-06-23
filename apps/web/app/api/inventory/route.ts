@@ -86,7 +86,7 @@ export async function GET(req: NextRequest) {
       rarity: card.rarity,
       imageUrl: card.imageUrl,
       cardType: card.cardType || 'Single',
-      game: card.game || 'Pokemon',
+      game: card.game || 'OnePiece',
       condition: card.condition,
       status: effectiveStatus,
       quantity,
@@ -118,9 +118,13 @@ export async function GET(req: NextRequest) {
     }
   })
 
-  let filtered = items
-  if (status === 'in_stock') filtered = items.filter((i) => i.status === 'in_stock')
-  if (status === 'sold_out') filtered = items.filter((i) => i.status === 'sold_out')
+  const visibleItems = items.filter(
+    (i) => i.quantity > 0 || i.status === 'sold_out' || i.status === 'grading'
+  )
+
+  let filtered = visibleItems
+  if (status === 'in_stock') filtered = visibleItems.filter((i) => i.status === 'in_stock')
+  if (status === 'sold_out') filtered = visibleItems.filter((i) => i.status === 'sold_out')
 
   const inStockQty = filtered
     .filter((i) => i.status === 'in_stock')

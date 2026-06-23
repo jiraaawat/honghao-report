@@ -31,7 +31,7 @@ export default function SendToGradeContent() {
   const [newCard, setNewCard] = useState({
     name: '',
     cardType: 'Single',
-    game: 'Pokemon',
+    game: 'OnePiece',
     setCode: '',
     cardNumber: '',
     rarity: '',
@@ -145,24 +145,24 @@ export default function SendToGradeContent() {
               <button
                 type="button"
                 onClick={() => setMode('existing')}
-                className={`flex items-center justify-center gap-2 rounded-md py-2 font-mono text-xs transition-colors ${
+                className={`flex min-w-0 items-center justify-center gap-2 rounded-md py-2 font-mono text-xs transition-colors ${
                   mode === 'existing'
                     ? 'bg-zinc-800 text-zinc-100'
                     : 'text-zinc-500 hover:text-zinc-300'
                 }`}
               >
-                <Search className="h-3.5 w-3.5" /> select existing
+                <Search className="h-3.5 w-3.5 shrink-0" /> <span className="min-w-0">select existing</span>
               </button>
               <button
                 type="button"
                 onClick={() => setMode('new')}
-                className={`flex items-center justify-center gap-2 rounded-md py-2 font-mono text-xs transition-colors ${
+                className={`flex min-w-0 items-center justify-center gap-2 rounded-md py-2 font-mono text-xs transition-colors ${
                   mode === 'new'
                     ? 'bg-zinc-800 text-zinc-100'
                     : 'text-zinc-500 hover:text-zinc-300'
                 }`}
               >
-                <Plus className="h-3.5 w-3.5" /> type new name
+                <Plus className="h-3.5 w-3.5 shrink-0" /> <span className="min-w-0">type new name</span>
               </button>
             </div>
 
@@ -193,7 +193,7 @@ export default function SendToGradeContent() {
                     required={mode === 'new'}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <Select
                     value={newCard.cardType}
                     onChange={(e) => setNewCard({ ...newCard, cardType: e.target.value })}
@@ -221,7 +221,7 @@ export default function SendToGradeContent() {
                   {showOptional ? 'hide optional details' : 'show optional details'}
                 </Button>
                 {showOptional && (
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                     <Input
                       placeholder="set code"
                       value={newCard.setCode}
@@ -244,23 +244,23 @@ export default function SendToGradeContent() {
 
             {selectedCard && mode === 'existing' && (
               <div className="rounded-md border border-zinc-800 bg-zinc-950 p-3 font-mono text-xs text-zinc-400">
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-2">
                   <span>current avg cost</span>
-                  <span className="text-zinc-200">{formatCurrency(Number(selectedCard.inventory?.averageCost ?? 0))}</span>
+                  <span className="min-w-0 break-words text-right text-zinc-200">{formatCurrency(Number(selectedCard.inventory?.averageCost ?? 0))}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-2">
                   <span>card type</span>
-                  <span className="text-zinc-200">{selectedCard.cardType}</span>
+                  <span className="min-w-0 break-words text-right text-zinc-200">{selectedCard.cardType}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-2">
                   <span>game</span>
-                  <span className="text-zinc-200">{selectedCard.game}</span>
+                  <span className="min-w-0 break-words text-right text-zinc-200">{selectedCard.game}</span>
                 </div>
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="min-w-0 space-y-2">
                 <label className="font-mono text-xs text-zinc-400">grading cost</label>
                 <Input
                   type="number"
@@ -272,7 +272,7 @@ export default function SendToGradeContent() {
                   required
                 />
               </div>
-              <div className="space-y-2">
+              <div className="min-w-0 space-y-2">
                 <label className="font-mono text-xs text-zinc-400">send date</label>
                 <Input
                   type="date"

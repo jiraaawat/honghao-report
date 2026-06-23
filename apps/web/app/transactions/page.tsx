@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -17,7 +17,9 @@ import {
 } from '@/components/ui/dialog'
 import { TransactionDto, CARD_TYPES, GAMES } from '@/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { Trash2, Search, Calendar, Pencil, ChevronUp, ChevronDown } from 'lucide-react'
+import { toPng } from 'html-to-image'
+import { FlexCard } from '@/components/flex-card'
+import { Trash2, Search, Calendar, Pencil, ChevronUp, ChevronDown, Zap } from 'lucide-react'
 
 export default function TransactionsPage() {
   const { status } = useSession()
@@ -45,6 +47,8 @@ export default function TransactionsPage() {
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [flexTx, setFlexTx] = useState<TransactionDto | null>(null)
+  const flexRef = useRef<HTMLDivElement>(null)
 
   const years = useMemo(
     () => Array.from({ length: 5 }, (_, i) => (new Date().getFullYear() - 2 + i).toString()),
@@ -89,6 +93,42 @@ export default function TransactionsPage() {
       cancelled = true
     }
   }, [status, fetchTransactions])
+
+  useEffect(() => {
+    if (!flexTx || !flexRef.current) return
+
+    const run = async () => {
+      try {
+        const dataUrl = await toPng(flexRef.current!, { pixelRatio: 2 })
+        const blob = await fetch(dataUrl).then((r) => r.blob())
+        const file = new File([blob], `flex-${flexTx.id}.png`, { type: 'image/png' })
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: 'FLEX by honghao report',
+            text: `Sold ${flexTx.card?.name} for ${formatCurrency(Number(flexTx.totalAmount))}`,
+          })
+        } else {
+          const link = document.createElement('a')
+          link.href = dataUrl
+          link.download = `flex-${flexTx.id}.png`
+          link.click()
+        }
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setFlexTx(null)
+      }
+    }
+
+    run()
+  }, [flexTx])
+
+  const handleFlex = (tx: TransactionDto) => {
+    if (tx.type !== 'SELL') return
+    setFlexTx(tx)
+  }
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this transaction?')) return
@@ -299,6 +339,17 @@ export default function TransactionsPage() {
                             {formatCurrency(Number(tx.totalAmount))}
                           </td>
                           <td className="py-3 text-right">
+                            {tx.type === 'SELL' && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleFlex(tx)}
+                                className="h-8 w-8 text-amber-400 hover:text-amber-300"
+                                title="FLEX"
+                              >
+                                <Zap className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="icon"
@@ -325,21 +376,32 @@ export default function TransactionsPage() {
                   {transactions.map((tx) => (
                     <div key={tx.id} className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3">
                       <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <div className="font-mono text-sm text-zinc-200">{tx.card?.name}</div>
-                          <div className="font-mono text-xs text-zinc-500">{tx.card?.cardType} · {tx.card?.game}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate font-mono text-sm text-zinc-200">{tx.card?.name}</div>
+                          <div className="truncate font-mono text-xs text-zinc-500">{tx.card?.cardType} · {tx.card?.game}</div>
                         </div>
-                        <Badge variant={tx.type === 'BUY' ? 'buy' : 'sell'}>{tx.type}</Badge>
+                        <Badge variant={tx.type === 'BUY' ? 'buy' : 'sell'} className="shrink-0">{tx.type}</Badge>
                       </div>
-                      <div className="mt-2 flex items-center justify-between font-mono text-xs">
+                      <div className="mt-2 flex items-center justify-between gap-2 font-mono text-xs">
                         <span className="text-zinc-500">{formatDate(tx.date)}</span>
-                        <span className="text-zinc-300">{tx.quantity} × {formatCurrency(Number(tx.pricePerUnit))}</span>
+                        <span className="min-w-0 break-words text-right text-zinc-300">{tx.quantity} × {formatCurrency(Number(tx.pricePerUnit))}</span>
                       </div>
-                      <div className="mt-1 flex items-center justify-between font-mono text-xs">
+                      <div className="mt-1 flex items-center justify-between gap-2 font-mono text-xs">
                         <span className="text-zinc-500">shipping {tx.shippingCost ? formatCurrency(Number(tx.shippingCost)) : '-'}</span>
-                        <span className="font-medium text-zinc-200">{formatCurrency(Number(tx.totalAmount))}</span>
+                        <span className="min-w-0 break-words text-right font-medium text-zinc-200">{formatCurrency(Number(tx.totalAmount))}</span>
                       </div>
                       <div className="mt-2 flex justify-end gap-1">
+                        {tx.type === 'SELL' && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleFlex(tx)}
+                            className="h-8 w-8 text-amber-400 hover:text-amber-300"
+                            title="FLEX"
+                          >
+                            <Zap className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -378,7 +440,7 @@ export default function TransactionsPage() {
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <label className="font-mono text-xs text-zinc-400">quantity</label>
                 <Input
@@ -445,6 +507,12 @@ export default function TransactionsPage() {
           </DialogFooter>
         </form>
       </Dialog>
+
+      {flexTx && (
+        <div className="fixed left-[-9999px] top-0">
+          <FlexCard ref={flexRef} tx={flexTx} />
+        </div>
+      )}
     </div>
   )
 }

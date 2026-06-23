@@ -35,13 +35,10 @@ const transactionSchema = z.object({
   cardId: z.string().min(1),
   type: z.enum(['BUY', 'SELL']),
   quantity: z.number().int().positive(),
-  pricePerUnit: z.number().nonnegative(),
+  pricePerUnit: z.number().positive(),
   shippingCost: z.number().nonnegative().optional(),
   date: z.string().datetime(),
   note: z.string().optional(),
-}).refine((data) => data.type !== 'BUY' || data.pricePerUnit > 0, {
-  message: 'BUY price must be positive',
-  path: ['pricePerUnit'],
 })
 
 export async function GET(req: NextRequest) {
@@ -83,7 +80,15 @@ export async function GET(req: NextRequest) {
 
   const transactions = await prisma.transaction.findMany({
     where,
-    include: { card: true },
+    include: {
+      card: {
+        include: {
+          inventory: {
+            select: { averageCost: true },
+          },
+        },
+      },
+    },
     orderBy: { date: 'desc' },
     take: limit ? Number(limit) : undefined,
   })

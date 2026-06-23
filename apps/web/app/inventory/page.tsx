@@ -58,6 +58,7 @@ export default function InventoryPage() {
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [formatFilter, setFormatFilter] = useState<'all' | 'raw' | 'slab' | 'sealed'>('all')
   const [cardType, setCardType] = useState('')
   const [game, setGame] = useState('')
   const [year, setYear] = useState('')
@@ -80,7 +81,6 @@ export default function InventoryPage() {
     item: InventoryItem | null
   }>({ open: false, item: null })
   const [removeQty, setRemoveQty] = useState('')
-  const [removeNote, setRemoveNote] = useState('')
 
   const [addDialog, setAddDialog] = useState<{ open: boolean; item: InventoryItem | null }>({
     open: false,
@@ -94,7 +94,7 @@ export default function InventoryPage() {
     cardNumber: '',
     rarity: '',
     cardType: 'Single',
-    game: 'Pokemon',
+    game: 'OnePiece',
     condition: '',
   })
   const [addQty, setAddQty] = useState('')
@@ -181,7 +181,6 @@ export default function InventoryPage() {
   const openRemove = (item: InventoryItem) => {
     setRemoveDialog({ open: true, item })
     setRemoveQty('1')
-    setRemoveNote('')
   }
 
   const closeRemove = () => {
@@ -198,7 +197,7 @@ export default function InventoryPage() {
       cardNumber: '',
       rarity: '',
       cardType: 'Single',
-      game: 'Pokemon',
+      game: 'OnePiece',
       condition: '',
     })
     setAddQty('1')
@@ -268,17 +267,10 @@ export default function InventoryPage() {
     if (!qty || qty <= 0 || qty > item.quantity) return
 
     setIsSubmitting(true)
-    const res = await fetch('/api/transactions', {
+    const res = await fetch(`/api/inventory/${item.cardId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        cardId: item.cardId,
-        type: 'SELL',
-        quantity: qty,
-        pricePerUnit: 0,
-        date: new Date().toISOString(),
-        note: removeNote || undefined,
-      }),
+      body: JSON.stringify({ quantity: qty }),
     })
 
     if (res.ok) {
@@ -408,9 +400,22 @@ export default function InventoryPage() {
 
   const items = useMemo(() => data?.items ?? [], [data])
 
+  const formatGroups = useMemo(
+    () => ({
+      raw: ['Single', 'Bundle'],
+      slab: ['PSA10', 'PSA9'],
+      sealed: ['Sealed Product'],
+    }),
+    []
+  )
+
   const filteredItems = useMemo(() => {
-    if (!year && !month) return items
-    return items.filter((item) => {
+    let list = items
+    if (formatFilter !== 'all') {
+      list = list.filter((item) => formatGroups[formatFilter].includes(item.cardType))
+    }
+    if (!year && !month) return list
+    return list.filter((item) => {
       const dateStr = statusFilter === 'sold_out' ? item.soldAt : item.createdAt
       if (!dateStr) return false
       const d = new Date(dateStr)
@@ -420,7 +425,7 @@ export default function InventoryPage() {
       if (month && m !== month) return false
       return true
     })
-  }, [items, year, month, statusFilter])
+  }, [items, year, month, statusFilter, formatFilter, formatGroups])
 
   const sortedItems = useMemo(() => {
     const list = [...filteredItems]
@@ -471,6 +476,15 @@ export default function InventoryPage() {
       totalInvested,
     }
   }, [filteredItems])
+
+  const formatCounts = useMemo(() => {
+    return {
+      all: items.length,
+      raw: items.filter((i) => formatGroups.raw.includes(i.cardType)).length,
+      slab: items.filter((i) => formatGroups.slab.includes(i.cardType)).length,
+      sealed: items.filter((i) => formatGroups.sealed.includes(i.cardType)).length,
+    }
+  }, [items, formatGroups])
 
   if (status === 'loading' || loading) {
     return (
@@ -584,12 +598,31 @@ export default function InventoryPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className={`font-mono text-xl font-bold sm:text-2xl ${s.color}`}>{s.value}</div>
+                <div className={`min-w-0 break-words font-mono text-xl font-bold sm:text-2xl ${s.color}`}>{s.value}</div>
                 {s.note && (
                   <div className="mt-1 font-mono text-[10px] text-zinc-600">{s.note}</div>
                 )}
               </CardContent>
             </Card>
+          )
+        })}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {(['all', 'raw', 'slab', 'sealed'] as const).map((key) => {
+          const active = formatFilter === key
+          return (
+            <Button
+              key={key}
+              type="button"
+              variant={active ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFormatFilter(key)}
+              className="gap-2 font-mono text-xs"
+            >
+              <span className="uppercase">{key}</span>
+              <span className={active ? 'text-zinc-300' : 'text-zinc-500'}>({formatCounts[key]})</span>
+            </Button>
           )
         })}
       </div>
@@ -677,6 +710,7 @@ export default function InventoryPage() {
                 size="sm"
                 onClick={() => {
                   setStatusFilter('')
+                  setFormatFilter('all')
                   setCardType('')
                   setGame('')
                   setYear('')
@@ -901,37 +935,37 @@ export default function InventoryPage() {
                         </div>
                       </div>
 
-                      <div className="mt-2 flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-1.5">
                           {item.status === 'grading' ? (
-                            <Badge variant="grading" className="gap-1 text-[10px]">
+                            <Badge variant="grading" className="gap-1 whitespace-nowrap text-[10px]">
                               <Gem className="h-3 w-3" /> grading
                             </Badge>
                           ) : item.quantity > 0 ? (
-                            <Badge variant="buy" className="gap-1 text-[10px]">
+                            <Badge variant="buy" className="gap-1 whitespace-nowrap text-[10px]">
                               <Package className="h-3 w-3" /> in stock
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="gap-1 text-[10px]">
+                            <Badge variant="outline" className="gap-1 whitespace-nowrap text-[10px]">
                               <PackageX className="h-3 w-3" /> sold out
                             </Badge>
                           )}
                           <span className="font-mono text-xs text-zinc-300">qty {item.quantity}</span>
                         </div>
-                        <div className="font-mono text-xs font-medium text-zinc-200">
+                        <div className="min-w-0 break-words text-right font-mono text-xs font-medium text-zinc-200">
                           {formatCurrency(item.currentValue)}
                         </div>
                       </div>
 
-                      <div className="mt-1 flex items-center justify-between font-mono text-xs">
+                      <div className="mt-1 flex items-center justify-between gap-2 font-mono text-xs">
                         <span className="text-zinc-500">profit</span>
-                        <span className={item.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                        <span className={item.profit >= 0 ? 'min-w-0 break-words text-right text-emerald-400' : 'min-w-0 break-words text-right text-red-400'}>
                           {formatCurrency(item.profit)}
                         </span>
                       </div>
 
                       {item.status === 'in_stock' && item.quantity > 0 && (
-                        <div className="mt-2 flex gap-2">
+                        <div className="mt-2 flex flex-wrap gap-2">
                           <Button
                             size="sm"
                             className="h-8 flex-1 gap-1 bg-emerald-600 hover:bg-emerald-700"
@@ -1042,7 +1076,7 @@ export default function InventoryPage() {
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <label className="font-mono text-xs text-zinc-400">quantity</label>
                 <Input
@@ -1065,7 +1099,7 @@ export default function InventoryPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <label className="font-mono text-xs text-zinc-400">sell price / unit</label>
                 <Input
@@ -1159,14 +1193,6 @@ export default function InventoryPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="font-mono text-xs text-zinc-400">note</label>
-              <Input
-                value={removeNote}
-                onChange={(e) => setRemoveNote(e.target.value)}
-                placeholder="optional"
-              />
-            </div>
           </div>
 
           <DialogFooter>
@@ -1248,7 +1274,7 @@ export default function InventoryPage() {
                     required
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
                     <label className="font-mono text-xs text-zinc-400">set code</label>
                     <Input
@@ -1266,7 +1292,7 @@ export default function InventoryPage() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
                     <label className="font-mono text-xs text-zinc-400">rarity</label>
                     <Input
@@ -1288,7 +1314,7 @@ export default function InventoryPage() {
                     </Select>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
                     <label className="font-mono text-xs text-zinc-400">card type</label>
                     <Select
@@ -1315,7 +1341,7 @@ export default function InventoryPage() {
               </>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <label className="font-mono text-xs text-zinc-400">quantity</label>
                 <Input
