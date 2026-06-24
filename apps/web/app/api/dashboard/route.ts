@@ -56,17 +56,25 @@ export async function GET(req: NextRequest) {
   const avgCostByCardId = new Map<string, number>()
 
   for (const card of cards) {
-    const buyTxs = card.transactions.filter((t) => t.type === 'BUY')
+    const costBasisTxs = card.transactions.filter(
+      (t) => t.type === 'BUY' || (t.type === 'GRADING' && !t.isGradingCost)
+    )
+    const gradingCostTxs = card.transactions.filter(
+      (t) => (t.type === 'BUY' && t.isGradingCost) || (t.type === 'GRADING' && t.isGradingCost)
+    )
     const sellTxs = card.transactions.filter((t) => t.type === 'SELL')
-    const normalBuyTxs = buyTxs.filter((t) => !t.isGradingCost)
-    const gradingBuyTxs = buyTxs.filter((t) => t.isGradingCost)
-    const totalBuyQty = normalBuyTxs.reduce((sum, t) => sum + t.quantity, 0)
-    const totalBuyAmount = normalBuyTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
-    const totalGradingCost = gradingBuyTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
+    const totalBuyQty = costBasisTxs.reduce((sum, t) => sum + t.quantity, 0)
+    const totalBuyAmount = costBasisTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
+    const totalGradingCost = gradingCostTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
     const totalSellQty = sellTxs.reduce((sum, t) => sum + t.quantity, 0)
     const totalSellAmount = sellTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
-    const avgCost = totalBuyQty > 0 ? (totalBuyAmount + totalGradingCost) / totalBuyQty : 0
     const qty = card.inventory?.quantity ?? 0
+    const avgCost =
+      totalBuyQty > 0
+        ? (totalBuyAmount + totalGradingCost) / totalBuyQty
+        : qty > 0
+          ? totalGradingCost / qty
+          : 0
 
     if (qty > 0 || card.status === 'grading') {
       activeCards += qty
@@ -84,7 +92,9 @@ export async function GET(req: NextRequest) {
     totalBuyAllTime += totalBuyAmount + totalGradingCost
   }
 
-  const filteredBuyTxs = filteredTransactions.filter((t) => t.type === 'BUY')
+  const filteredBuyTxs = filteredTransactions.filter(
+    (t) => t.type === 'BUY' || (t.type === 'GRADING' && t.isGradingCost)
+  )
   const filteredSellTxs = filteredTransactions.filter((t) => t.type === 'SELL')
   const totalSpend = filteredBuyTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
   const totalSell = filteredSellTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)

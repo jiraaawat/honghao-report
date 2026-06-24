@@ -16,7 +16,7 @@ export interface CardDto {
 export interface TransactionDto {
   id: string
   cardId: string
-  type: 'BUY' | 'SELL'
+  type: 'BUY' | 'SELL' | 'GRADING'
   quantity: number
   pricePerUnit: number
   totalAmount: number
@@ -128,5 +128,5 @@ export interface CatalogSetDto {
 export const CARD_TYPES = ['Single', 'Bundle', 'PSA10', 'PSA9', 'Sealed Product'] as const
 export const GAMES = ['OnePiece', 'Pokemon', 'Lorcana', 'ETC'] as const
 export const GRADES = ['PSA10', 'PSA9', 'PSA8', 'PSA7', 'PSA6', 'PSA5', 'BGS10', 'BGS9.5', 'CGC10'] as const
-export const TRANSACTION_TYPES = ['BUY', 'SELL'] as const
+export const TRANSACTION_TYPES = ['BUY', 'SELL', 'GRADING'] as const
 export const CARD_CONDITIONS = ['NM', 'LP', 'MP', 'HP', 'DMG'] as const

@@ -58,6 +58,13 @@ export async function PUT(
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
+  if (transaction.type === 'GRADING') {
+    return NextResponse.json(
+      { error: 'Grading transactions cannot be modified here. Use the Grading page instead.' },
+      { status: 400 }
+    )
+  }
+
   try {
     const body = await req.json()
     const data = updateSchema.parse(body)
@@ -189,6 +196,13 @@ export async function DELETE(
 
   if (!transaction) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
+  if (transaction.type === 'GRADING') {
+    return NextResponse.json(
+      { error: 'Grading transactions cannot be deleted here. Use the Grading page instead.' },
+      { status: 400 }
+    )
   }
 
   await prisma.$transaction(async (tx) => {

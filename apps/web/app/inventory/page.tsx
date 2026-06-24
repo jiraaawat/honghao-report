@@ -210,8 +210,8 @@ export default function InventoryPage() {
 
   const openAdd = (item: InventoryItem | null = null) => {
     setAddDialog({ open: true, item })
-    setAddMode(item ? 'existing' : 'existing')
-    setAddCardId(item ? item.cardId : cards.length > 0 ? cards[0].id : '')
+    setAddMode(item ? 'existing' : 'new')
+    setAddCardId(item ? item.cardId : '')
     setAddCard({
       name: '',
       setCode: '',
@@ -1327,169 +1327,182 @@ export default function InventoryPage() {
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="flex gap-2 rounded border border-zinc-800 bg-zinc-950 p-1">
-              <button
-                type="button"
-                onClick={() => setAddMode('existing')}
-                className={`flex-1 rounded px-3 py-1.5 font-mono text-xs ${
-                  addMode === 'existing'
-                    ? 'bg-zinc-800 text-zinc-100'
-                    : 'text-zinc-500 hover:text-zinc-300'
-                }`}
-              >
-                {t('inventory.dialog.add.existingCard')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setAddMode('new')}
-                className={`flex-1 rounded px-3 py-1.5 font-mono text-xs ${
-                  addMode === 'new'
-                    ? 'bg-zinc-800 text-zinc-100'
-                    : 'text-zinc-500 hover:text-zinc-300'
-                }`}
-              >
-                {t('inventory.dialog.add.newCard')}
-              </button>
-            </div>
-
-            {addMode === 'existing' ? (
-              <div className="space-y-2">
+            {addDialog.item ? (
+              <div className="space-y-2 rounded border border-zinc-800 bg-zinc-950 p-3">
                 <label className="font-mono text-xs text-zinc-400">{t('inventory.table.card')}</label>
-                <Select value={addCardId} onChange={(e) => setAddCardId(e.target.value)} required>
-                  <option value="">{t('inventory.dialog.add.selectCard')}</option>
-                  {cards.map((card) => (
-                    <option key={card.id} value={card.id}>
-                      {card.name} {card.condition ? `(${card.condition})` : ''}
-                    </option>
-                  ))}
-                </Select>
+                <div className="font-mono text-sm text-zinc-100">{addDialog.item.cardName}</div>
+              </div>
+            ) : (
+              <div className="flex gap-2 rounded border border-zinc-800 bg-zinc-950 p-1">
+                <button
+                  type="button"
+                  onClick={() => setAddMode('existing')}
+                  className={`flex-1 rounded px-3 py-1.5 font-mono text-xs ${
+                    addMode === 'existing'
+                      ? 'bg-zinc-800 text-zinc-100'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  {t('inventory.dialog.add.existingCard')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAddMode('new')}
+                  className={`flex-1 rounded px-3 py-1.5 font-mono text-xs ${
+                    addMode === 'new'
+                      ? 'bg-zinc-800 text-zinc-100'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  {t('inventory.dialog.add.newCard')}
+                </button>
+              </div>
+            )}
+
+            {addMode === 'existing' && !addDialog.item ? (
+              <div className="flex flex-col items-center gap-3 rounded border border-zinc-800 bg-zinc-950 p-6 text-center">
+                <p className="font-mono text-xs text-zinc-400">
+                  {t('inventory.dialog.add.browseCardListDescription')}
+                </p>
+                <Link href="/cards" onClick={closeAdd}>
+                  <Button type="button" size="sm" className="gap-2">
+                    <Package className="h-3.5 w-3.5" />
+                    {t('inventory.dialog.add.browseCardList')}
+                  </Button>
+                </Link>
               </div>
             ) : (
               <>
+                {addMode === 'new' && !addDialog.item && (
+                  <>
+                    <div className="space-y-2">
+                      <label className="font-mono text-xs text-zinc-400">{t('inventory.dialog.add.cardName')}</label>
+                      <Input
+                        value={addCard.name}
+                        onChange={(e) => setAddCard({ ...addCard, name: e.target.value })}
+                        placeholder="e.g. Charizard Base Set"
+                        required
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="font-mono text-xs text-zinc-400">{t('inventory.dialog.add.setCode')}</label>
+                        <Input
+                          value={addCard.setCode}
+                          onChange={(e) => setAddCard({ ...addCard, setCode: e.target.value })}
+                          placeholder="BS"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="font-mono text-xs text-zinc-400">{t('inventory.dialog.add.cardNumber')}</label>
+                        <Input
+                          value={addCard.cardNumber}
+                          onChange={(e) => setAddCard({ ...addCard, cardNumber: e.target.value })}
+                          placeholder="004"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="font-mono text-xs text-zinc-400">{t('common.rarity')}</label>
+                        <Input
+                          value={addCard.rarity}
+                          onChange={(e) => setAddCard({ ...addCard, rarity: e.target.value })}
+                          placeholder="Holo"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="font-mono text-xs text-zinc-400">{t('common.condition')}</label>
+                        <Select
+                          value={addCard.condition}
+                          onChange={(e) => setAddCard({ ...addCard, condition: e.target.value })}
+                        >
+                          <option value="">{t('common.unspecified')}</option>
+                          {CARD_CONDITIONS.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="font-mono text-xs text-zinc-400">{t('common.cardType')}</label>
+                        <Select
+                          value={addCard.cardType}
+                          onChange={(e) => setAddCard({ ...addCard, cardType: e.target.value })}
+                        >
+                          {CARD_TYPES.map((type) => (
+                            <option key={type} value={type}>{type}</option>
+                          ))}
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="font-mono text-xs text-zinc-400">{t('common.game')}</label>
+                        <Select
+                          value={addCard.game}
+                          onChange={(e) => setAddCard({ ...addCard, game: e.target.value })}
+                        >
+                          {GAMES.map((g) => (
+                            <option key={g} value={g}>{g}</option>
+                          ))}
+                        </Select>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="font-mono text-xs text-zinc-400">{t('common.quantity')}</label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={addQty}
+                      onChange={(e) => setAddQty(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="font-mono text-xs text-zinc-400">{t('inventory.dialog.add.costPerUnit')}</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      value={addPrice}
+                      onChange={(e) => setAddPrice(e.target.value)}
+                      placeholder="0.00"
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <label className="font-mono text-xs text-zinc-400">{t('inventory.dialog.add.cardName')}</label>
+                  <label className="font-mono text-xs text-zinc-400">{t('common.date')}</label>
+                  <Input type="date" value={addDate} onChange={(e) => setAddDate(e.target.value)} required />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="font-mono text-xs text-zinc-400">{t('common.note')}</label>
                   <Input
-                    value={addCard.name}
-                    onChange={(e) => setAddCard({ ...addCard, name: e.target.value })}
-                    placeholder="e.g. Charizard Base Set"
-                    required
+                    value={addNote}
+                    onChange={(e) => setAddNote(e.target.value)}
+                    placeholder={t('common.optional')}
                   />
-                </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="font-mono text-xs text-zinc-400">{t('inventory.dialog.add.setCode')}</label>
-                    <Input
-                      value={addCard.setCode}
-                      onChange={(e) => setAddCard({ ...addCard, setCode: e.target.value })}
-                      placeholder="BS"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="font-mono text-xs text-zinc-400">{t('inventory.dialog.add.cardNumber')}</label>
-                    <Input
-                      value={addCard.cardNumber}
-                      onChange={(e) => setAddCard({ ...addCard, cardNumber: e.target.value })}
-                      placeholder="004"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="font-mono text-xs text-zinc-400">{t('common.rarity')}</label>
-                    <Input
-                      value={addCard.rarity}
-                      onChange={(e) => setAddCard({ ...addCard, rarity: e.target.value })}
-                      placeholder="Holo"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="font-mono text-xs text-zinc-400">{t('common.condition')}</label>
-                    <Select
-                      value={addCard.condition}
-                      onChange={(e) => setAddCard({ ...addCard, condition: e.target.value })}
-                    >
-                      <option value="">{t('common.unspecified')}</option>
-                      {CARD_CONDITIONS.map((c) => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="font-mono text-xs text-zinc-400">{t('common.cardType')}</label>
-                    <Select
-                      value={addCard.cardType}
-                      onChange={(e) => setAddCard({ ...addCard, cardType: e.target.value })}
-                    >
-                      {CARD_TYPES.map((type) => (
-                        <option key={type} value={type}>{type}</option>
-                      ))}
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="font-mono text-xs text-zinc-400">{t('common.game')}</label>
-                    <Select
-                      value={addCard.game}
-                      onChange={(e) => setAddCard({ ...addCard, game: e.target.value })}
-                    >
-                      {GAMES.map((g) => (
-                        <option key={g} value={g}>{g}</option>
-                      ))}
-                    </Select>
-                  </div>
                 </div>
               </>
             )}
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="space-y-2">
-                <label className="font-mono text-xs text-zinc-400">{t('common.quantity')}</label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={addQty}
-                  onChange={(e) => setAddQty(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="font-mono text-xs text-zinc-400">{t('inventory.dialog.add.costPerUnit')}</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  value={addPrice}
-                  onChange={(e) => setAddPrice(e.target.value)}
-                  placeholder="0.00"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="font-mono text-xs text-zinc-400">{t('common.date')}</label>
-              <Input type="date" value={addDate} onChange={(e) => setAddDate(e.target.value)} required />
-            </div>
-
-            <div className="space-y-2">
-              <label className="font-mono text-xs text-zinc-400">{t('common.note')}</label>
-              <Input
-                value={addNote}
-                onChange={(e) => setAddNote(e.target.value)}
-                placeholder={t('common.optional')}
-              />
-            </div>
           </div>
 
           <DialogFooter>
             <Button type="button" variant="ghost" size="sm" onClick={closeAdd}>
               {t('common.cancel')}
             </Button>
-            <Button type="submit" size="sm" className="gap-2">
-              <Plus className="h-3.5 w-3.5" />
-              {t('inventory.dialog.add.addStock')}
-            </Button>
+            {(addMode === 'new' || addDialog.item) && (
+              <Button type="submit" size="sm" className="gap-2">
+                <Plus className="h-3.5 w-3.5" />
+                {t('inventory.dialog.add.addStock')}
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </Dialog>

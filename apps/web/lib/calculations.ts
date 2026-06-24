@@ -13,6 +13,11 @@ export interface MonthlyStats {
   transactionCount: number
 }
 
+function isBuyLike(tx: Transaction): boolean {
+  // BUY transactions and grading-cost transactions count as spend.
+  return tx.type === 'BUY' || (tx.type === 'GRADING' && tx.isGradingCost)
+}
+
 export function calculateMonthlyReport(
   transactions: Transaction[],
   avgCostMap?: Record<string, number>
@@ -41,10 +46,10 @@ export function calculateMonthlyReport(
     const stats = grouped.get(key)!
     stats.transactionCount += 1
 
-    if (tx.type === 'BUY') {
+    if (isBuyLike(tx)) {
       stats.totalBuy += Number(tx.totalAmount)
       stats.buyQty += tx.quantity
-    } else {
+    } else if (tx.type === 'SELL') {
       stats.totalSell += Number(tx.totalAmount)
       stats.sellQty += tx.quantity
       if (avgCostMap) {
@@ -73,7 +78,7 @@ export function calculateMonthlyReport(
 
 export function calculateTotalProfit(transactions: Transaction[]): number {
   const buyTotal = transactions
-    .filter((t) => t.type === 'BUY')
+    .filter(isBuyLike)
     .reduce((sum, t) => sum + Number(t.totalAmount), 0)
   const sellTotal = transactions
     .filter((t) => t.type === 'SELL')
@@ -83,7 +88,7 @@ export function calculateTotalProfit(transactions: Transaction[]): number {
 
 export function calculateROI(transactions: Transaction[]): number {
   const buyTotal = transactions
-    .filter((t) => t.type === 'BUY')
+    .filter(isBuyLike)
     .reduce((sum, t) => sum + Number(t.totalAmount), 0)
   const profit = calculateTotalProfit(transactions)
   return buyTotal > 0 ? (profit / buyTotal) * 100 : 0

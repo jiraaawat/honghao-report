@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url)
-  const type = searchParams.get('type') as 'BUY' | 'SELL' | null
+  const type = searchParams.get('type') as 'BUY' | 'SELL' | 'GRADING' | null
   const year = searchParams.get('year')
   const month = searchParams.get('month')
   const search = searchParams.get('search') || ''
@@ -58,7 +58,12 @@ export async function GET(req: NextRequest) {
   const limit = searchParams.get('limit')
 
   const where: Prisma.TransactionWhereInput = { userId }
-  if (type) where.type = type
+  if (type) {
+    where.type = type
+  } else {
+    // Grading transactions are managed from the Grading page.
+    where.type = { not: 'GRADING' }
+  }
   if (year && month) {
     const start = new Date(Date.UTC(Number(year), Number(month) - 1, 1))
     const end = new Date(Date.UTC(Number(year), Number(month), 1))

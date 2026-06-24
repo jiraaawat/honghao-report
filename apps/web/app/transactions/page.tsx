@@ -324,7 +324,9 @@ export default function TransactionsPage() {
                             </div>
                           </td>
                           <td className="py-3 pr-4">
-                            <Badge variant={tx.type === 'BUY' ? 'buy' : 'sell'}>{tx.type === 'BUY' ? t('transactions.buy') : t('transactions.sell')}</Badge>
+                            <Badge variant={tx.type === 'BUY' ? 'buy' : tx.type === 'SELL' ? 'sell' : 'grading'}>
+                              {tx.type === 'BUY' ? t('transactions.buy') : tx.type === 'SELL' ? t('transactions.sell') : t('transactions.grading')}
+                            </Badge>
                           </td>
                           <td className="py-3 pr-4 text-zinc-400">{tx.card?.game}</td>
                           <td className="py-3 pr-4 text-zinc-300">{tx.quantity}</td>
@@ -349,22 +351,26 @@ export default function TransactionsPage() {
                                 <Zap className="h-4 w-4" />
                               </Button>
                             )}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEdit(tx)}
-                              className="h-8 w-8 text-zinc-500 hover:text-emerald-400"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDelete(tx.id)}
-                              className="h-8 w-8 text-zinc-500 hover:text-red-400"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {tx.type !== 'GRADING' && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => openEdit(tx)}
+                                  className="h-8 w-8 text-zinc-500 hover:text-emerald-400"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDelete(tx.id)}
+                                  className="h-8 w-8 text-zinc-500 hover:text-red-400"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -379,7 +385,7 @@ export default function TransactionsPage() {
                           <div className="truncate font-mono text-sm text-zinc-200">{tx.card?.name}</div>
                           <div className="truncate font-mono text-xs text-zinc-500">{tx.card?.cardType} · {tx.card?.game}</div>
                         </div>
-                        <Badge variant={tx.type === 'BUY' ? 'buy' : 'sell'} className="shrink-0">{tx.type}</Badge>
+                        <Badge variant={tx.type === 'BUY' ? 'buy' : tx.type === 'SELL' ? 'sell' : 'grading'} className="shrink-0">{tx.type === 'BUY' ? t('transactions.buy') : tx.type === 'SELL' ? t('transactions.sell') : t('transactions.grading')}</Badge>
                       </div>
                       <div className="mt-2 flex items-center justify-between gap-2 font-mono text-xs">
                         <span className="text-zinc-500">{formatDate(tx.date)}</span>
@@ -401,22 +407,26 @@ export default function TransactionsPage() {
                             <Zap className="h-4 w-4" />
                           </Button>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEdit(tx)}
-                          className="h-8 w-8 text-zinc-500 hover:text-emerald-400"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(tx.id)}
-                          className="h-8 w-8 text-zinc-500 hover:text-red-400"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {tx.type !== 'GRADING' && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEdit(tx)}
+                              className="h-8 w-8 text-zinc-500 hover:text-emerald-400"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(tx.id)}
+                              className="h-8 w-8 text-zinc-500 hover:text-red-400"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   ))}

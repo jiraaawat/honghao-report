@@ -46,17 +46,25 @@ export async function GET(req: NextRequest) {
   })
 
   const items = cards.map((card) => {
-    const buyTxs = card.transactions.filter((t) => t.type === 'BUY')
+    const costBasisTxs = card.transactions.filter(
+      (t) => t.type === 'BUY' || (t.type === 'GRADING' && !t.isGradingCost)
+    )
+    const gradingCostTxs = card.transactions.filter(
+      (t) => (t.type === 'BUY' && t.isGradingCost) || (t.type === 'GRADING' && t.isGradingCost)
+    )
     const sellTxs = card.transactions.filter((t) => t.type === 'SELL')
-    const normalBuyTxs = buyTxs.filter((t) => !t.isGradingCost)
-    const gradingBuyTxs = buyTxs.filter((t) => t.isGradingCost)
-    const totalBuyQty = normalBuyTxs.reduce((sum, t) => sum + t.quantity, 0)
-    const totalBuyAmount = normalBuyTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
-    const totalGradingCost = gradingBuyTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
+    const totalBuyQty = costBasisTxs.reduce((sum, t) => sum + t.quantity, 0)
+    const totalBuyAmount = costBasisTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
+    const totalGradingCost = gradingCostTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
     const totalSellQty = sellTxs.reduce((sum, t) => sum + t.quantity, 0)
     const totalSellAmount = sellTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
-    const avgCost = totalBuyQty > 0 ? (totalBuyAmount + totalGradingCost) / totalBuyQty : 0
     const quantity = card.inventory?.quantity ?? 0
+    const avgCost =
+      totalBuyQty > 0
+        ? (totalBuyAmount + totalGradingCost) / totalBuyQty
+        : quantity > 0
+          ? totalGradingCost / quantity
+          : 0
 
     const effectiveStatus: 'in_stock' | 'sold_out' | 'grading' =
       card.status === 'grading'

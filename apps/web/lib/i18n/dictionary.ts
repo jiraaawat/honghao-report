@@ -205,6 +205,8 @@ export const dictionary = {
   'inventory.dialog.add.confirmTitle': { en: 'confirm add stock', th: 'ยืนยันการเพิ่มสต็อก' },
   'inventory.dialog.add.reviewDescription': { en: 'please review the stock addition before confirming.', th: 'ตรวจสอบการเพิ่มสต็อกก่อนยืนยัน' },
   'inventory.dialog.add.totalCost': { en: 'total cost', th: 'ต้นทุนรวม' },
+  'inventory.dialog.add.browseCardList': { en: 'browse card list', th: 'เลือกจากรายการการ์ด' },
+  'inventory.dialog.add.browseCardListDescription': { en: 'Pick an existing card from the catalog list.', th: 'เลือกการ์ดจากรายการ catalog' },
 
   // cards
   'cards.title': { en: 'card list', th: 'รายการการ์ด' },
@@ -279,6 +281,7 @@ export const dictionary = {
   'transactions.allTypes': { en: 'all types', th: 'ทุกประเภท' },
   'transactions.buy': { en: 'BUY', th: 'ซื้อ' },
   'transactions.sell': { en: 'SELL', th: 'ขาย' },
+  'transactions.grading': { en: 'GRADING', th: 'เกรด' },
   'transactions.allCardTypes': { en: 'all card types', th: 'ทุกประเภทการ์ด' },
   'transactions.clearFilters': { en: 'clear filters', th: 'ล้างตัวกรอง' },
   'transactions.table.date': { en: 'date', th: 'วันที่' },

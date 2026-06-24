@@ -440,7 +440,9 @@ export default function DashboardPage() {
                         <td className="py-3 pr-4 text-zinc-400">{formatDate(tx.date)}</td>
                         <td className="py-3 pr-4 text-zinc-200">{tx.card?.name}</td>
                         <td className="py-3 pr-4">
-                          <Badge variant={tx.type === 'BUY' ? 'buy' : 'sell'}>{tx.type}</Badge>
+                          <Badge variant={tx.type === 'BUY' ? 'buy' : tx.type === 'SELL' ? 'sell' : 'grading'}>
+                            {tx.type === 'BUY' ? t('transactions.buy') : tx.type === 'SELL' ? t('transactions.sell') : t('transactions.grading')}
+                          </Badge>
                         </td>
                         <td className="py-3 pr-4 text-zinc-300">{tx.quantity}</td>
                         <td className="py-3 pr-4 text-zinc-300">{formatCurrency(Number(tx.pricePerUnit))}</td>
@@ -455,7 +457,7 @@ export default function DashboardPage() {
                   <div key={tx.id} className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-mono text-xs text-zinc-400">{formatDate(tx.date)}</span>
-                      <Badge variant={tx.type === 'BUY' ? 'buy' : 'sell'} className="shrink-0">{tx.type}</Badge>
+                      <Badge variant={tx.type === 'BUY' ? 'buy' : tx.type === 'SELL' ? 'sell' : 'grading'} className="shrink-0">{tx.type === 'BUY' ? t('transactions.buy') : tx.type === 'SELL' ? t('transactions.sell') : t('transactions.grading')}</Badge>
                     </div>
                     <div className="mt-1 min-w-0 break-words font-mono text-sm text-zinc-200">{tx.card?.name}</div>
                     <div className="mt-2 flex items-center justify-between gap-2 font-mono text-xs">

@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
     const data = createSchema.parse(body)
 
     const txDate = new Date(data.date)
+    const costPerUnit = data.gradingCost / data.quantity
 
     const result = await prisma.$transaction(async (tx) => {
       let cardId = data.cardId
@@ -81,61 +82,70 @@ export async function POST(req: NextRequest) {
         const avgCost = Number(originalCard.inventory.averageCost)
         const splitInvested = avgCost * data.quantity
 
-        // Create a new card record for the graded portion
-        const gradedCard = await tx.card.create({
-          data: {
-            name: originalCard.name,
-            cardType: originalCard.cardType,
-            game: originalCard.game,
-            setCode: originalCard.setCode,
-            cardNumber: originalCard.cardNumber,
-            rarity: originalCard.rarity,
-            condition: originalCard.condition,
-            imageUrl: originalCard.imageUrl,
-            status: 'grading',
-            userId,
-          },
-        })
+        if (data.quantity === originalCard.inventory.quantity) {
+          // Use the original card id when sending the entire quantity.
+          await tx.card.update({
+            where: { id: originalCard.id },
+            data: { status: 'grading' },
+          })
+          card = originalCard
+        } else {
+          // Partial quantity: split into a new grading card.
+          const gradedCard = await tx.card.create({
+            data: {
+              name: originalCard.name,
+              cardType: originalCard.cardType,
+              game: originalCard.game,
+              setCode: originalCard.setCode,
+              cardNumber: originalCard.cardNumber,
+              rarity: originalCard.rarity,
+              condition: originalCard.condition,
+              imageUrl: originalCard.imageUrl,
+              status: 'grading',
+              userId,
+            },
+          })
 
-        await tx.cardInventory.create({
-          data: {
-            cardId: gradedCard.id,
-            userId,
-            quantity: data.quantity,
-            averageCost: avgCost,
-            totalInvested: splitInvested,
-            currentValue: avgCost,
-          },
-        })
+          await tx.cardInventory.create({
+            data: {
+              cardId: gradedCard.id,
+              userId,
+              quantity: data.quantity,
+              averageCost: avgCost,
+              totalInvested: splitInvested,
+              currentValue: avgCost,
+            },
+          })
 
-        await tx.transaction.create({
-          data: {
-            cardId: gradedCard.id,
-            userId,
-            type: 'BUY',
-            quantity: data.quantity,
-            pricePerUnit: avgCost,
-            totalAmount: splitInvested,
-            shippingCost: 0,
-            date: txDate,
-            note: `Split ${data.quantity} qty for grading`,
-            isGradingCost: false,
-          },
-        })
+          await tx.transaction.create({
+            data: {
+              cardId: gradedCard.id,
+              userId,
+              type: 'GRADING',
+              quantity: data.quantity,
+              pricePerUnit: avgCost,
+              totalAmount: splitInvested,
+              shippingCost: 0,
+              date: txDate,
+              note: `Split ${data.quantity} qty for grading`,
+              isGradingCost: false,
+            },
+          })
 
-        // Reduce original card inventory
-        const newOriginalQty = originalCard.inventory.quantity - data.quantity
-        const newOriginalInvested = Number(originalCard.inventory.totalInvested) - splitInvested
-        await tx.cardInventory.update({
-          where: { cardId: originalCard.id },
-          data: {
-            quantity: newOriginalQty,
-            totalInvested: newOriginalInvested,
-          },
-        })
+          // Reduce original card inventory
+          const newOriginalQty = originalCard.inventory.quantity - data.quantity
+          const newOriginalInvested = Number(originalCard.inventory.totalInvested) - splitInvested
+          await tx.cardInventory.update({
+            where: { cardId: originalCard.id },
+            data: {
+              quantity: newOriginalQty,
+              totalInvested: newOriginalInvested,
+            },
+          })
 
-        card = gradedCard
-        cardId = gradedCard.id
+          card = gradedCard
+          cardId = gradedCard.id
+        }
       } else if (data.newCard) {
         card = await tx.card.create({
           data: {
@@ -155,9 +165,9 @@ export async function POST(req: NextRequest) {
             cardId: card.id,
             userId,
             quantity: data.quantity,
-            averageCost: data.gradingCost / data.quantity,
+            averageCost: costPerUnit,
             totalInvested: data.gradingCost,
-            currentValue: data.gradingCost / data.quantity,
+            currentValue: costPerUnit,
           },
         })
 
@@ -184,9 +194,9 @@ export async function POST(req: NextRequest) {
         data: {
           cardId,
           userId,
-          type: 'BUY',
+          type: 'GRADING',
           quantity: data.quantity,
-          pricePerUnit: data.gradingCost / data.quantity,
+          pricePerUnit: costPerUnit,
           totalAmount: data.gradingCost,
           shippingCost: 0,
           date: txDate,
