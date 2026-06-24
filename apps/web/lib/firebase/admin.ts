@@ -1,5 +1,5 @@
-import { initializeApp, cert, getApps, getApp, App } from 'firebase-admin/app'
-import { getAuth, Auth } from 'firebase-admin/auth'
+import type { App, ServiceAccount } from 'firebase-admin/app'
+import type { Auth } from 'firebase-admin/auth'
 
 let cached: Auth | null = null
 
@@ -9,7 +9,9 @@ function getPrivateKey(): string | undefined {
   return key.replace(/\\n/g, '\n')
 }
 
-function createAdminApp(): App {
+async function createAdminApp(): Promise<App> {
+  const { initializeApp, cert, getApps, getApp } = await import('firebase-admin/app')
+
   if (getApps().length > 0) return getApp()
 
   const projectId = process.env.FIREBASE_PROJECT_ID
@@ -18,7 +20,7 @@ function createAdminApp(): App {
 
   if (projectId && clientEmail && privateKey) {
     return initializeApp({
-      credential: cert({ projectId, clientEmail, privateKey }),
+      credential: cert({ projectId, clientEmail, privateKey } as ServiceAccount),
     })
   }
 
@@ -32,9 +34,10 @@ function createAdminApp(): App {
   )
 }
 
-export function getFirebaseAdminAuth(): Auth {
+export async function getFirebaseAdminAuth(): Promise<Auth> {
   if (cached) return cached
-  const app = createAdminApp()
+  const app = await createAdminApp()
+  const { getAuth } = await import('firebase-admin/auth')
   cached = getAuth(app)
   return cached
 }

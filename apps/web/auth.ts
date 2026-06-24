@@ -13,6 +13,11 @@ function providerFromFirebase(providerId: string | undefined): string {
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
+  // Auth.js needs the incoming host to be trusted. This app runs on Vercel,
+  // local dev, and standalone builds, so we always trust the host header.
+  trustHost: true,
+  // Auth.js v5 uses AUTH_SECRET, but keep NEXTAUTH_SECRET for backward compat.
+  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   providers: [
     Credentials({
       name: 'credentials',
@@ -24,7 +29,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       authorize: async (credentials) => {
         if (credentials?.idToken) {
           try {
-          const adminAuth = getFirebaseAdminAuth()
+          const adminAuth = await getFirebaseAdminAuth()
           const decoded = await adminAuth.verifyIdToken(credentials.idToken as string)
           const firebaseUser = await adminAuth.getUser(decoded.uid)
 
