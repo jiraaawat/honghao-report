@@ -19,6 +19,7 @@ import { MonthlyReport } from '@/types'
 import { formatCurrency, formatNumber } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n/provider'
 import { MonthlyChart } from '@/components/reports/monthly-chart'
+import { FullPageLoader } from '@/components/ui/loading'
 import { Download, TrendingUp, TrendingDown, Calendar, AlertTriangle, Trash2 } from 'lucide-react'
 
 export default function ReportsPage() {
@@ -97,11 +98,7 @@ export default function ReportsPage() {
   }
 
   if (status === 'loading' || loading) {
-    return (
-      <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
-        <div className="font-mono text-sm text-zinc-500">{t('reports.calculating')}</div>
-      </div>
-    )
+    return <FullPageLoader />
   }
 
   if (status === 'unauthenticated') {

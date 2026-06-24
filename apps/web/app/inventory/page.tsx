@@ -21,6 +21,7 @@ import { InventoryItem, CardDto, CARD_TYPES, GAMES, CARD_CONDITIONS } from '@/ty
 import { InventoryGridCard } from '@/components/inventory/inventory-grid-card'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n/provider'
+import { FullPageLoader } from '@/components/ui/loading'
 import {
   Search,
   Package,
@@ -519,11 +520,7 @@ export default function InventoryPage() {
   }, [items, formatGroups])
 
   if (status === 'loading' || loading) {
-    return (
-      <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
-        <div className="font-mono text-sm text-zinc-500">{t('inventory.loading')}</div>
-      </div>
-    )
+    return <FullPageLoader />
   }
 
   if (status === 'unauthenticated') {

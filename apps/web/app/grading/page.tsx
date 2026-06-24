@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { GRADES } from '@/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n/provider'
+import { FullPageLoader } from '@/components/ui/loading'
 import { Plus, CheckCircle, XCircle, Gem, ArrowRight, ChevronUp, ChevronDown } from 'lucide-react'
 
 interface GradingWithCard {
@@ -114,11 +115,7 @@ export default function GradingPage() {
   }
 
   if (status === 'loading' || loading) {
-    return (
-      <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
-        <div className="font-mono text-sm text-zinc-500">{t('grading.loading')}</div>
-      </div>
-    )
+    return <FullPageLoader />
   }
 
   if (status === 'unauthenticated') {

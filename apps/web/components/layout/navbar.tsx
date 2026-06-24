@@ -17,6 +17,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n/provider'
 import { LanguageToggle } from '@/components/i18n/language-toggle'
+import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { DictionaryKey } from '@/lib/i18n/dictionary'
 
 const navItems: { href: string; label: DictionaryKey; icon: React.ElementType }[] = [
@@ -53,7 +54,16 @@ export function Navbar() {
   const { t } = useLanguage()
   const titleKey = getPageTitleKey(pathname)
 
-  if (status === 'loading') return null
+  if (status === 'loading') {
+    return (
+      <header className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur">
+        <div className="flex h-full items-center justify-between px-4 md:px-6">
+          <div className="h-4 w-32 rounded bg-zinc-800" />
+          <div className="h-8 w-20 rounded-md bg-zinc-800" />
+        </div>
+      </header>
+    )
+  }
   if (!session) return null
 
   return (
@@ -96,6 +106,7 @@ export function Navbar() {
           </nav>
 
           <div className="flex items-center gap-3 md:ml-auto">
+            <ThemeToggle />
             <LanguageToggle />
             <div className="hidden items-center gap-2 font-mono text-xs text-zinc-400 lg:flex">
               <User className="h-3.5 w-3.5" />
@@ -104,7 +115,7 @@ export function Navbar() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+              onClick={() => signOut({ callbackUrl: '/' })}
               className="gap-2"
             >
               <LogOut className="h-3.5 w-3.5" />

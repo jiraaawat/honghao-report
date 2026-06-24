@@ -61,7 +61,7 @@ Use `lucide-react` for icons.
 
 ## Environment
 
-Local dev uses SQLite. Ensure `apps/web/.env.local` exists with `DATABASE_URL`, `NEXTAUTH_URL`, and `NEXTAUTH_SECRET`. Add `TCGDB_URL` to enable the `/cards` catalog browser.
+Local dev uses SQLite. Ensure `apps/web/.env.local` exists with `DATABASE_URL`, `NEXTAUTH_URL`, and `NEXTAUTH_SECRET`. Add `TCGDB_URL` to enable the `/cards` catalog browser. Social login uses Firebase Auth and is controlled by `NEXT_PUBLIC_ENABLE_SOCIAL_LOGIN`. Add `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID` for the client, and `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` (or `GOOGLE_APPLICATION_CREDENTIALS`) for server-side token verification. Linked provider info is stored in the `Account` table. Ads can be enabled with `NEXT_PUBLIC_ADS_ENABLED`; see `docs/ads.md` for placement recommendations.
 
 ## Pages
 

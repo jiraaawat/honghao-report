@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog'
 import { CatalogCardDto, CatalogSetDto, CARD_TYPES, CARD_CONDITIONS, GAMES } from '@/types'
 import { useLanguage } from '@/lib/i18n/provider'
+import { FullPageLoader } from '@/components/ui/loading'
 
 const PAGE_SIZE = 24
 
@@ -186,7 +187,7 @@ export default function CardsPage() {
     }
   }
 
-  if (status === 'loading') return null
+  if (status === 'loading') return <FullPageLoader />
   if (status === 'unauthenticated') return null
 
   const visibleItems =

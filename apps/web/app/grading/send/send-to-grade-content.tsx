@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CardDto, CARD_TYPES, GAMES, GRADES } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n/provider'
+import { FullPageLoader } from '@/components/ui/loading'
 import { ArrowLeft, Gem, Send, Search, Plus } from 'lucide-react'
 
 interface CardWithInventory extends CardDto {
@@ -120,11 +121,7 @@ export default function SendToGradeContent() {
   const selectedCard = cards.find((c) => c.id === existingCardId)
 
   if (status === 'loading') {
-    return (
-      <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
-        <div className="font-mono text-sm text-zinc-500">{t('common.loading')}</div>
-      </div>
-    )
+    return <FullPageLoader />
   }
 
   if (status === 'unauthenticated') {

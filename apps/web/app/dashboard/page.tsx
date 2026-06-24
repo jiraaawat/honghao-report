@@ -12,6 +12,7 @@ import { DashboardStats } from '@/types'
 import { TransactionDto, InventoryItem, CARD_TYPES, GAMES } from '@/types'
 import { formatCurrency, formatNumber, formatDate } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n/provider'
+import { FullPageLoader } from '@/components/ui/loading'
 import {
   ArrowRight,
   Receipt,
@@ -140,11 +141,7 @@ export default function DashboardPage() {
   }
 
   if (status === 'loading' || loading) {
-    return (
-      <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
-        <div className="font-mono text-sm text-zinc-500">{t('common.loading')}</div>
-      </div>
-    )
+    return <FullPageLoader />
   }
 
   if (status === 'unauthenticated') {

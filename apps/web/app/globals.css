@@ -1,6 +1,19 @@
 @import "tailwindcss";
 
 :root {
+  --background: #f4f4f5;
+  --foreground: #18181b;
+  --muted: #71717a;
+  --accent: #059669;
+  --accent-dim: #047857;
+  --border: #e4e4e7;
+  --card: #ffffff;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --info: #2563eb;
+}
+
+.dark {
   --background: #09090b;
   --foreground: #e4e4e7;
   --muted: #a1a1aa;
@@ -29,6 +42,10 @@
 }
 
 html {
+  color-scheme: light;
+}
+
+html.dark {
   color-scheme: dark;
 }
 
@@ -39,10 +56,13 @@ body {
 }
 
 ::selection {
+  background: rgba(5, 150, 105, 0.25);
+}
+
+.dark ::selection {
   background: rgba(16, 185, 129, 0.3);
 }
 
-/* Custom scrollbar for dev terminal feel */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -58,5 +78,61 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
+  background: #d4d4d8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
   background: #3f3f46;
 }
+
+/* Light mode overrides for static Tailwind zinc utilities */
+.light [class~="bg-zinc-950"] { background-color: #f4f4f5 !important; }
+.light [class~="bg-zinc-900"] { background-color: #ffffff !important; }
+.light [class~="bg-zinc-900/50"] { background-color: rgba(255, 255, 255, 0.5) !important; }
+.light [class~="bg-zinc-900/80"] { background-color: rgba(255, 255, 255, 0.8) !important; }
+.light [class~="bg-zinc-900/40"] { background-color: rgba(255, 255, 255, 0.4) !important; }
+.light [class~="bg-zinc-900/60"] { background-color: rgba(255, 255, 255, 0.6) !important; }
+.light [class~="bg-zinc-900/30"] { background-color: rgba(255, 255, 255, 0.3) !important; }
+.light [class~="bg-zinc-950/50"] { background-color: rgba(244, 244, 245, 0.5) !important; }
+.light [class~="bg-zinc-950/80"] { background-color: rgba(244, 244, 245, 0.8) !important; }
+.light [class~="bg-zinc-800"] { background-color: #e4e4e7 !important; }
+.light [class~="bg-zinc-800/50"] { background-color: rgba(228, 228, 231, 0.5) !important; }
+.light [class~="bg-zinc-800/60"] { background-color: rgba(228, 228, 231, 0.6) !important; }
+.light [class~="bg-zinc-700"] { background-color: #d4d4d8 !important; }
+
+.light [class~="text-zinc-100"] { color: #18181b !important; }
+.light [class~="text-zinc-200"] { color: #27272a !important; }
+.light [class~="text-zinc-300"] { color: #3f3f46 !important; }
+.light [class~="text-zinc-400"] { color: #52525b !important; }
+.light [class~="text-zinc-500"] { color: #71717a !important; }
+.light [class~="text-zinc-600"] { color: #a1a1aa !important; }
+
+.light [class~="border-zinc-900"] { border-color: #f4f4f5 !important; }
+.light [class~="border-zinc-800"] { border-color: #e4e4e7 !important; }
+.light [class~="border-zinc-800/50"] { border-color: rgba(228, 228, 231, 0.5) !important; }
+.light [class~="border-zinc-800/60"] { border-color: rgba(228, 228, 231, 0.6) !important; }
+.light [class~="border-zinc-700"] { border-color: #d4d4d8 !important; }
+.light [class~="border-zinc-600"] { border-color: #d4d4d8 !important; }
+
+/* Make accent colors darker for better contrast on light backgrounds */
+.light [class~="text-emerald-400"] { color: #059669 !important; }
+.light [class~="text-emerald-500"] { color: #10b981 !important; }
+.light [class~="text-amber-400"] { color: #d97706 !important; }
+.light [class~="text-amber-500"] { color: #f59e0b !important; }
+.light [class~="text-red-400"] { color: #dc2626 !important; }
+.light [class~="text-red-500"] { color: #ef4444 !important; }
+.light [class~="text-blue-400"] { color: #2563eb !important; }
+.light [class~="text-blue-500"] { color: #3b82f6 !important; }
+
+.light [class~="hover:bg-zinc-800"]:hover { background-color: #f4f4f5 !important; }
+.light [class~="hover:bg-zinc-900"]:hover { background-color: #f4f4f5 !important; }
+.light [class~="hover:text-zinc-100"]:hover { color: #18181b !important; }
+.light [class~="hover:text-zinc-200"]:hover { color: #27272a !important; }
+.light [class~="hover:text-emerald-400"]:hover { color: #059669 !important; }
+
+.light [class~="focus:border-emerald-500"]:focus { border-color: #10b981 !important; }
+.light [class~="focus:ring-emerald-500"]:focus { --tw-ring-color: #10b981 !important; }
+
+/* Dialog/backdrop */
+.light [class~="bg-black/50"] { background-color: rgba(0, 0, 0, 0.3) !important; }
+.light [class~="bg-black/80"] { background-color: rgba(0, 0, 0, 0.5) !important; }

@@ -20,6 +20,7 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n/provider'
 import { toPng } from 'html-to-image'
 import { FlexCard } from '@/components/flex-card'
+import { FullPageLoader, InlineLoader } from '@/components/ui/loading'
 import { Trash2, Search, Calendar, Pencil, ChevronUp, ChevronDown, Zap } from 'lucide-react'
 
 export default function TransactionsPage() {
@@ -195,11 +196,7 @@ export default function TransactionsPage() {
   }
 
   if (status === 'loading') {
-    return (
-      <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
-        <div className="font-mono text-sm text-zinc-500">{t('common.loading')}</div>
-      </div>
-    )
+    return <FullPageLoader />
   }
 
   if (status === 'unauthenticated') {
@@ -294,7 +291,7 @@ export default function TransactionsPage() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="py-12 text-center font-mono text-sm text-zinc-500">{t('common.loading')}</div>
+              <InlineLoader />
             ) : transactions.length === 0 ? (
               <div className="py-12 text-center font-mono text-sm text-zinc-500">
                 {t('transactions.noTransactionsForPeriod', { month: filterMonth.padStart(2, '0'), year: filterYear })}
