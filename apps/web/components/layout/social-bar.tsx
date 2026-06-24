@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Instagram, Facebook, Twitter, Youtube, Linkedin } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n/provider'
 
 const socialLinks = [
   // TODO: replace # with actual profile URLs
@@ -14,6 +15,7 @@ const socialLinks = [
 ]
 
 export function SocialBar({ className }: { className?: string }) {
+  const { t } = useLanguage()
   return (
     <footer
       className={cn(
@@ -22,7 +24,7 @@ export function SocialBar({ className }: { className?: string }) {
       )}
     >
       <span className="font-mono text-[10px] text-zinc-500">
-        follow us
+        {t('socialBar.followUs')}
       </span>
       <div className="flex items-center gap-1">
         {socialLinks.map((item) => {

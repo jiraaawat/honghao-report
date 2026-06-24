@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { DashboardStats } from '@/types'
 import { TransactionDto, InventoryItem, CARD_TYPES, GAMES } from '@/types'
 import { formatCurrency, formatNumber, formatDate } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n/provider'
 import {
   ArrowRight,
   Receipt,
@@ -48,6 +49,7 @@ function addDays(date: Date, days: number) {
 
 export default function DashboardPage() {
   const { data: session, status } = useSession()
+  const { t } = useLanguage()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [recent, setRecent] = useState<TransactionDto[]>([])
   const [inventory, setInventory] = useState<InventoryItem[]>([])
@@ -140,7 +142,7 @@ export default function DashboardPage() {
   if (status === 'loading' || loading) {
     return (
       <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
-        <div className="font-mono text-sm text-zinc-500">initializing...</div>
+        <div className="font-mono text-sm text-zinc-500">{t('common.loading')}</div>
       </div>
     )
   }
@@ -169,63 +171,63 @@ export default function DashboardPage() {
 
   const statItems = [
     {
-      label: 'total spend',
+      labelKey: 'dashboard.totalSpend',
       value: stats ? formatCurrency(stats.totalSpend) : '-',
       icon: ArrowDownCircle,
       color: 'text-zinc-200',
     },
     {
-      label: 'total sell',
+      labelKey: 'dashboard.totalSell',
       value: stats ? formatCurrency(stats.totalSell) : '-',
       icon: ArrowUpCircle,
       color: 'text-emerald-400',
     },
     {
-      label: 'profit / loss',
+      labelKey: 'dashboard.profitLoss',
       value: stats ? formatCurrency(stats.periodProfit) : '-',
       icon: TrendingUp,
       color: stats && stats.periodProfit >= 0 ? 'text-emerald-400' : 'text-red-400',
     },
     {
-      label: 'transactions',
+      labelKey: 'dashboard.transactions',
       value: stats?.totalTransactions ?? 0,
       icon: Receipt,
       color: 'text-blue-400',
     },
     {
-      label: 'active cards',
+      labelKey: 'dashboard.activeCards',
       value: stats?.totalCards ?? 0,
       icon: Package,
       color: 'text-emerald-400',
     },
     {
-      label: 'sold cards',
+      labelKey: 'dashboard.soldCards',
       value: stats?.totalSoldCards ?? 0,
       icon: Boxes,
       color: 'text-amber-400',
     },
-  ]
+  ] as const
 
   return (
     <div className="space-y-4 p-3 md:space-y-6 md:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="font-mono text-2xl font-bold text-zinc-100">$ dashboard</h1>
+          <h1 className="font-mono text-2xl font-bold text-zinc-100">$ {t('dashboard.title')}</h1>
           <p className="font-mono text-sm text-zinc-500">
-            welcome back, {session?.user?.name || session?.user?.email}
+            {t('dashboard.welcomeBack')}, {session?.user?.name || session?.user?.email}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link href="/inventory">
             <Button variant="outline" className="gap-2">
               <Boxes className="h-4 w-4" />
-              <span className="hidden sm:inline">inventory</span>
+              <span className="hidden sm:inline">{t('nav.inventory')}</span>
             </Button>
           </Link>
           <Link href="/transactions">
             <Button variant="outline" className="gap-2">
               <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">transaction</span>
+              <span className="hidden sm:inline">{t('nav.transactions')}</span>
             </Button>
           </Link>
         </div>
@@ -235,7 +237,7 @@ export default function DashboardPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-mono text-sm">
             <Calendar className="h-4 w-4" />
-            date range
+            {t('dashboard.dateRange')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -248,17 +250,17 @@ export default function DashboardPage() {
                 className="font-mono text-xs"
                 onClick={() => setRange(range)}
               >
-                {range === 'month' && 'this month'}
-                {range === 'today' && 'today'}
-                {range === '7d' && 'last 7 days'}
-                {range === '30d' && 'last 30 days'}
-                {range === 'all' && 'all time'}
+                {range === 'month' && t('dashboard.thisMonth')}
+                {range === 'today' && t('dashboard.today')}
+                {range === '7d' && t('dashboard.last7Days')}
+                {range === '30d' && t('dashboard.last30Days')}
+                {range === 'all' && t('dashboard.allTime')}
               </Button>
             ))}
           </div>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             <div className="space-y-1">
-              <label className="font-mono text-xs text-zinc-500">start date</label>
+              <label className="font-mono text-xs text-zinc-500">{t('common.startDate')}</label>
               <Input
                 type="date"
                 value={startDate}
@@ -267,7 +269,7 @@ export default function DashboardPage() {
               />
             </div>
             <div className="space-y-1">
-              <label className="font-mono text-xs text-zinc-500">end date</label>
+              <label className="font-mono text-xs text-zinc-500">{t('common.endDate')}</label>
               <Input
                 type="date"
                 value={endDate}
@@ -283,11 +285,11 @@ export default function DashboardPage() {
         {statItems.map((item) => {
           const Icon = item.icon
           return (
-            <Card key={item.label} className="border-zinc-800 bg-zinc-900/50">
+            <Card key={item.labelKey} className="border-zinc-800 bg-zinc-900/50">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 font-mono text-xs font-normal text-zinc-500">
                   <Icon className="h-3.5 w-3.5" />
-                  {item.label}
+                  {t(item.labelKey)}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -301,38 +303,38 @@ export default function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="border-zinc-800 bg-zinc-900/50 lg:col-span-1">
           <CardHeader>
-            <CardTitle className="font-mono text-sm">inventory snapshot</CardTitle>
+            <CardTitle className="font-mono text-sm">{t('dashboard.inventorySnapshot')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                <span className="font-mono text-xs text-zinc-400">total cards</span>
+                <span className="font-mono text-xs text-zinc-400">{t('inventory.totalCards')}</span>
                 <span className="font-mono text-zinc-200">{inventorySummary.totalCards}</span>
               </div>
               <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                <span className="font-mono text-xs text-zinc-400">in stock</span>
+                <span className="font-mono text-xs text-zinc-400">{t('inventory.inStock')}</span>
                 <span className="font-mono text-emerald-400">{inventorySummary.inStock}</span>
               </div>
               <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                <span className="font-mono text-xs text-zinc-400">grading</span>
+                <span className="font-mono text-xs text-zinc-400">{t('inventory.grading')}</span>
                 <span className="font-mono text-amber-400">{inventorySummary.grading}</span>
               </div>
               <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                <span className="font-mono text-xs text-zinc-400">sold cards</span>
+                <span className="font-mono text-xs text-zinc-400">{t('dashboard.soldCards')}</span>
                 <span className="font-mono text-amber-400">{inventorySummary.soldOut}</span>
               </div>
               <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                <span className="font-mono text-xs text-zinc-400">total invested</span>
+                <span className="font-mono text-xs text-zinc-400">{t('dashboard.totalInvested')}</span>
                 <span className="font-mono text-zinc-200">
                   {formatCurrency(inventorySummary.totalInvested)}
                 </span>
               </div>
               <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                <span className="font-mono text-xs text-zinc-400">total value</span>
+                <span className="font-mono text-xs text-zinc-400">{t('dashboard.totalValue')}</span>
                 <span className="font-mono text-zinc-200">{formatCurrency(inventorySummary.totalValue)}</span>
               </div>
               <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                <span className="font-mono text-xs text-zinc-400">total profit</span>
+                <span className="font-mono text-xs text-zinc-400">{t('dashboard.totalProfit')}</span>
                 <span
                   className={`font-mono ${
                     inventorySummary.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400'
@@ -342,7 +344,7 @@ export default function DashboardPage() {
                 </span>
               </div>
               <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                <span className="font-mono text-xs text-zinc-400">overall roi</span>
+                <span className="font-mono text-xs text-zinc-400">{t('dashboard.overallRoi')}</span>
                 <span
                   className={`font-mono ${
                     inventorySummary.totalROI >= 0 ? 'text-emerald-400' : 'text-red-400'
@@ -354,7 +356,7 @@ export default function DashboardPage() {
             </div>
             <Link href="/inventory">
               <Button variant="ghost" size="sm" className="w-full gap-1 font-mono text-xs">
-                view inventory <ArrowRight className="h-3 w-3" />
+                {t('dashboard.viewInventory')} <ArrowRight className="h-3 w-3" />
               </Button>
             </Link>
           </CardContent>
@@ -362,18 +364,18 @@ export default function DashboardPage() {
 
         <Card className="border-zinc-800 bg-zinc-900/50 lg:col-span-1">
           <CardHeader>
-            <CardTitle className="font-mono text-sm">by game</CardTitle>
+            <CardTitle className="font-mono text-sm">{t('dashboard.byGame')}</CardTitle>
           </CardHeader>
           <CardContent>
             {gameBreakdown.length === 0 ? (
-              <div className="py-4 text-center font-mono text-xs text-zinc-500">no data</div>
+              <div className="py-4 text-center font-mono text-xs text-zinc-500">{t('common.noData')}</div>
             ) : (
               <div className="space-y-2">
                 {gameBreakdown.map((g) => (
                   <div key={g.game} className="flex items-center justify-between">
                     <span className="font-mono text-xs text-zinc-400">{g.game}</span>
                     <div className="text-right">
-                      <div className="font-mono text-sm text-zinc-200">{g.count} cards</div>
+                      <div className="font-mono text-sm text-zinc-200">{g.count} {t('common.cards')}</div>
                       <div className="font-mono text-xs text-zinc-500">{formatCurrency(g.value)}</div>
                     </div>
                   </div>
@@ -385,19 +387,19 @@ export default function DashboardPage() {
 
         <Card className="border-zinc-800 bg-zinc-900/50 lg:col-span-1">
           <CardHeader>
-            <CardTitle className="font-mono text-sm">by card type</CardTitle>
+            <CardTitle className="font-mono text-sm">{t('dashboard.byCardType')}</CardTitle>
           </CardHeader>
           <CardContent>
             {typeBreakdown.length === 0 ? (
-              <div className="py-4 text-center font-mono text-xs text-zinc-500">no data</div>
+              <div className="py-4 text-center font-mono text-xs text-zinc-500">{t('common.noData')}</div>
             ) : (
               <div className="space-y-2">
-                {typeBreakdown.map((t) => (
-                  <div key={t.type} className="flex items-center justify-between">
-                    <span className="font-mono text-xs text-zinc-400">{t.type}</span>
+                {typeBreakdown.map((typeItem) => (
+                  <div key={typeItem.type} className="flex items-center justify-between">
+                    <span className="font-mono text-xs text-zinc-400">{typeItem.type}</span>
                     <div className="text-right">
-                      <div className="font-mono text-sm text-zinc-200">{t.count} cards</div>
-                      <div className="font-mono text-xs text-zinc-500">{formatCurrency(t.value)}</div>
+                      <div className="font-mono text-sm text-zinc-200">{typeItem.count} {t('common.cards')}</div>
+                      <div className="font-mono text-xs text-zinc-500">{formatCurrency(typeItem.value)}</div>
                     </div>
                   </div>
                 ))}
@@ -409,17 +411,17 @@ export default function DashboardPage() {
 
       <Card className="border-zinc-800 bg-zinc-900/50">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="font-mono text-sm">recent transactions</CardTitle>
+          <CardTitle className="font-mono text-sm">{t('dashboard.recentTransactions')}</CardTitle>
           <Link href="/transactions">
             <Button variant="ghost" size="sm" className="gap-1 font-mono text-xs">
-              view all <ArrowRight className="h-3 w-3" />
+              {t('common.viewAll')} <ArrowRight className="h-3 w-3" />
             </Button>
           </Link>
         </CardHeader>
         <CardContent>
           {recent.length === 0 ? (
             <div className="py-8 text-center font-mono text-sm text-zinc-500">
-              no transactions found. create your first one.
+              {t('dashboard.noTransactions')}
             </div>
           ) : (
             <>
@@ -427,12 +429,12 @@ export default function DashboardPage() {
                 <table className="w-full text-left font-mono text-sm">
                   <thead>
                     <tr className="border-b border-zinc-800 text-zinc-500">
-                      <th className="pb-2 pr-4">date</th>
-                      <th className="pb-2 pr-4">card</th>
-                      <th className="pb-2 pr-4">type</th>
-                      <th className="pb-2 pr-4">qty</th>
-                      <th className="pb-2 pr-4">price</th>
-                      <th className="pb-2">total</th>
+                      <th className="pb-2 pr-4">{t('transactions.table.date')}</th>
+                      <th className="pb-2 pr-4">{t('transactions.table.card')}</th>
+                      <th className="pb-2 pr-4">{t('transactions.table.type')}</th>
+                      <th className="pb-2 pr-4">{t('transactions.table.qty')}</th>
+                      <th className="pb-2 pr-4">{t('transactions.table.price')}</th>
+                      <th className="pb-2">{t('common.total')}</th>
                     </tr>
                   </thead>
                   <tbody>

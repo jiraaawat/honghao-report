@@ -10,6 +10,7 @@ import { Select } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CardDto, CARD_TYPES, GAMES, GRADES } from '@/types'
 import { formatCurrency } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n/provider'
 import { ArrowLeft, Gem, Send, Search, Plus } from 'lucide-react'
 
 interface CardWithInventory extends CardDto {
@@ -21,6 +22,7 @@ interface CardWithInventory extends CardDto {
 
 export default function SendToGradeContent() {
   const router = useRouter()
+  const { t } = useLanguage()
   const searchParams = useSearchParams()
   const preselectedCardId = searchParams.get('cardId') || ''
   const { status } = useSession()
@@ -120,7 +122,7 @@ export default function SendToGradeContent() {
   if (status === 'loading') {
     return (
       <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
-        <div className="font-mono text-sm text-zinc-500">loading...</div>
+        <div className="font-mono text-sm text-zinc-500">{t('common.loading')}</div>
       </div>
     )
   }
@@ -133,7 +135,7 @@ export default function SendToGradeContent() {
     <div className="mx-auto max-w-2xl p-3 md:p-6">
       <Link href="/grading">
         <Button variant="ghost" size="sm" className="mb-4 gap-1 font-mono text-xs">
-          <ArrowLeft className="h-3.5 w-3.5" /> back to grading
+          <ArrowLeft className="h-3.5 w-3.5" /> {t('gradingSend.back')}
         </Button>
       </Link>
 
@@ -142,8 +144,8 @@ export default function SendToGradeContent() {
           <div className="mx-auto mb-1 flex h-10 w-10 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 md:mb-2 md:h-12 md:w-12">
             <Gem className="h-5 w-5 text-amber-400 md:h-6 md:w-6" />
           </div>
-          <CardTitle className="font-mono text-xl text-amber-400">$ send to grade</CardTitle>
-          <p className="font-mono text-sm text-zinc-500">the grading cost will be added to monthly cost</p>
+          <CardTitle className="font-mono text-xl text-amber-400">$ {t('gradingSend.title')}</CardTitle>
+          <p className="font-mono text-sm text-zinc-500">{t('gradingSend.note')}</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
@@ -157,7 +159,7 @@ export default function SendToGradeContent() {
                     : 'text-zinc-500 hover:text-zinc-300'
                 }`}
               >
-                <Search className="h-3.5 w-3.5 shrink-0" /> <span className="min-w-0">select existing</span>
+                <Search className="h-3.5 w-3.5 shrink-0" /> <span className="min-w-0">{t('gradingSend.selectExisting')}</span>
               </button>
               <button
                 type="button"
@@ -168,22 +170,22 @@ export default function SendToGradeContent() {
                     : 'text-zinc-500 hover:text-zinc-300'
                 }`}
               >
-                <Plus className="h-3.5 w-3.5 shrink-0" /> <span className="min-w-0">type new name</span>
+                <Plus className="h-3.5 w-3.5 shrink-0" /> <span className="min-w-0">{t('gradingSend.typeNewName')}</span>
               </button>
             </div>
 
             {mode === 'existing' ? (
               <div className="space-y-2">
-                <label className="font-mono text-xs text-zinc-400">select card</label>
+                <label className="font-mono text-xs text-zinc-400">{t('gradingSend.selectCard')}</label>
                 <Select
                   value={existingCardId}
                   onChange={(e) => setExistingCardId(e.target.value)}
                   required={mode === 'existing'}
                 >
-                  <option value="">choose a card in stock</option>
+                  <option value="">{t('gradingSend.chooseCardInStock')}</option>
                   {cards.map((card) => (
                     <option key={card.id} value={card.id}>
-                      {card.name} [{card.game}] ({card.inventory?.quantity ?? 0} in stock)
+                      {card.name} [{card.game}] ({card.inventory?.quantity ?? 0} {t('common.inStock')})
                     </option>
                   ))}
                 </Select>
@@ -191,7 +193,7 @@ export default function SendToGradeContent() {
             ) : (
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <label className="font-mono text-xs text-zinc-400">card name</label>
+                  <label className="font-mono text-xs text-zinc-400">{t('gradingSend.cardName')}</label>
                   <Input
                     value={newCard.name}
                     onChange={(e) => setNewCard({ ...newCard, name: e.target.value })}
@@ -204,8 +206,8 @@ export default function SendToGradeContent() {
                     value={newCard.cardType}
                     onChange={(e) => setNewCard({ ...newCard, cardType: e.target.value })}
                   >
-                    {CARD_TYPES.map((t) => (
-                      <option key={t} value={t}>{t}</option>
+                    {CARD_TYPES.map((type) => (
+                      <option key={type} value={type}>{type}</option>
                     ))}
                   </Select>
                   <Select
@@ -224,22 +226,22 @@ export default function SendToGradeContent() {
                   onClick={() => setShowOptional((v) => !v)}
                   className="w-full gap-1 font-mono text-xs text-zinc-500"
                 >
-                  {showOptional ? 'hide optional details' : 'show optional details'}
+                  {showOptional ? t('gradingSend.hideOptionalDetails') : t('gradingSend.showOptionalDetails')}
                 </Button>
                 {showOptional && (
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                     <Input
-                      placeholder="set code"
+                      placeholder={t('gradingSend.setCodePlaceholder')}
                       value={newCard.setCode}
                       onChange={(e) => setNewCard({ ...newCard, setCode: e.target.value })}
                     />
                     <Input
-                      placeholder="card #"
+                      placeholder={t('gradingSend.cardNumberPlaceholder')}
                       value={newCard.cardNumber}
                       onChange={(e) => setNewCard({ ...newCard, cardNumber: e.target.value })}
                     />
                     <Input
-                      placeholder="rarity"
+                      placeholder={t('gradingSend.rarityPlaceholder')}
                       value={newCard.rarity}
                       onChange={(e) => setNewCard({ ...newCard, rarity: e.target.value })}
                     />
@@ -251,19 +253,19 @@ export default function SendToGradeContent() {
             {selectedCard && mode === 'existing' && (
               <div className="rounded-md border border-zinc-800 bg-zinc-950 p-3 font-mono text-xs text-zinc-400">
                 <div className="flex justify-between gap-2">
-                  <span>current avg cost</span>
+                  <span>{t('gradingSend.currentAvgCost')}</span>
                   <span className="min-w-0 break-words text-right text-zinc-200">{formatCurrency(Number(selectedCard.inventory?.averageCost ?? 0))}</span>
                 </div>
                 <div className="flex justify-between gap-2">
-                  <span>in stock</span>
+                  <span>{t('gradingSend.inStock')}</span>
                   <span className="min-w-0 break-words text-right text-zinc-200">{selectedCard.inventory?.quantity ?? 0} qty</span>
                 </div>
                 <div className="flex justify-between gap-2">
-                  <span>card type</span>
+                  <span>{t('common.cardType')}</span>
                   <span className="min-w-0 break-words text-right text-zinc-200">{selectedCard.cardType}</span>
                 </div>
                 <div className="flex justify-between gap-2">
-                  <span>game</span>
+                  <span>{t('common.game')}</span>
                   <span className="min-w-0 break-words text-right text-zinc-200">{selectedCard.game}</span>
                 </div>
               </div>
@@ -271,7 +273,7 @@ export default function SendToGradeContent() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="min-w-0 space-y-2">
-                <label className="font-mono text-xs text-zinc-400">quantity to grade</label>
+                <label className="font-mono text-xs text-zinc-400">{t('gradingSend.quantityToGrade')}</label>
                 <Input
                   type="number"
                   step="1"
@@ -283,7 +285,7 @@ export default function SendToGradeContent() {
                 />
               </div>
               <div className="min-w-0 space-y-2">
-                <label className="font-mono text-xs text-zinc-400">target grade</label>
+                <label className="font-mono text-xs text-zinc-400">{t('gradingSend.targetGrade')}</label>
                 <Select value={grade} onChange={(e) => setGrade(e.target.value)}>
                   {GRADES.map((g) => (
                     <option key={g} value={g}>{g}</option>
@@ -291,7 +293,7 @@ export default function SendToGradeContent() {
                 </Select>
               </div>
               <div className="min-w-0 space-y-2">
-                <label className="font-mono text-xs text-zinc-400">grading cost</label>
+                <label className="font-mono text-xs text-zinc-400">{t('gradingSend.gradingCost')}</label>
                 <Input
                   type="number"
                   step="0.01"
@@ -305,7 +307,7 @@ export default function SendToGradeContent() {
             </div>
 
             <div className="min-w-0 space-y-2">
-              <label className="font-mono text-xs text-zinc-400">send date</label>
+              <label className="font-mono text-xs text-zinc-400">{t('gradingSend.sendDate')}</label>
               <Input
                 type="date"
                 value={date}
@@ -327,7 +329,7 @@ export default function SendToGradeContent() {
               }
             >
               <Send className="h-4 w-4" />
-              {loading ? 'sending...' : 'send to grade'}
+              {loading ? t('gradingSend.sending') : t('gradingSend.title')}
             </Button>
           </form>
         </CardContent>

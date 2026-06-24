@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { GRADES } from '@/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n/provider'
 import { Plus, CheckCircle, XCircle, Gem, ArrowRight, ChevronUp, ChevronDown } from 'lucide-react'
 
 interface GradingWithCard {
@@ -37,6 +38,7 @@ interface GradingWithCard {
 
 export default function GradingPage() {
   const { status } = useSession()
+  const { t } = useLanguage()
   const [gradings, setGradings] = useState<GradingWithCard[]>([])
   const [completed, setCompleted] = useState<GradingWithCard[]>([])
   const [loading, setLoading] = useState(true)
@@ -77,7 +79,7 @@ export default function GradingPage() {
   }, [status, fetchData])
 
   const handleCancel = async (id: string) => {
-    if (!confirm('Cancel this grading? The grading cost will be removed from monthly cost.')) return
+    if (!confirm(t('grading.cancelConfirm'))) return
     const res = await fetch(`/api/grading/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -114,7 +116,7 @@ export default function GradingPage() {
   if (status === 'loading' || loading) {
     return (
       <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
-        <div className="font-mono text-sm text-zinc-500">loading grading queue...</div>
+        <div className="font-mono text-sm text-zinc-500">{t('grading.loading')}</div>
       </div>
     )
   }
@@ -127,13 +129,13 @@ export default function GradingPage() {
     <div className="space-y-4 p-3 md:space-y-6 md:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="font-mono text-2xl font-bold text-zinc-100">$ grading</h1>
-          <p className="font-mono text-sm text-zinc-500">track cards being sent for grading</p>
+          <h1 className="font-mono text-2xl font-bold text-zinc-100">$ {t('grading.title')}</h1>
+          <p className="font-mono text-sm text-zinc-500">{t('grading.subtitle')}</p>
         </div>
         <Link href="/grading/send">
           <Button className="gap-2">
             <Plus className="h-4 w-4" />
-            send card to grade
+            {t('grading.sendCard')}
           </Button>
         </Link>
       </div>
@@ -142,17 +144,17 @@ export default function GradingPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-mono text-sm">
             <Gem className="h-4 w-4 text-amber-400" />
-            currently grading ({gradings.length})
+            {t('grading.currentlyGradingWithCount', { count: gradings.length })}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {gradings.length === 0 ? (
             <div className="py-12 text-center font-mono text-sm text-zinc-500">
-              no cards currently being graded.
+              {t('grading.noCards')}
               <div className="mt-2">
                 <Link href="/grading/send">
                   <Button variant="outline" size="sm" className="gap-1">
-                    send one now <ArrowRight className="h-3 w-3" />
+                    {t('grading.sendNow')} <ArrowRight className="h-3 w-3" />
                   </Button>
                 </Link>
               </div>
@@ -168,16 +170,16 @@ export default function GradingPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="min-w-0 truncate font-mono font-medium text-amber-400">{g.card?.name}</h3>
-                        <Badge variant="grading" className="shrink-0">grading</Badge>
+                        <Badge variant="grading" className="shrink-0">{t('common.grading')}</Badge>
                       </div>
                       <p className="mt-1 min-w-0 truncate font-mono text-xs text-zinc-500">
                         {[g.card?.setCode, g.card?.cardNumber, g.card?.rarity].filter(Boolean).join(' · ')} · {g.card?.game}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-x-3 font-mono text-xs text-zinc-400">
-                        <span>qty: <span className="text-amber-400">{g.quantity}</span></span>
-                        <span>target: <span className="text-amber-400">{g.grade || '-'}</span></span>
-                        <span>cost: <span className="text-amber-400">{formatCurrency(Number(g.gradingCost))}</span></span>
-                        <span>sent: {formatDate(g.sentDate)}</span>
+                        <span>{t('grading.qty')}: <span className="text-amber-400">{g.quantity}</span></span>
+                        <span>{t('grading.target')}: <span className="text-amber-400">{g.grade || '-'}</span></span>
+                        <span>{t('grading.cost')}: <span className="text-amber-400">{formatCurrency(Number(g.gradingCost))}</span></span>
+                        <span>{t('grading.sent')}: {formatDate(g.sentDate)}</span>
                       </div>
                     </div>
 
@@ -192,7 +194,7 @@ export default function GradingPage() {
                             }))
                           }
                         >
-                          <option value="">select grade</option>
+                          <option value="">{t('grading.selectGrade')}</option>
                           {GRADES.map((grade) => (
                             <option key={grade} value={grade}>{grade}</option>
                           ))}
@@ -201,7 +203,7 @@ export default function GradingPage() {
                           type="number"
                           step="0.01"
                           min={0}
-                          placeholder="current value"
+                          placeholder={t('grading.currentValue')}
                           value={completeForm[g.id]?.currentValue || ''}
                           onChange={(e) =>
                             setCompleteForm((prev) => ({
@@ -219,7 +221,7 @@ export default function GradingPage() {
                           disabled={!completeForm[g.id]?.grade || !completeForm[g.id]?.currentValue}
                         >
                           <CheckCircle className="h-3.5 w-3.5" />
-                          complete
+                          {t('grading.complete')}
                         </Button>
                         <Button
                           size="sm"
@@ -228,7 +230,7 @@ export default function GradingPage() {
                           onClick={() => handleCancel(g.id)}
                         >
                           <XCircle className="h-3.5 w-3.5" />
-                          cancel
+                          {t('grading.cancel')}
                         </Button>
                       </div>
                     </div>
@@ -245,7 +247,7 @@ export default function GradingPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2 font-mono text-sm">
               <CheckCircle className="h-4 w-4 text-emerald-400" />
-              completed gradings ({completed.length})
+              {t('grading.completedGradingsWithCount', { count: completed.length })}
             </CardTitle>
             <Button
               type="button"
@@ -255,7 +257,7 @@ export default function GradingPage() {
               className="gap-1 md:hidden font-mono text-xs"
             >
               {showCompleted ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-              {showCompleted ? 'hide' : 'show'}
+              {showCompleted ? t('common.hide') : t('common.show')}
             </Button>
           </CardHeader>
           <CardContent className={!showCompleted ? 'hidden md:block' : ''}>
@@ -263,12 +265,12 @@ export default function GradingPage() {
               <table className="w-full text-left font-mono text-sm">
                 <thead>
                   <tr className="border-b border-zinc-800 text-zinc-500">
-                    <th className="pb-2 pr-4">card</th>
-                    <th className="pb-2 pr-4">qty</th>
-                    <th className="pb-2 pr-4">grade</th>
-                    <th className="pb-2 pr-4">cost</th>
-                    <th className="pb-2 pr-4">current value</th>
-                    <th className="pb-2">completed</th>
+                    <th className="pb-2 pr-4">{t('grading.table.card')}</th>
+                    <th className="pb-2 pr-4">{t('grading.table.qty')}</th>
+                    <th className="pb-2 pr-4">{t('grading.table.grade')}</th>
+                    <th className="pb-2 pr-4">{t('grading.table.cost')}</th>
+                    <th className="pb-2 pr-4">{t('grading.table.currentValue')}</th>
+                    <th className="pb-2">{t('grading.table.completed')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -298,11 +300,11 @@ export default function GradingPage() {
                   </div>
                   <div className="mt-2 grid grid-cols-2 gap-2 font-mono text-xs">
                     <div className="min-w-0">
-                      <div className="text-zinc-500">cost</div>
+                      <div className="text-zinc-500">{t('grading.table.cost')}</div>
                       <div className="break-words text-zinc-300">{formatCurrency(Number(g.gradingCost))}</div>
                     </div>
                     <div className="min-w-0">
-                      <div className="text-zinc-500">value</div>
+                      <div className="text-zinc-500">{t('grading.table.currentValue')}</div>
                       <div className="break-words text-emerald-400">{formatCurrency(Number(g.currentValue))}</div>
                     </div>
                   </div>

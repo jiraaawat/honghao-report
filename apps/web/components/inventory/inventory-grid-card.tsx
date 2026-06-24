@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { Package, PackageCheck, PackageX, Gem, Plus, Minus, Tag } from 'lucide-react'
+import { useLanguage } from '@/lib/i18n/provider'
 
 interface InventoryGridCardProps {
   item: InventoryItem
@@ -29,6 +30,7 @@ export function InventoryGridCard({
   onEdit,
   onUpdateValue,
 }: InventoryGridCardProps) {
+  const { t } = useLanguage()
   const inStock = item.status === 'in_stock' && item.quantity > 0
 
   return (
@@ -52,21 +54,21 @@ export function InventoryGridCard({
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-1 font-mono text-xs text-zinc-600">
             <Package className="h-6 w-6" />
-            no image
+            {t('inventoryGridCard.noImage')}
           </div>
         )}
         <div className="absolute left-2 top-2">
           {item.status === 'grading' ? (
             <Badge variant="grading" className="gap-1 text-[10px]">
-              <Gem className="h-3 w-3" /> grading
+              <Gem className="h-3 w-3" /> {t('common.grading')}
             </Badge>
           ) : item.quantity > 0 ? (
             <Badge variant="buy" className="gap-1 text-[10px]">
-              <PackageCheck className="h-3 w-3" /> in stock
+              <PackageCheck className="h-3 w-3" /> {t('common.inStock')}
             </Badge>
           ) : (
             <Badge variant="outline" className="gap-1 text-[10px]">
-              <PackageX className="h-3 w-3" /> sold out
+              <PackageX className="h-3 w-3" /> {t('common.soldOut')}
             </Badge>
           )}
         </div>
@@ -97,15 +99,15 @@ export function InventoryGridCard({
 
       <div className="grid grid-cols-2 gap-2 font-mono text-[10px]">
         <div className="rounded-md bg-zinc-950/50 p-2">
-          <div className="text-zinc-500">qty</div>
+          <div className="text-zinc-500">{t('inventoryGridCard.qty')}</div>
           <div className="text-zinc-300">{item.quantity}</div>
         </div>
         <div className="rounded-md bg-zinc-950/50 p-2">
-          <div className="text-zinc-500">avg cost</div>
+          <div className="text-zinc-500">{t('inventoryGridCard.avgCost')}</div>
           <div className="text-zinc-300">{formatCurrency(item.averageCost)}</div>
         </div>
         <div className="rounded-md bg-zinc-950/50 p-2">
-          <div className="text-zinc-500">market</div>
+          <div className="text-zinc-500">{t('inventoryGridCard.market')}</div>
           {editing ? (
             <Input
               type="number"
@@ -125,26 +127,26 @@ export function InventoryGridCard({
               type="button"
               onClick={onEdit}
               className="text-left text-zinc-300 hover:text-zinc-100"
-              title="click to edit"
+              title={t('inventoryGridCard.editValueTitle')}
             >
               {formatCurrency(item.marketValuePerUnit)}
             </button>
           )}
         </div>
         <div className="rounded-md bg-zinc-950/50 p-2">
-          <div className="text-zinc-500">total value</div>
+          <div className="text-zinc-500">{t('inventoryGridCard.totalValue')}</div>
           <div className="text-zinc-300">{formatCurrency(item.currentValue)}</div>
         </div>
         <div className="col-span-2 rounded-md bg-zinc-950/50 p-2">
           <div className="flex items-center justify-between">
-            <span className="text-zinc-500">profit</span>
+            <span className="text-zinc-500">{t('inventoryGridCard.profit')}</span>
             <span className={item.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}>
               {formatCurrency(item.profit)}
             </span>
           </div>
           {item.unrealizedProfit !== 0 && (
             <div className="mt-0.5 flex items-center justify-between text-zinc-500">
-              <span>unrealized</span>
+              <span>{t('inventoryGridCard.unrealized')}</span>
               <span>{formatCurrency(item.unrealizedProfit)}</span>
             </div>
           )}
@@ -159,7 +161,7 @@ export function InventoryGridCard({
               className="h-8 w-full gap-1 text-xs"
               onClick={() => onSell(item)}
             >
-              <Tag className="h-3.5 w-3.5" /> <span className="hidden sm:inline">sell</span>
+              <Tag className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t('inventoryGridCard.sell')}</span>
             </Button>
             <div className="flex gap-2">
               <Button
@@ -168,7 +170,7 @@ export function InventoryGridCard({
                 className="h-8 flex-1 gap-1 text-xs"
                 onClick={() => onAdd(item)}
               >
-                <Plus className="h-3.5 w-3.5" /> <span className="hidden sm:inline">add</span>
+                <Plus className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t('inventoryGridCard.add')}</span>
               </Button>
               <Button
                 size="sm"
@@ -176,7 +178,7 @@ export function InventoryGridCard({
                 className="h-8 flex-1 gap-1 text-xs"
                 onClick={() => onRemove(item)}
               >
-                <Minus className="h-3.5 w-3.5" /> <span className="hidden sm:inline">remove</span>
+                <Minus className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t('inventoryGridCard.remove')}</span>
               </Button>
             </div>
             <Link href={`/grading/send?cardId=${item.cardId}`} className="block">
@@ -185,15 +187,15 @@ export function InventoryGridCard({
                 variant="outline"
                 className="h-8 w-full gap-1 text-xs text-amber-400 hover:bg-amber-500/10 hover:text-amber-400"
               >
-                <Gem className="h-3.5 w-3.5" /> <span className="hidden sm:inline">send to grade</span>
+                <Gem className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t('inventoryGridCard.sendToGrade')}</span>
               </Button>
             </Link>
           </>
         ) : (
           <div className="rounded-md border border-zinc-800 bg-zinc-950/30 p-2 font-mono text-[10px] text-zinc-500">
             {item.status === 'sold_out' && item.soldAt
-              ? `sold ${formatDate(item.soldAt)}`
-              : `created ${formatDate(item.createdAt)}`}
+              ? t('inventoryGridCard.soldAtWithDate', { date: formatDate(item.soldAt) })
+              : t('inventoryGridCard.createdAtWithDate', { date: formatDate(item.createdAt) })}
           </div>
         )}
       </div>

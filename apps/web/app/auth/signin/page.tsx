@@ -8,8 +8,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Terminal, AlertCircle } from 'lucide-react'
+import { useLanguage } from '@/lib/i18n/provider'
 
 export default function SignInPage() {
+  const { t } = useLanguage()
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -30,7 +32,7 @@ export default function SignInPage() {
     setLoading(false)
 
     if (result?.error) {
-      setError('Invalid credentials')
+      setError(t('auth.signin.invalidCredentials'))
     } else {
       router.push('/dashboard')
       router.refresh()
@@ -44,8 +46,8 @@ export default function SignInPage() {
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10">
             <Terminal className="h-6 w-6 text-emerald-400" />
           </div>
-          <CardTitle className="font-mono text-xl text-emerald-400">$ honghao-report</CardTitle>
-          <CardDescription>sign in to your trading card terminal</CardDescription>
+          <CardTitle className="font-mono text-xl text-emerald-400">$ {t('auth.signin.title')}</CardTitle>
+          <CardDescription>{t('auth.signin.subtitle')}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -56,7 +58,7 @@ export default function SignInPage() {
               </div>
             )}
             <div className="space-y-2">
-              <label className="font-mono text-xs text-zinc-400">email</label>
+              <label className="font-mono text-xs text-zinc-400">{t('auth.signin.email')}</label>
               <Input
                 type="email"
                 value={email}
@@ -66,7 +68,7 @@ export default function SignInPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="font-mono text-xs text-zinc-400">password</label>
+              <label className="font-mono text-xs text-zinc-400">{t('auth.signin.password')}</label>
               <Input
                 type="password"
                 value={password}
@@ -76,13 +78,13 @@ export default function SignInPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'authenticating...' : 'sign in'}
+              {loading ? t('auth.signin.authenticating') : t('auth.signin.signIn')}
             </Button>
           </form>
           <p className="mt-4 text-center font-mono text-xs text-zinc-500">
-            no account?{' '}
+            {t('auth.signin.noAccount')}{' '}
             <Link href="/auth/register" className="text-emerald-400 hover:underline">
-              register
+              {t('auth.signin.register')}
             </Link>
           </p>
         </CardContent>

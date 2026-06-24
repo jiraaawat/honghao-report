@@ -7,8 +7,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Terminal, AlertCircle, CheckCircle } from 'lucide-react'
+import { useLanguage } from '@/lib/i18n/provider'
 
 export default function RegisterPage() {
+  const { t } = useLanguage()
   const router = useRouter()
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [error, setError] = useState('')
@@ -30,7 +32,7 @@ export default function RegisterPage() {
 
     if (!res.ok) {
       const data = await res.json()
-      setError(data.error || 'Registration failed')
+      setError(data.error || t('auth.register.registrationFailed'))
     } else {
       setSuccess(true)
       setTimeout(() => {
@@ -46,8 +48,8 @@ export default function RegisterPage() {
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10">
             <Terminal className="h-6 w-6 text-emerald-400" />
           </div>
-          <CardTitle className="font-mono text-xl text-emerald-400">$ register</CardTitle>
-          <CardDescription>create a new account</CardDescription>
+          <CardTitle className="font-mono text-xl text-emerald-400">$ {t('auth.register.title')}</CardTitle>
+          <CardDescription>{t('auth.register.subtitle')}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -60,11 +62,11 @@ export default function RegisterPage() {
             {success && (
               <div className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 font-mono text-xs text-emerald-400">
                 <CheckCircle className="h-4 w-4" />
-                Account created. Redirecting...
+                {t('auth.register.accountCreated')}
               </div>
             )}
             <div className="space-y-2">
-              <label className="font-mono text-xs text-zinc-400">name</label>
+              <label className="font-mono text-xs text-zinc-400">{t('auth.register.name')}</label>
               <Input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -73,7 +75,7 @@ export default function RegisterPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="font-mono text-xs text-zinc-400">email</label>
+              <label className="font-mono text-xs text-zinc-400">{t('auth.register.email')}</label>
               <Input
                 type="email"
                 value={form.email}
@@ -83,7 +85,7 @@ export default function RegisterPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="font-mono text-xs text-zinc-400">password</label>
+              <label className="font-mono text-xs text-zinc-400">{t('auth.register.password')}</label>
               <Input
                 type="password"
                 value={form.password}
@@ -93,13 +95,13 @@ export default function RegisterPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading || success}>
-              {loading ? 'creating...' : 'create account'}
+              {loading ? t('auth.register.creating') : t('auth.register.createAccount')}
             </Button>
           </form>
           <p className="mt-4 text-center font-mono text-xs text-zinc-500">
-            already have an account?{' '}
+            {t('auth.register.alreadyHaveAccount')}{' '}
             <Link href="/auth/signin" className="text-emerald-400 hover:underline">
-              sign in
+              {t('auth.register.signIn')}
             </Link>
           </p>
         </CardContent>

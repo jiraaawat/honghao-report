@@ -20,6 +20,7 @@ This is a full-stack monorepo for tracking trading card buy/sell transactions, p
 - Use `cn()` utility from `lib/utils.ts` for class merging
 - Use Prisma client from `lib/prisma.ts`
 - API routes should check session with `auth()` from `@/auth`
+- Use `useLanguage()` from `lib/i18n/provider` for all user-facing copy. Add new keys to `lib/i18n/dictionary.ts` with both `en` and `th` translations.
 
 ## Database
 

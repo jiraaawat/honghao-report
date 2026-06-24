@@ -20,6 +20,7 @@ import {
 import { InventoryItem, CardDto, CARD_TYPES, GAMES, CARD_CONDITIONS } from '@/types'
 import { InventoryGridCard } from '@/components/inventory/inventory-grid-card'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n/provider'
 import {
   Search,
   Package,
@@ -112,6 +113,7 @@ export default function InventoryPage() {
   const [editingValue, setEditingValue] = useState<{ cardId: string; value: string } | null>(null)
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const { t } = useLanguage()
 
   const [sellConfirm, setSellConfirm] = useState<{ open: boolean; item: InventoryItem | null; qty: number; price: number; shipping: number; date: string; note: string }>({
     open: false,
@@ -139,6 +141,13 @@ export default function InventoryPage() {
     []
   )
   const months = useMemo(() => Array.from({ length: 12 }, (_, i) => (i + 1).toString()), [])
+
+  const formatLabel = (key: typeof formatFilter) => {
+    if (key === 'raw') return t('inventory.format.raw')
+    if (key === 'slab') return t('inventory.format.slab')
+    if (key === 'sealed') return t('inventory.format.sealed')
+    return t('common.all')
+  }
 
   const fetchInventory = useCallback(() => {
     const params = new URLSearchParams()
@@ -512,7 +521,7 @@ export default function InventoryPage() {
   if (status === 'loading' || loading) {
     return (
       <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
-        <div className="font-mono text-sm text-zinc-500">loading inventory...</div>
+        <div className="font-mono text-sm text-zinc-500">{t('inventory.loading')}</div>
       </div>
     )
   }
@@ -523,40 +532,40 @@ export default function InventoryPage() {
 
   const statCards = [
     {
-      label: 'total cards',
+      label: t('inventory.totalCards'),
       value: summary.totalCards,
       icon: Boxes,
       color: 'text-blue-400',
-      note: 'unsold quantity',
+      note: t('inventory.unsoldQuantity'),
     },
     {
-      label: 'in stock',
+      label: t('inventory.inStock'),
       value: summary.inStock,
       icon: PackageCheck,
       color: 'text-emerald-400',
-      note: 'quantity',
+      note: t('common.quantity'),
     },
     {
-      label: 'grading',
+      label: t('inventory.grading'),
       value: summary.grading,
       icon: Gem,
       color: 'text-amber-400',
-      note: 'quantity',
+      note: t('common.quantity'),
     },
     {
-      label: 'sold cards',
+      label: t('inventory.soldCards'),
       value: summary.soldCards,
       icon: PackageX,
       color: 'text-zinc-400',
     },
     {
-      label: 'current value',
+      label: t('inventory.currentValue'),
       value: formatCurrency(summary.totalValue),
       icon: Wallet,
       color: 'text-zinc-200',
     },
     {
-      label: 'total profit',
+      label: t('inventory.totalProfit'),
       value: formatCurrency(summary.totalProfit),
       icon: TrendingUp,
       color: (summary?.totalProfit ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400',
@@ -567,18 +576,18 @@ export default function InventoryPage() {
     <div className="space-y-4 p-3 md:space-y-6 md:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="font-mono text-2xl font-bold text-zinc-100">$ inventory</h1>
-          <p className="font-mono text-sm text-zinc-500">track your cards, stock, and sold items</p>
+          <h1 className="font-mono text-2xl font-bold text-zinc-100">$ {t('inventory.title')}</h1>
+          <p className="font-mono text-sm text-zinc-500">{t('inventory.pageSubtitle')}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button className="gap-2" onClick={() => openAdd(null)}>
             <PlusCircle className="h-4 w-4" />
-            <span className="hidden sm:inline">add card</span>
+            <span className="hidden sm:inline">{t('inventory.addCard')}</span>
           </Button>
           <Link href="/grading/send">
             <Button className="gap-2">
               <Gem className="h-4 w-4" />
-              <span className="hidden sm:inline">send to grade</span>
+              <span className="hidden sm:inline">{t('common.sendToGrade')}</span>
             </Button>
           </Link>
         </div>
@@ -618,7 +627,7 @@ export default function InventoryPage() {
               onClick={() => setFormatFilter(key)}
               className="gap-2 font-mono text-xs"
             >
-              <span className="uppercase">{key}</span>
+              <span className="uppercase">{formatLabel(key)}</span>
               <span className={active ? 'text-zinc-300' : 'text-zinc-500'}>({formatCounts[key]})</span>
             </Button>
           )
@@ -627,7 +636,7 @@ export default function InventoryPage() {
 
       <Card className="border-zinc-800 bg-zinc-900/50">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="font-mono text-sm">filters</CardTitle>
+          <CardTitle className="font-mono text-sm">{t('common.filters')}</CardTitle>
           <Button
             type="button"
             variant="ghost"
@@ -636,7 +645,7 @@ export default function InventoryPage() {
             className="gap-1 md:hidden font-mono text-xs"
           >
             {showFilters ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-            filters
+            {t('common.filters')}
           </Button>
         </CardHeader>
         <CardContent className={!showFilters ? 'hidden md:block' : ''}>
@@ -644,7 +653,7 @@ export default function InventoryPage() {
             <div className="relative w-44">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
               <Input
-                placeholder="search cards..."
+                placeholder={t('inventory.searchPlaceholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onFocus={() => setShowSuggestions(true)}
@@ -672,21 +681,21 @@ export default function InventoryPage() {
             </div>
 
             <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-44">
-              <option value="">all status</option>
-              <option value="in_stock">in stock</option>
-              <option value="grading">grading</option>
-              <option value="sold_out">sold out</option>
+              <option value="">{t('inventory.allStatus')}</option>
+              <option value="in_stock">{t('common.inStock')}</option>
+              <option value="grading">{t('common.grading')}</option>
+              <option value="sold_out">{t('common.soldOut')}</option>
             </Select>
 
             <Select value={cardType} onChange={(e) => setCardType(e.target.value)} className="w-44">
-              <option value="">all types</option>
-              {CARD_TYPES.map((t) => (
-                <option key={t} value={t}>{t}</option>
+              <option value="">{t('inventory.allTypes')}</option>
+              {CARD_TYPES.map((type) => (
+                <option key={type} value={type}>{type}</option>
               ))}
             </Select>
 
             <Select value={game} onChange={(e) => setGame(e.target.value)} className="w-44">
-              <option value="">all games</option>
+              <option value="">{t('inventory.allGames')}</option>
               {GAMES.map((g) => (
                 <option key={g} value={g}>{g}</option>
               ))}
@@ -695,7 +704,7 @@ export default function InventoryPage() {
             <div className="flex w-44 items-center gap-2">
               <Calendar className="h-4 w-4 text-zinc-500" />
               <Select value={year} onChange={(e) => setYear(e.target.value)} className="flex-1">
-                <option value="">all years</option>
+                <option value="">{t('inventory.allYears')}</option>
                 {years.map((y) => (
                   <option key={y} value={y}>{y}</option>
                 ))}
@@ -703,7 +712,7 @@ export default function InventoryPage() {
             </div>
 
             <Select value={month} onChange={(e) => setMonth(e.target.value)} className="w-44">
-              <option value="">all months</option>
+              <option value="">{t('inventory.allMonths')}</option>
               {months.map((m) => (
                 <option key={m} value={m}>{m.padStart(2, '0')}</option>
               ))}
@@ -712,13 +721,13 @@ export default function InventoryPage() {
             <div className="flex w-44 items-center gap-2">
               <Calendar className="h-4 w-4 text-zinc-500" />
               <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)} className="flex-1">
-                <option value="lastTransaction_desc">sort: last transaction</option>
-                <option value="createdAt_desc">sort: latest created</option>
-                <option value="createdAt_asc">sort: oldest created</option>
-                <option value="name_asc">sort: name A-Z</option>
-                <option value="name_desc">sort: name Z-A</option>
-                <option value="quantity_desc">sort: qty high-low</option>
-                <option value="quantity_asc">sort: qty low-high</option>
+                <option value="lastTransaction_desc">{t('inventory.sortLabel.lastTransaction_desc')}</option>
+                <option value="createdAt_desc">{t('inventory.sortLabel.createdAt_desc')}</option>
+                <option value="createdAt_asc">{t('inventory.sortLabel.createdAt_asc')}</option>
+                <option value="name_asc">{t('inventory.sortLabel.name_asc')}</option>
+                <option value="name_desc">{t('inventory.sortLabel.name_desc')}</option>
+                <option value="quantity_desc">{t('inventory.sortLabel.quantity_desc')}</option>
+                <option value="quantity_asc">{t('inventory.sortLabel.quantity_asc')}</option>
               </Select>
             </div>
 
@@ -738,7 +747,7 @@ export default function InventoryPage() {
                 }}
                 className="ml-auto font-mono text-xs"
               >
-                clear filters
+                {t('common.clearFilters')}
               </Button>
             )}
           </div>
@@ -747,11 +756,11 @@ export default function InventoryPage() {
 
       <Card className="border-zinc-800 bg-zinc-900/50">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4">
-          <CardTitle className="font-mono text-sm">items ({items.length})</CardTitle>
+          <CardTitle className="font-mono text-sm">{t('inventory.itemsWithCount', { count: items.length })}</CardTitle>
           <div className="flex shrink-0 items-center gap-2">
             <div className="flex shrink-0 items-center rounded-lg border border-zinc-700 bg-zinc-950 p-1 shadow-sm">
               {(['in_stock', 'sold_out', ''] as const).map((key) => {
-                const label = key === 'in_stock' ? 'in stock' : key === 'sold_out' ? 'sold' : 'all'
+                const label = key === 'in_stock' ? t('common.inStock') : key === 'sold_out' ? t('common.sold') : t('common.all')
                 const active = statusFilter === key
                 return (
                   <button
@@ -780,9 +789,9 @@ export default function InventoryPage() {
                     ? 'bg-emerald-500 text-zinc-950 shadow'
                     : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
                 )}
-                title="List view"
+                title={t('inventory.listView')}
               >
-                <LayoutList className="h-4 w-4" /> list
+                <LayoutList className="h-4 w-4" /> {t('common.list')}
               </button>
               <button
                 type="button"
@@ -793,9 +802,9 @@ export default function InventoryPage() {
                     ? 'bg-emerald-500 text-zinc-950 shadow'
                     : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
                 )}
-                title="Grid view"
+                title={t('inventory.gridView')}
               >
-                <LayoutGrid className="h-4 w-4" /> grid
+                <LayoutGrid className="h-4 w-4" /> {t('common.grid')}
               </button>
             </div>
           </div>
@@ -803,7 +812,7 @@ export default function InventoryPage() {
         <CardContent>
           {sortedItems.length === 0 ? (
             <div className="py-12 text-center font-mono text-sm text-zinc-500">
-              no items match your filters
+              {t('inventory.noItemsMatch')}
             </div>
           ) : (
             <>
@@ -811,18 +820,18 @@ export default function InventoryPage() {
                 <table className="w-full text-left font-mono text-sm">
                   <thead>
                     <tr className="border-b border-zinc-800 text-zinc-500">
-                      <th className="pb-2 pr-4">card</th>
-                      <th className="pb-2 pr-4">type</th>
-                      <th className="pb-2 pr-4">game</th>
-                      <th className="pb-2 pr-4">condition</th>
-                      <th className="pb-2 pr-4">status</th>
-                      <th className="pb-2 pr-4">created / sold</th>
-                      <th className="pb-2 pr-4 text-right">qty</th>
-                      <th className="pb-2 pr-4 text-right">avg cost</th>
-                      <th className="pb-2 pr-4 text-right">market value</th>
-                      <th className="pb-2 pr-4 text-right">total value</th>
-                      <th className="pb-2 pr-4 text-right">profit</th>
-                      <th className="w-28 pb-2">actions</th>
+                      <th className="pb-2 pr-4">{t('inventory.table.card')}</th>
+                      <th className="pb-2 pr-4">{t('inventory.table.type')}</th>
+                      <th className="pb-2 pr-4">{t('inventory.table.game')}</th>
+                      <th className="pb-2 pr-4">{t('inventory.table.condition')}</th>
+                      <th className="pb-2 pr-4">{t('inventory.table.status')}</th>
+                      <th className="pb-2 pr-4">{t('inventory.table.createdSold')}</th>
+                      <th className="pb-2 pr-4 text-right">{t('inventory.table.qty')}</th>
+                      <th className="pb-2 pr-4 text-right">{t('inventory.table.avgCost')}</th>
+                      <th className="pb-2 pr-4 text-right">{t('inventory.table.marketValue')}</th>
+                      <th className="pb-2 pr-4 text-right">{t('inventory.table.totalValue')}</th>
+                      <th className="pb-2 pr-4 text-right">{t('inventory.table.profit')}</th>
+                      <th className="w-28 pb-2">{t('inventory.table.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -860,23 +869,23 @@ export default function InventoryPage() {
                         <td className="py-3 pr-4">
                           {item.status === 'grading' ? (
                             <Badge variant="grading" className="gap-1">
-                              <Gem className="h-3 w-3" /> grading
+                              <Gem className="h-3 w-3" /> {t('common.grading')}
                             </Badge>
                           ) : item.quantity > 0 ? (
                             <Badge variant="buy" className="gap-1">
-                              <Package className="h-3 w-3" /> in stock
+                              <Package className="h-3 w-3" /> {t('common.inStock')}
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="gap-1">
-                              <PackageX className="h-3 w-3" /> sold out
+                              <PackageX className="h-3 w-3" /> {t('common.soldOut')}
                             </Badge>
                           )}
                         </td>
                         <td className="py-3 pr-4">
                           <div className="flex flex-col text-xs">
-                            <span className="text-zinc-500">created {formatDate(item.createdAt)}</span>
+                            <span className="text-zinc-500">{t('inventory.createdOn', { date: formatDate(item.createdAt) })}</span>
                             {item.status === 'sold_out' && item.soldAt && (
-                              <span className="text-amber-400">sold {formatDate(item.soldAt)}</span>
+                              <span className="text-amber-400">{t('inventory.soldOn', { date: formatDate(item.soldAt) })}</span>
                             )}
                           </div>
                         </td>
@@ -910,7 +919,7 @@ export default function InventoryPage() {
                                 setEditingValue({ cardId: item.cardId, value: String(item.marketValuePerUnit) })
                               }}
                               className="font-mono text-zinc-300 hover:text-zinc-100"
-                              title="click to edit current value"
+                              title={t('inventory.editValueTitle')}
                             >
                               {formatCurrency(item.marketValuePerUnit)}
                             </button>
@@ -926,7 +935,7 @@ export default function InventoryPage() {
                             </span>
                             {item.unrealizedProfit !== 0 && (
                               <span className="text-[10px] text-zinc-500">
-                                unrealized {formatCurrency(item.unrealizedProfit)}
+                                {t('inventoryGridCard.unrealized')} {formatCurrency(item.unrealizedProfit)}
                               </span>
                             )}
                           </div>
@@ -938,7 +947,7 @@ export default function InventoryPage() {
                                 <Button
                                   variant="outline"
                                   size="icon"
-                                  title="quick add"
+                                  title={t('common.add')}
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     openAdd(item)
@@ -950,7 +959,7 @@ export default function InventoryPage() {
                                 <Button
                                   variant="outline"
                                   size="icon"
-                                  title="quick remove"
+                                  title={t('common.remove')}
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     openRemove(item)
@@ -963,7 +972,7 @@ export default function InventoryPage() {
                                   <Button
                                     variant="outline"
                                     size="icon"
-                                    title="send to grade"
+                                    title={t('common.sendToGrade')}
                                     onClick={(e) => e.stopPropagation()}
                                     className="h-7 w-7 shrink-0 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:text-amber-400"
                                   >
@@ -1023,7 +1032,7 @@ export default function InventoryPage() {
                               <PackageX className="h-3 w-3" /> sold out
                             </Badge>
                           )}
-                          <span className="font-mono text-xs text-zinc-300">qty {item.quantity}</span>
+                          <span className="font-mono text-xs text-zinc-300">{t('inventoryGridCard.qty')} {item.quantity}</span>
                         </div>
                         <div className="min-w-0 break-words text-right font-mono text-xs font-medium text-zinc-200">
                           {formatCurrency(item.currentValue)}
@@ -1031,7 +1040,7 @@ export default function InventoryPage() {
                       </div>
 
                       <div className="mt-1 flex items-center justify-between gap-2 font-mono text-xs">
-                        <span className="text-zinc-500">profit</span>
+                        <span className="text-zinc-500">{t('inventoryGridCard.profit')}</span>
                         <span className={item.profit >= 0 ? 'min-w-0 break-words text-right text-emerald-400' : 'min-w-0 break-words text-right text-red-400'}>
                           {formatCurrency(item.profit)}
                         </span>
@@ -1044,7 +1053,7 @@ export default function InventoryPage() {
                             className="h-7 flex-1 gap-1 bg-emerald-600 text-[10px] text-white hover:bg-emerald-700"
                             onClick={() => openSell(item)}
                           >
-                            <Tag className="h-3.5 w-3.5" /> sell
+                            <Tag className="h-3.5 w-3.5" /> {t('inventoryGridCard.sell')}
                           </Button>
                           <Button
                             size="sm"
@@ -1052,7 +1061,7 @@ export default function InventoryPage() {
                             className="h-7 flex-1 gap-1 text-[10px]"
                             onClick={() => openAdd(item)}
                           >
-                            <Plus className="h-3.5 w-3.5" /> add
+                            <Plus className="h-3.5 w-3.5" /> {t('inventoryGridCard.add')}
                           </Button>
                           <Button
                             size="sm"
@@ -1060,7 +1069,7 @@ export default function InventoryPage() {
                             className="h-7 flex-1 gap-1 text-[10px]"
                             onClick={() => openRemove(item)}
                           >
-                            <Minus className="h-3.5 w-3.5" /> remove
+                            <Minus className="h-3.5 w-3.5" /> {t('inventoryGridCard.remove')}
                           </Button>
                           <Link href={`/grading/send?cardId=${item.cardId}`}>
                             <Button size="sm" variant="outline" className="h-7 px-2 text-amber-400 hover:bg-amber-500/10 hover:text-amber-400">
@@ -1075,18 +1084,18 @@ export default function InventoryPage() {
                         onClick={() => toggleExpanded(item.cardId)}
                         className="mt-2 flex w-full items-center justify-center gap-1 rounded border border-zinc-800 bg-zinc-900/50 py-1 font-mono text-[10px] text-zinc-500 hover:text-zinc-300"
                       >
-                        {isExpanded ? 'hide details' : 'show details'}
+                        {isExpanded ? t('inventory.hideDetails') : t('inventory.showDetails')}
                         {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                       </button>
 
                       {isExpanded && (
                         <div className="mt-2 grid grid-cols-2 gap-y-2 border-t border-zinc-800 pt-2 font-mono text-xs">
                           <div>
-                            <div className="text-zinc-500">avg cost</div>
+                            <div className="text-zinc-500">{t('inventoryGridCard.avgCost')}</div>
                             <div className="text-zinc-300">{formatCurrency(item.averageCost)}</div>
                           </div>
                           <div>
-                            <div className="text-zinc-500">market value</div>
+                            <div className="text-zinc-500">{t('inventoryGridCard.marketValue')}</div>
                             {editingValue?.cardId === item.cardId ? (
                               <Input
                                 type="number"
@@ -1117,7 +1126,7 @@ export default function InventoryPage() {
                           </div>
                           <div className="col-span-2">
                             <div className="text-zinc-500">
-                              {item.status === 'sold_out' ? 'sold at' : 'created at'}
+                              {item.status === 'sold_out' ? t('inventoryGridCard.soldAt') : t('inventoryGridCard.createdAt')}
                             </div>
                             <div className="text-zinc-300">
                               {item.status === 'sold_out' && item.soldAt
@@ -1163,17 +1172,17 @@ export default function InventoryPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Tag className="h-4 w-4 text-emerald-400" />
-              sell {sellDialog.item?.cardName}
+              {t('inventory.dialog.sell.title')} {sellDialog.item?.cardName}
             </DialogTitle>
             <DialogDescription>
-              click a card row to sell. quantity cannot exceed current stock.
+              {t('inventory.dialog.sell.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <label className="font-mono text-xs text-zinc-400">quantity</label>
+                <label className="font-mono text-xs text-zinc-400">{t('common.quantity')}</label>
                 <Input
                   type="number"
                   min={1}
@@ -1184,7 +1193,7 @@ export default function InventoryPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="font-mono text-xs text-zinc-400">avg cost</label>
+                <label className="font-mono text-xs text-zinc-400">{t('inventory.dialog.sell.avgCost')}</label>
                 <Input
                   type="text"
                   value={formatCurrency(sellDialog.item?.averageCost ?? 0)}
@@ -1196,7 +1205,7 @@ export default function InventoryPage() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <label className="font-mono text-xs text-zinc-400">sell price / unit</label>
+                <label className="font-mono text-xs text-zinc-400">{t('inventory.dialog.sell.sellPrice')}</label>
                 <Input
                   type="number"
                   step="0.01"
@@ -1208,7 +1217,7 @@ export default function InventoryPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="font-mono text-xs text-zinc-400">shipping cost</label>
+                <label className="font-mono text-xs text-zinc-400">{t('inventory.dialog.sell.shippingCost')}</label>
                 <Input
                   type="number"
                   step="0.01"
@@ -1221,30 +1230,30 @@ export default function InventoryPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="font-mono text-xs text-zinc-400">date</label>
+              <label className="font-mono text-xs text-zinc-400">{t('common.date')}</label>
               <Input type="date" value={sellDate} onChange={(e) => setSellDate(e.target.value)} required />
             </div>
 
             <div className="space-y-2">
-              <label className="font-mono text-xs text-zinc-400">note</label>
+              <label className="font-mono text-xs text-zinc-400">{t('common.note')}</label>
               <Input
                 value={sellNote}
                 onChange={(e) => setSellNote(e.target.value)}
-                placeholder="optional"
+                placeholder={t('common.optional')}
               />
             </div>
 
             <div className="rounded border border-zinc-800 bg-zinc-950 p-3">
               <div className="flex justify-between font-mono text-xs text-zinc-400">
-                <span>cards total</span>
+                <span>{t('inventory.dialog.sell.cardsTotal')}</span>
                 <span>{formatCurrency(Number(sellQty || 0) * Number(sellPrice || 0))}</span>
               </div>
               <div className="flex justify-between font-mono text-xs text-zinc-400">
-                <span>shipping</span>
+                <span>{t('inventory.dialog.sell.shipping')}</span>
                 <span>{formatCurrency(Number(sellShipping || 0))}</span>
               </div>
               <div className="mt-1 flex justify-between font-mono text-sm font-bold text-zinc-200">
-                <span>total received</span>
+                <span>{t('inventory.dialog.sell.totalReceived')}</span>
                 <span>{formatCurrency(sellTotal)}</span>
               </div>
             </div>
@@ -1252,11 +1261,11 @@ export default function InventoryPage() {
 
           <DialogFooter>
             <Button type="button" variant="ghost" size="sm" onClick={closeSell}>
-              cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" size="sm" className="gap-2">
               <Tag className="h-3.5 w-3.5" />
-              confirm sell
+              {t('inventory.dialog.sell.confirmSell')}
             </Button>
           </DialogFooter>
         </form>
@@ -1267,16 +1276,16 @@ export default function InventoryPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Minus className="h-4 w-4 text-zinc-400" />
-              remove stock · {removeDialog.item?.cardName}
+              {t('inventory.dialog.remove.title')} · {removeDialog.item?.cardName}
             </DialogTitle>
             <DialogDescription>
-              enter the quantity to remove from stock.
+              {t('inventory.dialog.remove.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="font-mono text-xs text-zinc-400">quantity</label>
+              <label className="font-mono text-xs text-zinc-400">{t('common.quantity')}</label>
               <Input
                 type="number"
                 min={1}
@@ -1292,15 +1301,15 @@ export default function InventoryPage() {
 
           <DialogFooter>
             <Button type="button" variant="ghost" size="sm" onClick={closeRemove}>
-              cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={isSubmitting} size="sm" className="gap-2">
               {isSubmitting ? (
-                <span className="font-mono text-xs">processing...</span>
+                <span className="font-mono text-xs">{t('common.processing')}</span>
               ) : (
                 <>
                   <Minus className="h-3.5 w-3.5" />
-                  remove stock
+                  {t('inventory.dialog.remove.title')}
                 </>
               )}
             </Button>
@@ -1313,10 +1322,10 @@ export default function InventoryPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="h-4 w-4 text-emerald-400" />
-              add card / stock
+              {t('inventory.dialog.add.title')}
             </DialogTitle>
             <DialogDescription>
-              choose an existing card from your history, or create a new one.
+              {t('inventory.dialog.add.description')}
             </DialogDescription>
           </DialogHeader>
 
@@ -1331,7 +1340,7 @@ export default function InventoryPage() {
                     : 'text-zinc-500 hover:text-zinc-300'
                 }`}
               >
-                existing card
+                {t('inventory.dialog.add.existingCard')}
               </button>
               <button
                 type="button"
@@ -1342,15 +1351,15 @@ export default function InventoryPage() {
                     : 'text-zinc-500 hover:text-zinc-300'
                 }`}
               >
-                new card
+                {t('inventory.dialog.add.newCard')}
               </button>
             </div>
 
             {addMode === 'existing' ? (
               <div className="space-y-2">
-                <label className="font-mono text-xs text-zinc-400">card</label>
+                <label className="font-mono text-xs text-zinc-400">{t('inventory.table.card')}</label>
                 <Select value={addCardId} onChange={(e) => setAddCardId(e.target.value)} required>
-                  <option value="">select card</option>
+                  <option value="">{t('inventory.dialog.add.selectCard')}</option>
                   {cards.map((card) => (
                     <option key={card.id} value={card.id}>
                       {card.name} {card.condition ? `(${card.condition})` : ''}
@@ -1361,7 +1370,7 @@ export default function InventoryPage() {
             ) : (
               <>
                 <div className="space-y-2">
-                  <label className="font-mono text-xs text-zinc-400">card name</label>
+                  <label className="font-mono text-xs text-zinc-400">{t('inventory.dialog.add.cardName')}</label>
                   <Input
                     value={addCard.name}
                     onChange={(e) => setAddCard({ ...addCard, name: e.target.value })}
@@ -1371,7 +1380,7 @@ export default function InventoryPage() {
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="font-mono text-xs text-zinc-400">set code</label>
+                    <label className="font-mono text-xs text-zinc-400">{t('inventory.dialog.add.setCode')}</label>
                     <Input
                       value={addCard.setCode}
                       onChange={(e) => setAddCard({ ...addCard, setCode: e.target.value })}
@@ -1379,7 +1388,7 @@ export default function InventoryPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="font-mono text-xs text-zinc-400">card number</label>
+                    <label className="font-mono text-xs text-zinc-400">{t('inventory.dialog.add.cardNumber')}</label>
                     <Input
                       value={addCard.cardNumber}
                       onChange={(e) => setAddCard({ ...addCard, cardNumber: e.target.value })}
@@ -1389,7 +1398,7 @@ export default function InventoryPage() {
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="font-mono text-xs text-zinc-400">rarity</label>
+                    <label className="font-mono text-xs text-zinc-400">{t('common.rarity')}</label>
                     <Input
                       value={addCard.rarity}
                       onChange={(e) => setAddCard({ ...addCard, rarity: e.target.value })}
@@ -1397,12 +1406,12 @@ export default function InventoryPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="font-mono text-xs text-zinc-400">condition</label>
+                    <label className="font-mono text-xs text-zinc-400">{t('common.condition')}</label>
                     <Select
                       value={addCard.condition}
                       onChange={(e) => setAddCard({ ...addCard, condition: e.target.value })}
                     >
-                      <option value="">unspecified</option>
+                      <option value="">{t('common.unspecified')}</option>
                       {CARD_CONDITIONS.map((c) => (
                         <option key={c} value={c}>{c}</option>
                       ))}
@@ -1411,18 +1420,18 @@ export default function InventoryPage() {
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="font-mono text-xs text-zinc-400">card type</label>
+                    <label className="font-mono text-xs text-zinc-400">{t('common.cardType')}</label>
                     <Select
                       value={addCard.cardType}
                       onChange={(e) => setAddCard({ ...addCard, cardType: e.target.value })}
                     >
-                      {CARD_TYPES.map((t) => (
-                        <option key={t} value={t}>{t}</option>
+                      {CARD_TYPES.map((type) => (
+                        <option key={type} value={type}>{type}</option>
                       ))}
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <label className="font-mono text-xs text-zinc-400">game</label>
+                    <label className="font-mono text-xs text-zinc-400">{t('common.game')}</label>
                     <Select
                       value={addCard.game}
                       onChange={(e) => setAddCard({ ...addCard, game: e.target.value })}
@@ -1438,7 +1447,7 @@ export default function InventoryPage() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <label className="font-mono text-xs text-zinc-400">quantity</label>
+                <label className="font-mono text-xs text-zinc-400">{t('common.quantity')}</label>
                 <Input
                   type="number"
                   min={1}
@@ -1448,7 +1457,7 @@ export default function InventoryPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="font-mono text-xs text-zinc-400">cost / unit</label>
+                <label className="font-mono text-xs text-zinc-400">{t('inventory.dialog.add.costPerUnit')}</label>
                 <Input
                   type="number"
                   step="0.01"
@@ -1462,27 +1471,27 @@ export default function InventoryPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="font-mono text-xs text-zinc-400">date</label>
+              <label className="font-mono text-xs text-zinc-400">{t('common.date')}</label>
               <Input type="date" value={addDate} onChange={(e) => setAddDate(e.target.value)} required />
             </div>
 
             <div className="space-y-2">
-              <label className="font-mono text-xs text-zinc-400">note</label>
+              <label className="font-mono text-xs text-zinc-400">{t('common.note')}</label>
               <Input
                 value={addNote}
                 onChange={(e) => setAddNote(e.target.value)}
-                placeholder="optional"
+                placeholder={t('common.optional')}
               />
             </div>
           </div>
 
           <DialogFooter>
             <Button type="button" variant="ghost" size="sm" onClick={closeAdd}>
-              cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" size="sm" className="gap-2">
               <Plus className="h-3.5 w-3.5" />
-              add stock
+              {t('inventory.dialog.add.addStock')}
             </Button>
           </DialogFooter>
         </form>
@@ -1495,40 +1504,40 @@ export default function InventoryPage() {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Tag className="h-4 w-4 text-emerald-400" />
-            confirm sell
+            {t('inventory.dialog.sell.confirmSell')}
           </DialogTitle>
-          <DialogDescription>please review the sell details before confirming.</DialogDescription>
+          <DialogDescription>{t('inventory.dialog.sell.reviewDescription')}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 font-mono text-sm">
           <div className="flex justify-between border-b border-zinc-800 pb-2">
-            <span className="text-zinc-500">card</span>
+            <span className="text-zinc-500">{t('inventory.table.card')}</span>
             <span className="text-zinc-200">{sellConfirm.item?.cardName}</span>
           </div>
           <div className="flex justify-between border-b border-zinc-800 pb-2">
-            <span className="text-zinc-500">quantity</span>
+            <span className="text-zinc-500">{t('common.quantity')}</span>
             <span className="text-zinc-200">{sellConfirm.qty}</span>
           </div>
           <div className="flex justify-between border-b border-zinc-800 pb-2">
-            <span className="text-zinc-500">price / unit</span>
+            <span className="text-zinc-500">{t('inventory.dialog.sell.sellPrice')}</span>
             <span className="text-zinc-200">{formatCurrency(sellConfirm.price)}</span>
           </div>
           <div className="flex justify-between border-b border-zinc-800 pb-2">
-            <span className="text-zinc-500">shipping</span>
+            <span className="text-zinc-500">{t('inventory.dialog.sell.shipping')}</span>
             <span className="text-zinc-200">{formatCurrency(sellConfirm.shipping)}</span>
           </div>
           <div className="flex justify-between border-b border-zinc-800 pb-2">
-            <span className="text-zinc-500">date</span>
+            <span className="text-zinc-500">{t('common.date')}</span>
             <span className="text-zinc-200">{sellConfirm.date}</span>
           </div>
           {sellConfirm.note && (
             <div className="flex justify-between border-b border-zinc-800 pb-2">
-              <span className="text-zinc-500">note</span>
+              <span className="text-zinc-500">{t('common.note')}</span>
               <span className="text-zinc-200">{sellConfirm.note}</span>
             </div>
           )}
           <div className="flex justify-between pt-1 font-bold text-zinc-200">
-            <span>total received</span>
+            <span>{t('inventory.dialog.sell.totalReceived')}</span>
             <span>{formatCurrency(sellConfirm.qty * sellConfirm.price + sellConfirm.shipping)}</span>
           </div>
         </div>
@@ -1540,15 +1549,15 @@ export default function InventoryPage() {
             size="sm"
             onClick={() => setSellConfirm({ open: false, item: null, qty: 0, price: 0, shipping: 0, date: '', note: '' })}
           >
-            cancel
+            {t('common.cancel')}
           </Button>
           <Button type="button" size="sm" className="gap-2" onClick={executeSell} disabled={isSubmitting}>
             {isSubmitting ? (
-              <span className="font-mono text-xs">processing...</span>
+              <span className="font-mono text-xs">{t('common.processing')}</span>
             ) : (
               <>
                 <Tag className="h-3.5 w-3.5" />
-                confirm sell
+                {t('inventory.dialog.sell.confirmSell')}
               </>
             )}
           </Button>
@@ -1562,48 +1571,48 @@ export default function InventoryPage() {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Plus className="h-4 w-4 text-emerald-400" />
-            confirm add stock
+            {t('inventory.dialog.add.confirmTitle')}
           </DialogTitle>
-          <DialogDescription>please review the stock addition before confirming.</DialogDescription>
+          <DialogDescription>{t('inventory.dialog.add.reviewDescription')}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 font-mono text-sm">
           <div className="flex justify-between border-b border-zinc-800 pb-2">
-            <span className="text-zinc-500">card</span>
-            <span className="text-zinc-200">{addConfirm.cardName || 'new card'}</span>
+            <span className="text-zinc-500">{t('inventory.table.card')}</span>
+            <span className="text-zinc-200">{addConfirm.cardName || t('inventory.dialog.add.newCard')}</span>
           </div>
           {addConfirm.isNewCard && (
             <div className="flex justify-between border-b border-zinc-800 pb-2">
-              <span className="text-zinc-500">type</span>
+              <span className="text-zinc-500">{t('common.type')}</span>
               <span className="text-zinc-200">{addCard.cardType}</span>
             </div>
           )}
           {addConfirm.isNewCard && (
             <div className="flex justify-between border-b border-zinc-800 pb-2">
-              <span className="text-zinc-500">game</span>
+              <span className="text-zinc-500">{t('common.game')}</span>
               <span className="text-zinc-200">{addCard.game}</span>
             </div>
           )}
           <div className="flex justify-between border-b border-zinc-800 pb-2">
-            <span className="text-zinc-500">quantity</span>
+            <span className="text-zinc-500">{t('common.quantity')}</span>
             <span className="text-zinc-200">{addConfirm.qty}</span>
           </div>
           <div className="flex justify-between border-b border-zinc-800 pb-2">
-            <span className="text-zinc-500">cost / unit</span>
+            <span className="text-zinc-500">{t('inventory.dialog.add.costPerUnit')}</span>
             <span className="text-zinc-200">{formatCurrency(addConfirm.price)}</span>
           </div>
           <div className="flex justify-between border-b border-zinc-800 pb-2">
-            <span className="text-zinc-500">date</span>
+            <span className="text-zinc-500">{t('common.date')}</span>
             <span className="text-zinc-200">{addConfirm.date}</span>
           </div>
           {addConfirm.note && (
             <div className="flex justify-between border-b border-zinc-800 pb-2">
-              <span className="text-zinc-500">note</span>
+              <span className="text-zinc-500">{t('common.note')}</span>
               <span className="text-zinc-200">{addConfirm.note}</span>
             </div>
           )}
           <div className="flex justify-between pt-1 font-bold text-zinc-200">
-            <span>total cost</span>
+            <span>{t('inventory.dialog.add.totalCost')}</span>
             <span>{formatCurrency(addConfirm.qty * addConfirm.price)}</span>
           </div>
         </div>
@@ -1615,15 +1624,15 @@ export default function InventoryPage() {
             size="sm"
             onClick={() => setAddConfirm({ open: false, cardName: '', qty: 0, price: 0, date: '', note: '', cardId: '', isNewCard: false })}
           >
-            cancel
+            {t('common.cancel')}
           </Button>
           <Button type="button" size="sm" className="gap-2" onClick={executeAdd} disabled={isSubmitting}>
             {isSubmitting ? (
-              <span className="font-mono text-xs">processing...</span>
+              <span className="font-mono text-xs">{t('common.processing')}</span>
             ) : (
               <>
                 <Plus className="h-3.5 w-3.5" />
-                confirm add
+                {t('inventory.dialog.add.confirmAdd')}
               </>
             )}
           </Button>

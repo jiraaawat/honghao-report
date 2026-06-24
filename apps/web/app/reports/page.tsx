@@ -17,10 +17,13 @@ import {
 } from '@/components/ui/dialog'
 import { MonthlyReport } from '@/types'
 import { formatCurrency, formatNumber } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n/provider'
+import { MonthlyChart } from '@/components/reports/monthly-chart'
 import { Download, TrendingUp, TrendingDown, Calendar, AlertTriangle, Trash2 } from 'lucide-react'
 
 export default function ReportsPage() {
   const { status } = useSession()
+  const { t } = useLanguage()
   const [report, setReport] = useState<MonthlyReport[]>([])
   const [filterYear, setFilterYear] = useState('')
   const [filterMonth, setFilterMonth] = useState('')
@@ -96,7 +99,7 @@ export default function ReportsPage() {
   if (status === 'loading' || loading) {
     return (
       <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
-        <div className="font-mono text-sm text-zinc-500">calculating...</div>
+        <div className="font-mono text-sm text-zinc-500">{t('reports.calculating')}</div>
       </div>
     )
   }
@@ -115,23 +118,23 @@ export default function ReportsPage() {
   return (
     <div className="space-y-4 p-3 md:space-y-6 md:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <h1 className="font-mono text-2xl font-bold text-zinc-100">$ reports</h1>
+        <h1 className="font-mono text-2xl font-bold text-zinc-100">$ {t('reports.title')}</h1>
         <div className="flex flex-wrap items-center gap-2">
           <Select value={filterYear} onChange={(e) => setFilterYear(e.target.value)}>
-            <option value="">all years</option>
+            <option value="">{t('transactions.allYears')}</option>
             {years.map((y) => (
               <option key={y} value={y}>{y}</option>
             ))}
           </Select>
           <Select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)}>
-            <option value="">all months</option>
+            <option value="">{t('transactions.allMonths')}</option>
             {months.map((m) => (
               <option key={m} value={m}>{m.padStart(2, '0')}</option>
             ))}
           </Select>
           <Button onClick={handleExport} className="gap-2">
             <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">export excel</span>
+            <span className="hidden sm:inline">{t('reports.exportExcel')}</span>
           </Button>
         </div>
       </div>
@@ -141,7 +144,7 @@ export default function ReportsPage() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 font-mono text-xs font-normal text-zinc-500">
               <TrendingUp className="h-3.5 w-3.5" />
-              total profit
+              {t('common.totalProfit')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -155,7 +158,7 @@ export default function ReportsPage() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 font-mono text-xs font-normal text-zinc-500">
               <Calendar className="h-3.5 w-3.5" />
-              total buy
+              {t('reports.totalBuy')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -169,7 +172,7 @@ export default function ReportsPage() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 font-mono text-xs font-normal text-zinc-500">
               <TrendingDown className="h-3.5 w-3.5" />
-              total sell
+              {t('reports.totalSell')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -183,7 +186,7 @@ export default function ReportsPage() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 font-mono text-xs font-normal text-zinc-500">
               <TrendingUp className="h-3.5 w-3.5" />
-              overall roi
+              {t('common.overallRoi')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -194,14 +197,16 @@ export default function ReportsPage() {
         </Card>
       </div>
 
+      <MonthlyChart data={report} />
+
       <Card className="border-zinc-800 bg-zinc-900/50">
         <CardHeader>
-          <CardTitle className="font-mono text-sm">monthly breakdown</CardTitle>
+          <CardTitle className="font-mono text-sm">{t('reports.monthlyBreakdown')}</CardTitle>
         </CardHeader>
         <CardContent>
           {report.length === 0 ? (
             <div className="py-12 text-center font-mono text-sm text-zinc-500">
-              no data available for the selected period
+              {t('reports.noData')}
             </div>
           ) : (
             <>
@@ -260,26 +265,26 @@ export default function ReportsPage() {
                     </div>
                     <div className="mt-2 grid grid-cols-2 gap-2 font-mono text-xs">
                       <div className="min-w-0">
-                        <div className="text-zinc-500">buy ({r.buyQty})</div>
+                        <div className="text-zinc-500">{t('reports.table.buy')} ({r.buyQty})</div>
                         <div className="break-words text-zinc-300">{formatCurrency(r.totalBuy)}</div>
                       </div>
                       <div className="min-w-0">
-                        <div className="text-zinc-500">sell ({r.sellQty})</div>
+                        <div className="text-zinc-500">{t('reports.table.sell')} ({r.sellQty})</div>
                         <div className="break-words text-zinc-300">{formatCurrency(r.totalSell)}</div>
                       </div>
                       <div className="min-w-0">
-                        <div className="text-zinc-500">cost basis</div>
+                        <div className="text-zinc-500">{t('reports.table.costBasis')}</div>
                         <div className="break-words text-zinc-400">{formatCurrency(r.costBasisSold)}</div>
                       </div>
                       <div className="min-w-0">
-                        <div className="text-zinc-500">profit</div>
+                        <div className="text-zinc-500">{t('reports.table.profit')}</div>
                         <div className={r.totalProfit >= 0 ? 'break-words text-emerald-400' : 'break-words text-red-400'}>
                           {formatCurrency(r.totalProfit)}
                         </div>
                       </div>
                     </div>
                     <div className="mt-1 font-mono text-xs text-zinc-500">
-                      {r.transactionCount} transactions
+                      {t('transactions.transactionCount', { count: r.transactionCount })}
                     </div>
                   </div>
                 ))}
@@ -293,12 +298,12 @@ export default function ReportsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-mono text-sm text-red-400">
             <AlertTriangle className="h-4 w-4" />
-            danger zone
+            {t('reports.dangerZone')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="mb-4 font-mono text-xs text-zinc-400">
-            Resetting your portfolio will permanently delete all cards, transactions, inventory records, and grading records. This cannot be undone.
+            {t('reports.dangerZoneDescription')}
           </p>
           <Button
             variant="destructive"
@@ -307,7 +312,7 @@ export default function ReportsPage() {
             onClick={() => setResetDialog(true)}
           >
             <Trash2 className="h-4 w-4" />
-            reset portfolio
+            {t('reports.resetPortfolio')}
           </Button>
         </CardContent>
       </Card>
@@ -317,16 +322,16 @@ export default function ReportsPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-400">
               <AlertTriangle className="h-4 w-4" />
-              Reset portfolio
+              {t('reports.resetDialog.confirmTitle')}
             </DialogTitle>
             <DialogDescription>
-              This will delete all your portfolio data. Enter your password and type RESET to confirm.
+              {t('reports.resetDialog.confirmDescription')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-1">
-              <label className="font-mono text-xs text-zinc-400">password</label>
+              <label className="font-mono text-xs text-zinc-400">{t('reports.resetDialog.password')}</label>
               <Input
                 type="password"
                 value={resetPassword}
@@ -336,12 +341,12 @@ export default function ReportsPage() {
               />
             </div>
             <div className="space-y-1">
-              <label className="font-mono text-xs text-zinc-400">type RESET to confirm</label>
+              <label className="font-mono text-xs text-zinc-400">{t('reports.resetDialog.confirmText')}</label>
               <Input
                 type="text"
                 value={resetConfirm}
                 onChange={(e) => setResetConfirm(e.target.value)}
-                placeholder="RESET"
+                placeholder={t('reports.resetDialog.placeholder')}
                 required
               />
             </div>
@@ -354,7 +359,7 @@ export default function ReportsPage() {
               size="sm"
               onClick={() => setResetDialog(false)}
             >
-              cancel
+              {t('common.cancel')}
             </Button>
             <Button
               type="submit"
@@ -362,7 +367,7 @@ export default function ReportsPage() {
               variant="destructive"
               disabled={resetting || resetConfirm !== 'RESET' || !resetPassword}
             >
-              {resetting ? 'resetting...' : 'yes, reset everything'}
+              {resetting ? t('reports.resetDialog.resetting') : t('reports.resetDialog.confirmButton')}
             </Button>
           </DialogFooter>
         </form>

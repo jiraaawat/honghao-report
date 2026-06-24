@@ -18,6 +18,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { CatalogCardDto, CatalogSetDto, CARD_TYPES, CARD_CONDITIONS, GAMES } from '@/types'
+import { useLanguage } from '@/lib/i18n/provider'
 
 const PAGE_SIZE = 24
 
@@ -43,6 +44,7 @@ const itemVariants = {
 export default function CardsPage() {
   const { status } = useSession()
   const router = useRouter()
+  const { t } = useLanguage()
 
   const [items, setItems] = useState<CatalogCardDto[]>([])
   const [sets, setSets] = useState<CatalogSetDto[]>([])
@@ -200,8 +202,8 @@ export default function CardsPage() {
         transition={{ duration: 0.3 }}
         className="mb-6"
       >
-        <h1 className="font-mono text-xl font-bold text-zinc-100">card list</h1>
-        <p className="font-mono text-xs text-zinc-500">Browse the One Piece TCG catalog</p>
+        <h1 className="font-mono text-xl font-bold text-zinc-100">{t('cards.title')}</h1>
+        <p className="font-mono text-xs text-zinc-500">{t('cards.subtitle')}</p>
       </motion.div>
 
       <motion.div
@@ -213,7 +215,7 @@ export default function CardsPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
           <Input
-            placeholder="Search card name or number..."
+            placeholder={t('cards.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -227,7 +229,7 @@ export default function CardsPage() {
           }}
           className="sm:w-56"
         >
-          <option value="">All sets</option>
+          <option value="">{t('cards.allSets')}</option>
           {sets.map((s) => (
             <option key={s.setId} value={s.setId}>
               {s.setId} {s.setName ? `- ${s.setName}` : ''}
@@ -235,9 +237,9 @@ export default function CardsPage() {
           ))}
         </Select>
         <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="sm:w-44">
-          {CARD_TYPE_OPTIONS.map((t) => (
-            <option key={t} value={t}>
-              {t}
+          {CARD_TYPE_OPTIONS.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
             </option>
           ))}
         </Select>
@@ -256,7 +258,7 @@ export default function CardsPage() {
           className="flex flex-col items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/50 py-16 text-center"
         >
           <Package className="mb-3 h-8 w-8 text-zinc-600" />
-          <p className="font-mono text-sm text-zinc-400">No cards found.</p>
+          <p className="font-mono text-sm text-zinc-400">{t('cards.noCards')}</p>
         </motion.div>
       ) : (
         <>
@@ -284,7 +286,7 @@ export default function CardsPage() {
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center font-mono text-xs text-zinc-600">
-                      No image
+                      {t('inventoryGridCard.noImage')}
                     </div>
                   )}
                 </div>
@@ -313,7 +315,7 @@ export default function CardsPage() {
                   className="mt-auto h-8 gap-1 text-xs bg-emerald-600 text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-[0_0_12px_rgba(16,185,129,0.25)]"
                   onClick={() => openAdd(card)}
                 >
-                  <Plus className="h-3.5 w-3.5" /> Add
+                  <Plus className="h-3.5 w-3.5" /> {t('cards.add')}
                 </Button>
               </motion.div>
             ))}
@@ -331,10 +333,10 @@ export default function CardsPage() {
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
             >
-              Previous
+              {t('common.previous')}
             </Button>
             <span className="font-mono text-xs text-zinc-400">
-              Page {page} of {totalPages}
+              {t('cards.pageOf', { page, total: totalPages })}
             </span>
             <Button
               variant="outline"
@@ -342,7 +344,7 @@ export default function CardsPage() {
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
             >
-              Next
+              {t('common.next')}
             </Button>
           </motion.div>
         </>
@@ -351,12 +353,12 @@ export default function CardsPage() {
       <Dialog open={addDialog.open} onOpenChange={closeAdd}>
         <form onSubmit={handleAdd}>
             <DialogHeader>
-              <DialogTitle>Add to inventory</DialogTitle>
+              <DialogTitle>{t('cards.addToInventory')}</DialogTitle>
               <DialogDescription>
                 {addDialog.card?.name} ({addDialog.card?.cardNo})
                 {addDialog.card?.marketPrice ? (
                   <span className="ml-1 text-emerald-400">
-                    market ${Number(addDialog.card.marketPrice).toFixed(2)}
+                    {t('cards.marketPrice', { price: Number(addDialog.card.marketPrice).toFixed(2) })}
                   </span>
                 ) : null}
               </DialogDescription>
@@ -365,7 +367,7 @@ export default function CardsPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="font-mono text-xs text-zinc-400">Category</label>
+                  <label className="font-mono text-xs text-zinc-400">{t('cards.category')}</label>
                   <Select
                     value={addForm.cardType}
                     onChange={(e) => setAddForm((prev) => ({ ...prev, cardType: e.target.value }))}
@@ -379,7 +381,7 @@ export default function CardsPage() {
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <label className="font-mono text-xs text-zinc-400">Game</label>
+                  <label className="font-mono text-xs text-zinc-400">{t('common.game')}</label>
                   <Select
                     value={addForm.game}
                     onChange={(e) => setAddForm((prev) => ({ ...prev, game: e.target.value }))}
@@ -396,7 +398,7 @@ export default function CardsPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="font-mono text-xs text-zinc-400">Condition</label>
+                  <label className="font-mono text-xs text-zinc-400">{t('common.condition')}</label>
                   <Select
                     value={addForm.condition}
                     onChange={(e) => setAddForm((prev) => ({ ...prev, condition: e.target.value }))}
@@ -409,7 +411,7 @@ export default function CardsPage() {
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <label className="font-mono text-xs text-zinc-400">Quantity</label>
+                  <label className="font-mono text-xs text-zinc-400">{t('cards.quantity')}</label>
                   <Input
                     type="number"
                     min={1}
@@ -422,7 +424,7 @@ export default function CardsPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="font-mono text-xs text-zinc-400">Price / unit</label>
+                  <label className="font-mono text-xs text-zinc-400">{t('cards.pricePerUnit')}</label>
                   <Input
                     type="number"
                     step="0.01"
@@ -433,7 +435,7 @@ export default function CardsPage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="font-mono text-xs text-zinc-400">Date</label>
+                  <label className="font-mono text-xs text-zinc-400">{t('cards.date')}</label>
                   <Input
                     type="date"
                     value={addForm.date}
@@ -444,21 +446,21 @@ export default function CardsPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="font-mono text-xs text-zinc-400">Note</label>
+                <label className="font-mono text-xs text-zinc-400">{t('cards.note')}</label>
                 <Input
                   value={addForm.note}
                   onChange={(e) => setAddForm((prev) => ({ ...prev, note: e.target.value }))}
-                  placeholder="Optional"
+                  placeholder={t('common.optional')}
                 />
               </div>
             </div>
 
             <DialogFooter>
               <Button type="button" variant="ghost" size="sm" onClick={closeAdd}>
-                Cancel
+                {t('cards.cancel')}
               </Button>
               <Button type="submit" size="sm" disabled={adding}>
-                {adding ? 'Adding...' : 'Add to inventory'}
+                {adding ? t('cards.adding') : t('cards.addToInventory')}
               </Button>
             </DialogFooter>
           </form>

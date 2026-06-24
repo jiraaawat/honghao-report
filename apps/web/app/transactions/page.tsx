@@ -17,12 +17,14 @@ import {
 } from '@/components/ui/dialog'
 import { TransactionDto, CARD_TYPES, GAMES } from '@/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n/provider'
 import { toPng } from 'html-to-image'
 import { FlexCard } from '@/components/flex-card'
 import { Trash2, Search, Calendar, Pencil, ChevronUp, ChevronDown, Zap } from 'lucide-react'
 
 export default function TransactionsPage() {
   const { status } = useSession()
+  const { t } = useLanguage()
   const [transactions, setTransactions] = useState<TransactionDto[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -106,8 +108,8 @@ export default function TransactionsPage() {
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({
             files: [file],
-            title: 'FLEX by honghao report',
-            text: `Sold ${flexTx.card?.name} for ${formatCurrency(Number(flexTx.totalAmount))}`,
+            title: t('flexCard.shareTitle'),
+            text: t('flexCard.shareText', { name: flexTx.card?.name ?? '', amount: formatCurrency(Number(flexTx.totalAmount)) }),
           })
         } else {
           const link = document.createElement('a')
@@ -123,7 +125,7 @@ export default function TransactionsPage() {
     }
 
     run()
-  }, [flexTx])
+  }, [flexTx, t])
 
   const handleFlex = (tx: TransactionDto) => {
     if (tx.type !== 'SELL') return
@@ -131,7 +133,7 @@ export default function TransactionsPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this transaction?')) return
+    if (!confirm(t('transactions.deleteConfirm'))) return
     if (isSubmitting) return
     setIsSubmitting(true)
     const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' })
@@ -195,7 +197,7 @@ export default function TransactionsPage() {
   if (status === 'loading') {
     return (
       <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
-        <div className="font-mono text-sm text-zinc-500">loading...</div>
+        <div className="font-mono text-sm text-zinc-500">{t('common.loading')}</div>
       </div>
     )
   }
@@ -207,12 +209,12 @@ export default function TransactionsPage() {
   return (
     <div className="space-y-4 p-3 md:space-y-6 md:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <h1 className="font-mono text-2xl font-bold text-zinc-100">$ transactions</h1>
+        <h1 className="font-mono text-2xl font-bold text-zinc-100">$ {t('transactions.title')}</h1>
       </div>
 
       <Card className="border-zinc-800 bg-zinc-900/50">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="font-mono text-sm">filters</CardTitle>
+          <CardTitle className="font-mono text-sm">{t('common.filters')}</CardTitle>
           <Button
             type="button"
             variant="ghost"
@@ -221,7 +223,7 @@ export default function TransactionsPage() {
             className="gap-1 md:hidden font-mono text-xs"
           >
             {showFilters ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-            filters
+            {t('common.filters')}
           </Button>
         </CardHeader>
         <CardContent className={!showFilters ? 'hidden md:block' : ''}>
@@ -229,7 +231,7 @@ export default function TransactionsPage() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
               <Input
-                placeholder="search card..."
+                placeholder={t('transactions.searchPlaceholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -237,20 +239,20 @@ export default function TransactionsPage() {
             </div>
 
             <Select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-              <option value="">all types</option>
-              <option value="BUY">BUY</option>
-              <option value="SELL">SELL</option>
+              <option value="">{t('transactions.allTypes')}</option>
+              <option value="BUY">{t('transactions.buy')}</option>
+              <option value="SELL">{t('transactions.sell')}</option>
             </Select>
 
             <Select value={filterCardType} onChange={(e) => setFilterCardType(e.target.value)}>
-              <option value="">all card types</option>
+              <option value="">{t('transactions.allCardTypes')}</option>
               {CARD_TYPES.map((t) => (
                 <option key={t} value={t}>{t}</option>
               ))}
             </Select>
 
             <Select value={filterGame} onChange={(e) => setFilterGame(e.target.value)}>
-              <option value="">all games</option>
+              <option value="">{t('transactions.allGames')}</option>
               {GAMES.map((g) => (
                 <option key={g} value={g}>{g}</option>
               ))}
@@ -259,7 +261,7 @@ export default function TransactionsPage() {
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-zinc-500" />
               <Select value={filterYear} onChange={(e) => setFilterYear(e.target.value)}>
-                <option value="">all years</option>
+                <option value="">{t('transactions.allYears')}</option>
                 {years.map((y) => (
                   <option key={y} value={y}>{y}</option>
                 ))}
@@ -267,7 +269,7 @@ export default function TransactionsPage() {
             </div>
 
             <Select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)}>
-              <option value="">all months</option>
+              <option value="">{t('transactions.allMonths')}</option>
               {months.map((m) => (
                 <option key={m} value={m}>{m.padStart(2, '0')}</option>
               ))}
@@ -277,7 +279,7 @@ export default function TransactionsPage() {
           <div className="mt-4 flex flex-wrap gap-2">
             {[search, filterType, filterCardType, filterGame, filterYear, filterMonth].some(Boolean) && (
               <Button variant="ghost" size="sm" onClick={clearFilters} className="font-mono text-xs">
-                clear filters
+                {t('transactions.clearFilters')}
               </Button>
             )}
           </div>
@@ -287,15 +289,15 @@ export default function TransactionsPage() {
       <Card className="border-zinc-800 bg-zinc-900/50">
           <CardHeader>
             <CardTitle className="font-mono text-sm">
-              transactions ({transactions.length})
+              {t('transactions.transactionsWithCount', { count: transactions.length })}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="py-12 text-center font-mono text-sm text-zinc-500">loading...</div>
+              <div className="py-12 text-center font-mono text-sm text-zinc-500">{t('common.loading')}</div>
             ) : transactions.length === 0 ? (
               <div className="py-12 text-center font-mono text-sm text-zinc-500">
-                no transactions for {filterMonth.padStart(2, '0')}/{filterYear}
+                {t('transactions.noTransactionsForPeriod', { month: filterMonth.padStart(2, '0'), year: filterYear })}
               </div>
             ) : (
               <>
@@ -303,14 +305,14 @@ export default function TransactionsPage() {
                   <table className="w-full text-left font-mono text-sm">
                     <thead>
                       <tr className="border-b border-zinc-800 text-zinc-500">
-                        <th className="pb-2 pr-4">date</th>
-                        <th className="pb-2 pr-4">card</th>
-                        <th className="pb-2 pr-4">type</th>
-                        <th className="pb-2 pr-4">game</th>
-                        <th className="pb-2 pr-4">qty</th>
-                        <th className="pb-2 pr-4">price</th>
-                        <th className="pb-2 pr-4">shipping</th>
-                        <th className="pb-2 pr-4">total</th>
+                        <th className="pb-2 pr-4">{t('transactions.table.date')}</th>
+                        <th className="pb-2 pr-4">{t('transactions.table.card')}</th>
+                        <th className="pb-2 pr-4">{t('transactions.table.type')}</th>
+                        <th className="pb-2 pr-4">{t('transactions.table.game')}</th>
+                        <th className="pb-2 pr-4">{t('transactions.table.qty')}</th>
+                        <th className="pb-2 pr-4">{t('transactions.table.price')}</th>
+                        <th className="pb-2 pr-4">{t('transactions.table.shipping')}</th>
+                        <th className="pb-2 pr-4">{t('transactions.table.total')}</th>
                         <th className="pb-2"></th>
                       </tr>
                     </thead>
@@ -325,7 +327,7 @@ export default function TransactionsPage() {
                             </div>
                           </td>
                           <td className="py-3 pr-4">
-                            <Badge variant={tx.type === 'BUY' ? 'buy' : 'sell'}>{tx.type}</Badge>
+                            <Badge variant={tx.type === 'BUY' ? 'buy' : 'sell'}>{tx.type === 'BUY' ? t('transactions.buy') : t('transactions.sell')}</Badge>
                           </td>
                           <td className="py-3 pr-4 text-zinc-400">{tx.card?.game}</td>
                           <td className="py-3 pr-4 text-zinc-300">{tx.quantity}</td>
@@ -387,7 +389,7 @@ export default function TransactionsPage() {
                         <span className="min-w-0 break-words text-right text-zinc-300">{tx.quantity} × {formatCurrency(Number(tx.pricePerUnit))}</span>
                       </div>
                       <div className="mt-1 flex items-center justify-between gap-2 font-mono text-xs">
-                        <span className="text-zinc-500">shipping {tx.shippingCost ? formatCurrency(Number(tx.shippingCost)) : '-'}</span>
+                        <span className="text-zinc-500">{t('transactions.table.shipping')} {tx.shippingCost ? formatCurrency(Number(tx.shippingCost)) : '-'}</span>
                         <span className="min-w-0 break-words text-right font-medium text-zinc-200">{formatCurrency(Number(tx.totalAmount))}</span>
                       </div>
                       <div className="mt-2 flex justify-end gap-1">
@@ -432,17 +434,17 @@ export default function TransactionsPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Pencil className="h-4 w-4 text-emerald-400" />
-              edit transaction
+              {t('transactions.editTransaction')}
             </DialogTitle>
             <DialogDescription>
-              update quantity, price, shipping, date, or note.
+              {t('transactions.editDescription')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <label className="font-mono text-xs text-zinc-400">quantity</label>
+                <label className="font-mono text-xs text-zinc-400">{t('transactions.quantity')}</label>
                 <Input
                   type="number"
                   min={1}
@@ -452,7 +454,7 @@ export default function TransactionsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="font-mono text-xs text-zinc-400">price / unit</label>
+                <label className="font-mono text-xs text-zinc-400">{t('transactions.pricePerUnit')}</label>
                 <Input
                   type="number"
                   step="0.01"
@@ -465,7 +467,7 @@ export default function TransactionsPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="font-mono text-xs text-zinc-400">shipping cost</label>
+              <label className="font-mono text-xs text-zinc-400">{t('transactions.shippingCost')}</label>
               <Input
                 type="number"
                 step="0.01"
@@ -477,7 +479,7 @@ export default function TransactionsPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="font-mono text-xs text-zinc-400">date</label>
+              <label className="font-mono text-xs text-zinc-400">{t('common.date')}</label>
               <Input
                 type="date"
                 value={editForm.date}
@@ -487,22 +489,22 @@ export default function TransactionsPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="font-mono text-xs text-zinc-400">note</label>
+              <label className="font-mono text-xs text-zinc-400">{t('common.note')}</label>
               <Input
                 value={editForm.note}
                 onChange={(e) => setEditForm({ ...editForm, note: e.target.value })}
-                placeholder="optional"
+                placeholder={t('common.optional')}
               />
             </div>
           </div>
 
           <DialogFooter>
             <Button type="button" variant="ghost" size="sm" onClick={closeEdit}>
-              cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={isSubmitting} size="sm" className="gap-2">
               <Pencil className="h-3.5 w-3.5" />
-              save changes
+              {t('transactions.saveChanges')}
             </Button>
           </DialogFooter>
         </form>

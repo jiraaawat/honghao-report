@@ -15,39 +15,43 @@ import {
   Library,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n/provider'
+import { LanguageToggle } from '@/components/i18n/language-toggle'
+import { DictionaryKey } from '@/lib/i18n/dictionary'
 
-const navItems = [
-  { href: '/dashboard', label: 'dashboard', icon: LayoutDashboard },
-  { href: '/inventory', label: 'inventory', icon: Boxes },
-  { href: '/cards', label: 'cards', icon: Library },
-  { href: '/grading', label: 'grading', icon: Gem },
-  { href: '/transactions', label: 'transactions', icon: Receipt },
-  { href: '/reports', label: 'reports', icon: BarChart3 },
+const navItems: { href: string; label: DictionaryKey; icon: React.ElementType }[] = [
+  { href: '/dashboard', label: 'nav.dashboard', icon: LayoutDashboard },
+  { href: '/inventory', label: 'nav.inventory', icon: Boxes },
+  { href: '/cards', label: 'nav.cards', icon: Library },
+  { href: '/grading', label: 'nav.grading', icon: Gem },
+  { href: '/transactions', label: 'nav.transactions', icon: Receipt },
+  { href: '/reports', label: 'nav.reports', icon: BarChart3 },
 ]
 
-const pageTitles: Record<string, string> = {
-  '/dashboard': 'Dashboard',
-  '/inventory': 'Inventory',
-  '/cards': 'Card list',
-  '/grading': 'Grading',
-  '/grading/send': 'Send to grade',
-  '/transactions': 'Transactions',
-  '/reports': 'Reports',
+const pageTitles: Record<string, DictionaryKey> = {
+  '/dashboard': 'pageTitle.dashboard',
+  '/inventory': 'pageTitle.inventory',
+  '/cards': 'pageTitle.cardList',
+  '/grading': 'pageTitle.grading',
+  '/grading/send': 'pageTitle.sendToGrade',
+  '/transactions': 'pageTitle.transactions',
+  '/reports': 'pageTitle.reports',
 }
 
-function getPageTitle(pathname: string) {
+function getPageTitleKey(pathname: string): DictionaryKey | null {
   if (pageTitles[pathname]) return pageTitles[pathname]
   const match = Object.keys(pageTitles)
     .filter((p) => p !== '/')
     .sort((a, b) => b.length - a.length)
     .find((p) => pathname.startsWith(p))
-  return match ? pageTitles[match] : ''
+  return match ? pageTitles[match] : null
 }
 
 export function Navbar() {
   const pathname = usePathname()
   const { data: session, status } = useSession()
-  const title = getPageTitle(pathname)
+  const { t } = useLanguage()
+  const titleKey = getPageTitleKey(pathname)
 
   if (status === 'loading') return null
   if (!session) return null
@@ -64,8 +68,8 @@ export function Navbar() {
           </Link>
 
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 md:hidden">
-            {title ? (
-              <h2 className="font-mono text-sm font-medium tracking-tight text-zinc-200">{title}</h2>
+            {titleKey ? (
+              <h2 className="font-mono text-sm font-medium tracking-tight text-zinc-200">{t(titleKey)}</h2>
             ) : null}
           </div>
 
@@ -85,13 +89,14 @@ export function Navbar() {
                   )}
                 >
                   <Icon className="h-3.5 w-3.5" />
-                  {item.label}
+                  {t(item.label)}
                 </Link>
               )
             })}
           </nav>
 
           <div className="flex items-center gap-3 md:ml-auto">
+            <LanguageToggle />
             <div className="hidden items-center gap-2 font-mono text-xs text-zinc-400 lg:flex">
               <User className="h-3.5 w-3.5" />
               <span className="max-w-[160px] truncate">{session.user?.email}</span>
@@ -103,7 +108,7 @@ export function Navbar() {
               className="gap-2"
             >
               <LogOut className="h-3.5 w-3.5" />
-              <span className="hidden md:inline">logout</span>
+              <span className="hidden md:inline">{t('nav.logout')}</span>
             </Button>
           </div>
         </div>
@@ -131,7 +136,7 @@ export function Navbar() {
                   >
                     <Icon className="h-5 w-5" />
                   </span>
-                  {item.label}
+                  {t(item.label)}
                 </Link>
               </li>
             )
