@@ -324,8 +324,8 @@ export default function TransactionsPage() {
                             </div>
                           </td>
                           <td className="py-3 pr-4">
-                            <Badge variant={tx.type === 'BUY' ? 'buy' : tx.type === 'SELL' ? 'sell' : 'grading'}>
-                              {tx.type === 'BUY' ? t('transactions.buy') : tx.type === 'SELL' ? t('transactions.sell') : t('transactions.grading')}
+                            <Badge variant={tx.type === 'BUY' ? 'buy' : tx.type === 'SELL' ? 'sell' : tx.type === 'GRADING' ? 'grading' : 'default'}>
+                              {tx.type === 'BUY' ? t('transactions.buy') : tx.type === 'SELL' ? t('transactions.sell') : tx.type === 'GRADING' ? t('transactions.grading') : t('transactions.adjustment')}
                             </Badge>
                           </td>
                           <td className="py-3 pr-4 text-zinc-400">{tx.card?.game}</td>
@@ -351,7 +351,7 @@ export default function TransactionsPage() {
                                 <Zap className="h-4 w-4" />
                               </Button>
                             )}
-                            {tx.type !== 'GRADING' && (
+                            {tx.type !== 'GRADING' && tx.type !== 'COST_ADJUSTMENT' && (
                               <>
                                 <Button
                                   variant="ghost"
@@ -385,7 +385,7 @@ export default function TransactionsPage() {
                           <div className="truncate font-mono text-sm text-zinc-200">{tx.card?.name}</div>
                           <div className="truncate font-mono text-xs text-zinc-500">{tx.card?.cardType} · {tx.card?.game}</div>
                         </div>
-                        <Badge variant={tx.type === 'BUY' ? 'buy' : tx.type === 'SELL' ? 'sell' : 'grading'} className="shrink-0">{tx.type === 'BUY' ? t('transactions.buy') : tx.type === 'SELL' ? t('transactions.sell') : t('transactions.grading')}</Badge>
+                        <Badge variant={tx.type === 'BUY' ? 'buy' : tx.type === 'SELL' ? 'sell' : tx.type === 'GRADING' ? 'grading' : 'default'} className="shrink-0">{tx.type === 'BUY' ? t('transactions.buy') : tx.type === 'SELL' ? t('transactions.sell') : tx.type === 'GRADING' ? t('transactions.grading') : t('transactions.adjustment')}</Badge>
                       </div>
                       <div className="mt-2 flex items-center justify-between gap-2 font-mono text-xs">
                         <span className="text-zinc-500">{formatDate(tx.date)}</span>
@@ -407,7 +407,7 @@ export default function TransactionsPage() {
                             <Zap className="h-4 w-4" />
                           </Button>
                         )}
-                        {tx.type !== 'GRADING' && (
+                        {tx.type !== 'GRADING' && tx.type !== 'COST_ADJUSTMENT' && (
                           <>
                             <Button
                               variant="ghost"

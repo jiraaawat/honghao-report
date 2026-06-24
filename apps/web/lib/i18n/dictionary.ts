@@ -172,6 +172,7 @@ export const dictionary = {
   'inventory.gridView': { en: 'Grid view', th: 'มุมมองกริด' },
   'inventory.noItemsMatch': { en: 'no items match your filters', th: 'ไม่มีรายการที่ตรงกับตัวกรอง' },
   'inventory.editValueTitle': { en: 'click to edit current value', th: 'คลิกเพื่อแก้ไขมูลค่าปัจจุบัน' },
+  'inventory.editCost': { en: 'edit cost', th: 'แก้ไขต้นทุน' },
   'inventory.showDetails': { en: 'show details', th: 'แสดงรายละเอียด' },
   'inventory.hideDetails': { en: 'hide details', th: 'ซ่อนรายละเอียด' },
   'inventory.createdOn': { en: 'created {date}', th: 'สร้าง {date}' },
@@ -191,6 +192,12 @@ export const dictionary = {
 
   'inventory.dialog.remove.title': { en: 'remove stock', th: 'ลดสต็อก' },
   'inventory.dialog.remove.description': { en: 'enter the quantity to remove from stock.', th: 'ใส่จำนวนที่ต้องการลดออกจากสต็อก' },
+
+  'inventory.dialog.cost.title': { en: 'edit avg cost', th: 'แก้ไขต้นทุนเฉลี่ย' },
+  'inventory.dialog.cost.description': { en: 'adjust the average cost per unit. a cost adjustment transaction will be logged.', th: 'ปรับต้นทุนเฉลี่ยต่อใบ ระบบจะบันทึกธุรกรรมปรับต้นทุน' },
+  'inventory.dialog.cost.currentAvgCost': { en: 'current avg cost', th: 'ต้นทุนเฉลี่ยปัจจุบัน' },
+  'inventory.dialog.cost.newAvgCost': { en: 'new avg cost', th: 'ต้นทุนเฉลี่ยใหม่' },
+  'inventory.dialog.cost.save': { en: 'save cost', th: 'บันทึกต้นทุน' },
 
   'inventory.dialog.add.title': { en: 'add card / stock', th: 'เพิ่มการ์ด / สต็อก' },
   'inventory.dialog.add.existingCard': { en: 'existing card', th: 'การ์ดที่มีอยู่' },
@@ -283,6 +290,7 @@ export const dictionary = {
   'transactions.buy': { en: 'BUY', th: 'ซื้อ' },
   'transactions.sell': { en: 'SELL', th: 'ขาย' },
   'transactions.grading': { en: 'GRADING', th: 'เกรด' },
+  'transactions.adjustment': { en: 'COST ADJUST', th: 'ปรับต้นทุน' },
   'transactions.allCardTypes': { en: 'all card types', th: 'ทุกประเภทการ์ด' },
   'transactions.clearFilters': { en: 'clear filters', th: 'ล้างตัวกรอง' },
   'transactions.table.date': { en: 'date', th: 'วันที่' },
@@ -412,6 +420,7 @@ export const dictionary = {
   'inventoryGridCard.sell': { en: 'sell', th: 'ขาย' },
   'inventoryGridCard.add': { en: 'add', th: 'เพิ่ม' },
   'inventoryGridCard.remove': { en: 'remove', th: 'ลด' },
+  'inventoryGridCard.editCost': { en: 'edit cost', th: 'แก้ไขต้นทุน' },
   'inventoryGridCard.sendToGrade': { en: 'send to grade', th: 'ส่งเกรด' },
   'inventoryGridCard.createdAt': { en: 'created at', th: 'สร้างเมื่อ' },
   'inventoryGridCard.soldAt': { en: 'sold at', th: 'ขายเมื่อ' },

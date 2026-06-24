@@ -35,6 +35,7 @@ import {
   Plus,
   Minus,
   Tag,
+  Pencil,
   PlusCircle,
   ChevronUp,
   ChevronDown,
@@ -53,6 +54,7 @@ interface InventoryResponse {
     totalValue: number
     totalProfit: number
     totalInvested: number
+    totalROI: number
   }
 }
 
@@ -135,7 +137,11 @@ export default function InventoryPage() {
     cardId: '',
     isNewCard: false,
   })
-
+  const [costDialog, setCostDialog] = useState<{ open: boolean; item: InventoryItem | null }>({
+    open: false,
+    item: null,
+  })
+  const [costValue, setCostValue] = useState('')
 
   const years = useMemo(
     () => Array.from({ length: 5 }, (_, i) => (new Date().getFullYear() - 2 + i).toString()),
@@ -229,6 +235,38 @@ export default function InventoryPage() {
 
   const closeAdd = () => {
     setAddDialog({ open: false, item: null })
+  }
+
+  const openCost = (item: InventoryItem) => {
+    setCostDialog({ open: true, item })
+    setCostValue(String(item.averageCost))
+  }
+
+  const closeCost = () => {
+    setCostDialog({ open: false, item: null })
+    setCostValue('')
+  }
+
+  const handleCost = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const item = costDialog.item
+    if (!item || isSubmitting) return
+
+    const newCost = Number(costValue)
+    if (Number.isNaN(newCost) || newCost < 0) return
+
+    setIsSubmitting(true)
+    const res = await fetch(`/api/inventory/${item.cardId}/cost`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newAverageCost: newCost }),
+    })
+
+    if (res.ok) {
+      closeCost()
+      fetchInventory()
+    }
+    setIsSubmitting(false)
   }
 
   const handleSell = (e: React.FormEvent) => {
@@ -487,28 +525,20 @@ export default function InventoryPage() {
   }, [filteredItems, sortBy])
 
   const summary = useMemo(() => {
-    const inStockQty = filteredItems
-      .filter((i) => i.status === 'in_stock')
-      .reduce((sum, i) => sum + i.quantity, 0)
-    const gradingQty = filteredItems
-      .filter((i) => i.status === 'grading')
-      .reduce((sum, i) => sum + i.quantity, 0)
-    const soldOutQty = filteredItems.reduce((sum, i) => sum + i.soldQty, 0)
-    const totalValue = filteredItems.reduce((sum, i) => sum + i.currentValue, 0)
-    const totalProfit = filteredItems.reduce((sum, i) => sum + i.profit, 0)
-    const totalInvested = filteredItems.reduce((sum, i) => sum + i.totalInvested, 0)
-    return {
-      totalCards: inStockQty + gradingQty,
-      inStock: inStockQty,
-      grading: gradingQty,
-      soldOut: soldOutQty,
-      soldCards: soldOutQty,
-      totalValue,
-      totalProfit,
-      totalROI: totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0,
-      totalInvested,
-    }
-  }, [filteredItems])
+    return (
+      data?.summary ?? {
+        totalCards: 0,
+        inStock: 0,
+        grading: 0,
+        soldOut: 0,
+        soldCards: 0,
+        totalValue: 0,
+        totalProfit: 0,
+        totalInvested: 0,
+        totalROI: 0,
+      }
+    )
+  }, [data?.summary])
 
   const formatCounts = useMemo(() => {
     return {
@@ -976,6 +1006,18 @@ export default function InventoryPage() {
                                     <Gem className="h-3.5 w-3.5" />
                                   </Button>
                                 </Link>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  title={t('inventory.editCost')}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    openCost(item)
+                                  }}
+                                  className="h-7 w-7 shrink-0 border-blue-500/30 text-blue-400 hover:bg-blue-500/10 hover:text-blue-400"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
                               </>
                             ) : (
                               <span className="inline-block h-7 w-7" />
@@ -1073,6 +1115,14 @@ export default function InventoryPage() {
                               <Gem className="h-3.5 w-3.5" />
                             </Button>
                           </Link>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-blue-400 hover:bg-blue-500/10 hover:text-blue-400"
+                            onClick={() => openCost(item)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
                       )}
 
@@ -1154,6 +1204,7 @@ export default function InventoryPage() {
                   onSell={openSell}
                   onAdd={openAdd}
                   onRemove={openRemove}
+                  onEditCost={openCost}
                   editing={editingValue?.cardId === item.cardId}
                   onEdit={() => setEditingValue({ cardId: item.cardId, value: String(item.marketValuePerUnit) })}
                   onUpdateValue={(value) => updateCurrentValue(item.cardId, value)}
@@ -1647,6 +1698,60 @@ export default function InventoryPage() {
             )}
           </Button>
         </DialogFooter>
+      </Dialog>
+
+      <Dialog open={costDialog.open} onOpenChange={closeCost}>
+        <form onSubmit={handleCost}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-4 w-4 text-blue-400" />
+              {t('inventory.dialog.cost.title')} {costDialog.item?.cardName}
+            </DialogTitle>
+            <DialogDescription>{t('inventory.dialog.cost.description')}</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label className="font-mono text-xs text-zinc-400">{t('inventory.table.qty')}</label>
+                <Input type="number" value={costDialog.item?.quantity ?? 0} disabled className="text-zinc-500" />
+              </div>
+              <div className="space-y-2">
+                <label className="font-mono text-xs text-zinc-400">{t('inventory.dialog.cost.currentAvgCost')}</label>
+                <Input
+                  type="text"
+                  value={formatCurrency(costDialog.item?.averageCost ?? 0)}
+                  disabled
+                  className="text-zinc-500"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="font-mono text-xs text-zinc-400">{t('inventory.dialog.cost.newAvgCost')}</label>
+              <Input
+                type="number"
+                step="0.01"
+                min={0}
+                value={costValue}
+                onChange={(e) => setCostValue(e.target.value)}
+                placeholder="0.00"
+                required
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="ghost" size="sm" onClick={closeCost}>
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" size="sm" className="gap-2" disabled={isSubmitting}>
+              <Pencil className="h-3.5 w-3.5" />
+              {t('inventory.dialog.cost.save')}
+            </Button>
+          </DialogFooter>
+        </form>
       </Dialog>
     </div>
   )

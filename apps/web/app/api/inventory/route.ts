@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { calculateAverageCost } from '@/lib/calculations'
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -46,25 +47,11 @@ export async function GET(req: NextRequest) {
   })
 
   const items = cards.map((card) => {
-    const costBasisTxs = card.transactions.filter(
-      (t) => t.type === 'BUY' || (t.type === 'GRADING' && !t.isGradingCost)
-    )
-    const gradingCostTxs = card.transactions.filter(
-      (t) => (t.type === 'BUY' && t.isGradingCost) || (t.type === 'GRADING' && t.isGradingCost)
-    )
     const sellTxs = card.transactions.filter((t) => t.type === 'SELL')
-    const totalBuyQty = costBasisTxs.reduce((sum, t) => sum + t.quantity, 0)
-    const totalBuyAmount = costBasisTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
-    const totalGradingCost = gradingCostTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
     const totalSellQty = sellTxs.reduce((sum, t) => sum + t.quantity, 0)
     const totalSellAmount = sellTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
     const quantity = card.inventory?.quantity ?? 0
-    const avgCost =
-      totalBuyQty > 0
-        ? (totalBuyAmount + totalGradingCost) / totalBuyQty
-        : quantity > 0
-          ? totalGradingCost / quantity
-          : 0
+    const avgCost = calculateAverageCost(card.transactions, quantity)
 
     const effectiveStatus: 'in_stock' | 'sold_out' | 'grading' =
       card.status === 'grading'
@@ -134,28 +121,29 @@ export async function GET(req: NextRequest) {
   if (status === 'in_stock') filtered = visibleItems.filter((i) => i.status === 'in_stock')
   if (status === 'sold_out') filtered = visibleItems.filter((i) => i.status === 'sold_out')
 
-  const inStockQty = filtered
+  // Summary reflects all visible items regardless of status filter.
+  const allInStockQty = visibleItems
     .filter((i) => i.status === 'in_stock')
     .reduce((sum, i) => sum + i.quantity, 0)
-  const gradingQty = filtered
+  const allGradingQty = visibleItems
     .filter((i) => i.status === 'grading')
     .reduce((sum, i) => sum + i.quantity, 0)
-  const soldOutCount = filtered.reduce((sum, i) => sum + i.soldQty, 0)
+  const allSoldOutCount = visibleItems.reduce((sum, i) => sum + i.soldQty, 0)
 
-  const totalValue = filtered.reduce((sum, i) => sum + i.currentValue, 0)
-  const totalProfit = filtered.reduce((sum, i) => sum + i.profit, 0)
-  const totalInvested = filtered.reduce((sum, i) => sum + i.totalInvested, 0)
+  const allTotalValue = visibleItems.reduce((sum, i) => sum + i.currentValue, 0)
+  const allTotalProfit = visibleItems.reduce((sum, i) => sum + i.profit, 0)
+  const allTotalInvested = visibleItems.reduce((sum, i) => sum + i.totalInvested, 0)
 
   const summary = {
-    totalCards: inStockQty + gradingQty, // total unsold card quantity
-    inStock: inStockQty,
-    grading: gradingQty,
-    soldOut: soldOutCount,
-    soldCards: soldOutCount,
-    totalValue,
-    totalProfit,
-    totalROI: totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0,
-    totalInvested,
+    totalCards: allInStockQty + allGradingQty, // total unsold card quantity
+    inStock: allInStockQty,
+    grading: allGradingQty,
+    soldOut: allSoldOutCount,
+    soldCards: allSoldOutCount,
+    totalValue: allTotalValue,
+    totalProfit: allTotalProfit,
+    totalROI: allTotalInvested > 0 ? (allTotalProfit / allTotalInvested) * 100 : 0,
+    totalInvested: allTotalInvested,
   }
 
   return NextResponse.json({ items: filtered, summary })

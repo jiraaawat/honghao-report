@@ -65,6 +65,13 @@ export async function PUT(
     )
   }
 
+  if (transaction.type === 'COST_ADJUSTMENT') {
+    return NextResponse.json(
+      { error: 'Cost adjustments cannot be modified. Edit the inventory cost instead.' },
+      { status: 400 }
+    )
+  }
+
   try {
     const body = await req.json()
     const data = updateSchema.parse(body)
@@ -201,6 +208,13 @@ export async function DELETE(
   if (transaction.type === 'GRADING') {
     return NextResponse.json(
       { error: 'Grading transactions cannot be deleted here. Use the Grading page instead.' },
+      { status: 400 }
+    )
+  }
+
+  if (transaction.type === 'COST_ADJUSTMENT') {
+    return NextResponse.json(
+      { error: 'Cost adjustments cannot be deleted. Edit the inventory cost instead.' },
       { status: 400 }
     )
   }

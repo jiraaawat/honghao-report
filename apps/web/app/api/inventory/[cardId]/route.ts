@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { calculateAverageCost } from '@/lib/calculations'
 import { z } from 'zod'
 
 const updateSchema = z.object({
@@ -96,19 +97,18 @@ export async function POST(
       const sellTxs = await tx.transaction.findMany({
         where: { cardId, userId, type: 'SELL' },
       })
+      const adjustmentTxs = await tx.transaction.findMany({
+        where: { cardId, userId, type: 'COST_ADJUSTMENT' },
+      })
 
       const totalBuyQty = remainingBuyTxs.reduce((sum, t) => sum + t.quantity, 0)
-      const totalBuyAmount = remainingBuyTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
-      const totalGradingCost = gradingCostTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
       const totalSellQty = sellTxs.reduce((sum, t) => sum + t.quantity, 0)
 
       let newQuantity = totalBuyQty - totalSellQty
-      let avgCost =
-        totalBuyQty > 0
-          ? (totalBuyAmount + totalGradingCost) / totalBuyQty
-          : newQuantity > 0
-            ? totalGradingCost / newQuantity
-            : 0
+      let avgCost = calculateAverageCost(
+        [...remainingBuyTxs, ...gradingCostTxs, ...adjustmentTxs],
+        newQuantity
+      )
       let totalInvested = avgCost * newQuantity
 
       // Fallback: if no normal buy tx was found to reverse, just reduce the existing inventory.

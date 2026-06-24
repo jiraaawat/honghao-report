@@ -16,7 +16,7 @@ export interface CardDto {
 export interface TransactionDto {
   id: string
   cardId: string
-  type: 'BUY' | 'SELL'
+  type: 'BUY' | 'SELL' | 'GRADING' | 'COST_ADJUSTMENT'
   quantity: number
   pricePerUnit: number
   totalAmount: number

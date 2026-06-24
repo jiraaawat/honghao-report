@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
-import { calculateMonthlyReport } from '@/lib/calculations'
+import { calculateAverageCost, calculateMonthlyReport } from '@/lib/calculations'
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
       include: {
         inventory: true,
         transactions: {
-          where: { type: { in: ['BUY', 'GRADING'] } },
+          where: { type: { in: ['BUY', 'GRADING', 'COST_ADJUSTMENT'] } },
           select: { type: true, quantity: true, totalAmount: true, isGradingCost: true },
         },
       },
@@ -37,22 +37,7 @@ export async function GET(req: NextRequest) {
 
   const avgCostMap: Record<string, number> = {}
   for (const card of cards) {
-    const costBasisTxs = card.transactions.filter(
-      (t) => t.type === 'BUY' || (t.type === 'GRADING' && !t.isGradingCost)
-    )
-    const gradingCostTxs = card.transactions.filter(
-      (t) => (t.type === 'BUY' && t.isGradingCost) || (t.type === 'GRADING' && t.isGradingCost)
-    )
-    const totalBuyQty = costBasisTxs.reduce((sum, t) => sum + t.quantity, 0)
-    const totalBuyAmount = costBasisTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
-    const totalGradingCost = gradingCostTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
-    const quantity = card.inventory?.quantity ?? 0
-    avgCostMap[card.id] =
-      totalBuyQty > 0
-        ? (totalBuyAmount + totalGradingCost) / totalBuyQty
-        : quantity > 0
-          ? totalGradingCost / quantity
-          : 0
+    avgCostMap[card.id] = calculateAverageCost(card.transactions, card.inventory?.quantity ?? 0)
   }
 
   const report = calculateMonthlyReport(transactions, avgCostMap)

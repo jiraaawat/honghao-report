@@ -14,8 +14,13 @@ export interface MonthlyStats {
 }
 
 function isBuyLike(tx: Transaction): boolean {
-  // BUY transactions and grading-cost transactions count as spend.
+  // BUY transactions and grading-cost transactions count as spend and quantity.
   return tx.type === 'BUY' || (tx.type === 'GRADING' && tx.isGradingCost)
+}
+
+function isCostLike(tx: Transaction): boolean {
+  // Anything that changes the cost basis, including manual adjustments.
+  return tx.type === 'BUY' || (tx.type === 'GRADING' && tx.isGradingCost) || tx.type === 'COST_ADJUSTMENT'
 }
 
 export function calculateMonthlyReport(
@@ -46,9 +51,11 @@ export function calculateMonthlyReport(
     const stats = grouped.get(key)!
     stats.transactionCount += 1
 
-    if (isBuyLike(tx)) {
+    if (isCostLike(tx)) {
       stats.totalBuy += Number(tx.totalAmount)
-      stats.buyQty += tx.quantity
+      if (isBuyLike(tx)) {
+        stats.buyQty += tx.quantity
+      }
     } else if (tx.type === 'SELL') {
       stats.totalSell += Number(tx.totalAmount)
       stats.sellQty += tx.quantity
@@ -78,7 +85,7 @@ export function calculateMonthlyReport(
 
 export function calculateTotalProfit(transactions: Transaction[]): number {
   const buyTotal = transactions
-    .filter(isBuyLike)
+    .filter(isCostLike)
     .reduce((sum, t) => sum + Number(t.totalAmount), 0)
   const sellTotal = transactions
     .filter((t) => t.type === 'SELL')
@@ -88,8 +95,40 @@ export function calculateTotalProfit(transactions: Transaction[]): number {
 
 export function calculateROI(transactions: Transaction[]): number {
   const buyTotal = transactions
-    .filter(isBuyLike)
+    .filter(isCostLike)
     .reduce((sum, t) => sum + Number(t.totalAmount), 0)
   const profit = calculateTotalProfit(transactions)
   return buyTotal > 0 ? (profit / buyTotal) * 100 : 0
+}
+
+interface CostTransaction {
+  type: string
+  quantity: number
+  totalAmount: number | string | { toNumber: () => number }
+  isGradingCost?: boolean | null
+}
+
+export function calculateAverageCost(
+  transactions: CostTransaction[],
+  currentQuantity?: number
+): number {
+  const costBasisTxs = transactions.filter(
+    (t) => t.type === 'BUY' || (t.type === 'GRADING' && !t.isGradingCost)
+  )
+  const gradingCostTxs = transactions.filter(
+    (t) => (t.type === 'BUY' && t.isGradingCost) || (t.type === 'GRADING' && t.isGradingCost)
+  )
+  const adjustmentTxs = transactions.filter((t) => t.type === 'COST_ADJUSTMENT')
+
+  const totalBuyQty = costBasisTxs.reduce((sum, t) => sum + t.quantity, 0)
+  const totalBuyAmount = costBasisTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
+  const totalGradingCost = gradingCostTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
+  const totalAdjustment = adjustmentTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
+
+  if (totalBuyQty > 0) {
+    return (totalBuyAmount + totalGradingCost + totalAdjustment) / totalBuyQty
+  }
+
+  const qty = currentQuantity ?? 0
+  return qty > 0 ? (totalGradingCost + totalAdjustment) / qty : 0
 }

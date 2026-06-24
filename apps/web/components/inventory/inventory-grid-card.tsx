@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
-import { Package, PackageCheck, PackageX, Gem, Plus, Minus, Tag } from 'lucide-react'
+import { Package, PackageCheck, PackageX, Gem, Plus, Minus, Tag, Pencil } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/provider'
 
 interface InventoryGridCardProps {
@@ -16,6 +16,7 @@ interface InventoryGridCardProps {
   onSell: (item: InventoryItem) => void
   onAdd: (item: InventoryItem) => void
   onRemove: (item: InventoryItem) => void
+  onEditCost: (item: InventoryItem) => void
   editing: boolean
   onEdit: () => void
   onUpdateValue: (value: string) => void
@@ -26,6 +27,7 @@ export function InventoryGridCard({
   onSell,
   onAdd,
   onRemove,
+  onEditCost,
   editing,
   onEdit,
   onUpdateValue,
@@ -190,6 +192,14 @@ export function InventoryGridCard({
                 <Gem className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t('inventoryGridCard.sendToGrade')}</span>
               </Button>
             </Link>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 w-full gap-1 text-xs text-blue-400 hover:bg-blue-500/10 hover:text-blue-400"
+              onClick={() => onEditCost(item)}
+            >
+              <Pencil className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t('inventoryGridCard.editCost')}</span>
+            </Button>
           </>
         ) : (
           <div className="rounded-md border border-zinc-800 bg-zinc-950/30 p-2 font-mono text-[10px] text-zinc-500">
