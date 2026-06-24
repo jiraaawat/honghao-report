@@ -82,6 +82,7 @@ export const dictionary = {
   'nav.transactions': { en: 'transactions', th: 'ธุรกรรม' },
   'nav.reports': { en: 'reports', th: 'รายงาน' },
   'nav.logout': { en: 'logout', th: 'ออกจากระบบ' },
+  'nav.logoutConfirm': { en: 'Are you sure you want to sign out?', th: 'คุณต้องการออกจากระบบใช่หรือไม่?' },
 
   // page titles
   'pageTitle.dashboard': { en: 'Dashboard', th: 'แดชบอร์ด' },

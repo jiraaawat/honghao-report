@@ -93,8 +93,11 @@ body {
 .light [class~="bg-zinc-900/40"] { background-color: rgba(255, 255, 255, 0.4) !important; }
 .light [class~="bg-zinc-900/60"] { background-color: rgba(255, 255, 255, 0.6) !important; }
 .light [class~="bg-zinc-900/30"] { background-color: rgba(255, 255, 255, 0.3) !important; }
-.light [class~="bg-zinc-950/50"] { background-color: rgba(244, 244, 245, 0.5) !important; }
+.light [class~="bg-zinc-950/95"] { background-color: rgba(244, 244, 245, 0.95) !important; }
+.light [class~="bg-zinc-950/90"] { background-color: rgba(244, 244, 245, 0.9) !important; }
 .light [class~="bg-zinc-950/80"] { background-color: rgba(244, 244, 245, 0.8) !important; }
+.light [class~="bg-zinc-950/60"] { background-color: rgba(244, 244, 245, 0.6) !important; }
+.light [class~="bg-zinc-950/50"] { background-color: rgba(244, 244, 245, 0.5) !important; }
 .light [class~="bg-zinc-800"] { background-color: #e4e4e7 !important; }
 .light [class~="bg-zinc-800/50"] { background-color: rgba(228, 228, 231, 0.5) !important; }
 .light [class~="bg-zinc-800/60"] { background-color: rgba(228, 228, 231, 0.6) !important; }
@@ -128,7 +131,10 @@ body {
 .light [class~="hover:bg-zinc-900"]:hover { background-color: #f4f4f5 !important; }
 .light [class~="hover:text-zinc-100"]:hover { color: #18181b !important; }
 .light [class~="hover:text-zinc-200"]:hover { color: #27272a !important; }
+.light [class~="hover:text-zinc-300"]:hover { color: #52525b !important; }
 .light [class~="hover:text-emerald-400"]:hover { color: #059669 !important; }
+
+.light [class~="bg-emerald-500/15"] { background-color: rgba(5, 150, 105, 0.12) !important; }
 
 .light [class~="focus:border-emerald-500"]:focus { border-color: #10b981 !important; }
 .light [class~="focus:ring-emerald-500"]:focus { --tw-ring-color: #10b981 !important; }

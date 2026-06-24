@@ -77,6 +77,11 @@ export function Navbar() {
             <span className="text-emerald-500">$</span> honghao-report
           </Link>
 
+          <div className="relative z-10 flex items-center gap-3 md:hidden">
+            <ThemeToggle />
+            <LanguageToggle />
+          </div>
+
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 md:hidden">
             {titleKey ? (
               <h2 className="font-mono text-sm font-medium tracking-tight text-zinc-200">{t(titleKey)}</h2>
@@ -105,9 +110,11 @@ export function Navbar() {
             })}
           </nav>
 
-          <div className="flex items-center gap-3 md:ml-auto">
-            <ThemeToggle />
-            <LanguageToggle />
+          <div className="relative z-10 ml-auto flex items-center gap-3">
+            <div className="hidden items-center gap-3 md:flex">
+              <ThemeToggle />
+              <LanguageToggle />
+            </div>
             <div className="hidden items-center gap-2 font-mono text-xs text-zinc-400 lg:flex">
               <User className="h-3.5 w-3.5" />
               <span className="max-w-[160px] truncate">{session.user?.email}</span>
@@ -115,7 +122,11 @@ export function Navbar() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => signOut({ callbackUrl: '/' })}
+              onClick={() => {
+                if (confirm(t('nav.logoutConfirm'))) {
+                  signOut({ callbackUrl: '/' })
+                }
+              }}
               className="gap-2"
             >
               <LogOut className="h-3.5 w-3.5" />
