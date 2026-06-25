@@ -17,6 +17,15 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { InventoryItem, CardDto, CARD_TYPES, GAMES, CARD_CONDITIONS, LANGUAGES } from '@/types'
+import {
+  InventoryResponse,
+  optimisticSell,
+  optimisticRemove,
+  optimisticBuy,
+  optimisticNewCard,
+  optimisticCost,
+  optimisticCurrentValue,
+} from '@/lib/optimistic/inventory'
 import { InventoryGridCard } from '@/components/inventory/inventory-grid-card'
 import { SortableInventoryGrid } from '@/components/inventory/sortable-grid'
 import { InventoryDetailsDialog } from '@/components/inventory/inventory-details-dialog'
@@ -45,22 +54,10 @@ import {
   ChevronDown,
   LayoutList,
   LayoutGrid,
+  Check,
+  X,
+  GripVertical,
 } from 'lucide-react'
-
-interface InventoryResponse {
-  items: InventoryItem[]
-  summary: {
-    totalCards: number
-    inStock: number
-    grading: number
-    soldOut: number
-    soldCards: number
-    totalValue: number
-    totalProfit: number
-    totalInvested: number
-    totalROI: number
-  }
-}
 
 export default function InventoryPage() {
   const emptySummary = useMemo(
@@ -99,6 +96,7 @@ export default function InventoryPage() {
     | 'quantity_desc'
     | 'quantity_asc'
   const [sortBy, setSortBy] = useState<SortBy>('userOrder')
+  const [reorderDraft, setReorderDraft] = useState<InventoryItem[] | null>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
 
@@ -281,6 +279,10 @@ export default function InventoryPage() {
 
     if (res.ok) {
       closeCost()
+      mutateInventory(
+        (current) => optimisticCost(current ?? inventoryData ?? { items: [], summary: emptySummary }, item, newCost),
+        false
+      )
       mutateInventory()
     }
     setIsSubmitting(false)
@@ -329,6 +331,11 @@ export default function InventoryPage() {
     if (res.ok) {
       setSellConfirm({ open: false, item: null, qty: 0, price: 0, shipping: 0, date: '', note: '' })
       closeSell()
+      mutateInventory(
+        (current) =>
+          optimisticSell(current ?? inventoryData ?? { items: [], summary: emptySummary }, item, qty, price, shipping),
+        false
+      )
       mutateInventory()
     }
     setIsSubmitting(false)
@@ -351,6 +358,10 @@ export default function InventoryPage() {
 
     if (res.ok) {
       closeRemove()
+      mutateInventory(
+        (current) => optimisticRemove(current ?? inventoryData ?? { items: [], summary: emptySummary }, item, qty),
+        false
+      )
       mutateInventory()
     }
     setIsSubmitting(false)
@@ -389,6 +400,7 @@ export default function InventoryPage() {
   const executeAdd = async () => {
     const { qty, price, date, note, isNewCard } = addConfirm
     let cardId = addConfirm.cardId
+    let newCard: CardDto | null = null
 
     if (isSubmitting) return
     setIsSubmitting(true)
@@ -412,8 +424,9 @@ export default function InventoryPage() {
         setIsSubmitting(false)
         return
       }
-      const newCard = await res.json()
-      cardId = newCard.id
+      const created = await res.json()
+      newCard = created
+      cardId = created.id
       mutateCards()
     }
 
@@ -438,6 +451,24 @@ export default function InventoryPage() {
     if (res.ok) {
       setAddConfirm({ open: false, cardName: '', qty: 0, price: 0, date: '', note: '', cardId: '', isNewCard: false })
       closeAdd()
+      mutateInventory(
+        (current) => {
+          const base = current ?? inventoryData ?? { items: [], summary: emptySummary }
+          const existing = base.items.find((i) => i.cardId === cardId)
+          if (existing) {
+            return optimisticBuy(base, existing, qty, price)
+          }
+          if (isNewCard && newCard) {
+            return optimisticNewCard(base, newCard, qty, price)
+          }
+          const card = cards.find((c) => c.id === cardId)
+          if (card) {
+            return optimisticNewCard(base, card, qty, price)
+          }
+          return base
+        },
+        false
+      )
       mutateInventory()
     }
     setIsSubmitting(false)
@@ -456,6 +487,8 @@ export default function InventoryPage() {
     const num = Number(value)
     if (Number.isNaN(num) || num < 0) return
 
+    const item = inventoryData?.items.find((i) => i.cardId === cardId)
+
     const res = await fetch(`/api/inventory/${cardId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -464,25 +497,28 @@ export default function InventoryPage() {
 
     if (res.ok) {
       setEditingValue(null)
+      if (item) {
+        mutateInventory(
+          (current) =>
+            optimisticCurrentValue(current ?? inventoryData ?? { items: [], summary: emptySummary }, item, num),
+          false
+        )
+      }
       mutateInventory()
     }
-  }, [mutateInventory])
+  }, [mutateInventory, inventoryData, emptySummary])
 
   const renderInventoryCard = useCallback(
     (item: InventoryItem) => (
       <InventoryGridCard
         item={item}
-        onSell={openSell}
-        onAdd={openAdd}
-        onRemove={openRemove}
-        onEditCost={openCost}
         onOpenDetails={setDetailsItem}
         editing={editingValue?.cardId === item.cardId}
         onEdit={() => setEditingValue({ cardId: item.cardId, value: String(item.marketValuePerUnit) })}
         onUpdateValue={(value) => updateCurrentValue(item.cardId, value)}
       />
     ),
-    [editingValue, openSell, openAdd, openRemove, openCost, updateCurrentValue]
+    [editingValue, updateCurrentValue]
   )
 
   const sellTotal = useMemo(() => {
@@ -581,29 +617,50 @@ export default function InventoryPage() {
     }
   }, [items, formatGroups])
 
+  const changeSortBy = useCallback((value: SortBy) => {
+    if (value !== 'userOrder') setReorderDraft(null)
+    setSortBy(value)
+  }, [])
+
+  const startReorder = useCallback(() => {
+    setReorderDraft(data.items)
+  }, [data.items])
+
+  const cancelReorder = useCallback(() => {
+    setReorderDraft(null)
+  }, [])
+
+  const saveReorder = useCallback(async () => {
+    if (!reorderDraft) return
+    const orders: Record<string, number> = {}
+    reorderDraft.forEach((item, i) => {
+      orders[item.cardId] = i
+    })
+    await fetch('/api/inventory/order', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orders }),
+    })
+    mutateInventory((current) => (current ? { ...current, items: reorderDraft } : current), false)
+    mutateInventory()
+    setReorderDraft(null)
+  }, [reorderDraft, mutateInventory])
+
   const handleReorder = useCallback(
     (newSortedItems: InventoryItem[]) => {
+      if (!reorderDraft) return
       const visibleIds = new Set(newSortedItems.map((i) => i.cardId))
       const sortedIterator = [...newSortedItems]
       let idx = 0
-      const combined = data.items.map((item) => {
+      const combined = reorderDraft.map((item) => {
         if (visibleIds.has(item.cardId)) {
           return sortedIterator[idx++]
         }
         return item
       })
-      const orders: Record<string, number> = {}
-      combined.forEach((item, i) => {
-        orders[item.cardId] = i
-      })
-      mutateInventory((current) => (current ? { ...current, items: combined } : current), false)
-      fetch('/api/inventory/order', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orders }),
-      }).catch(() => {})
+      setReorderDraft(combined)
     },
-    [data.items, mutateInventory]
+    [reorderDraft]
   )
 
   if (inventoryLoading && !inventoryData) {
@@ -811,7 +868,7 @@ export default function InventoryPage() {
 
             <div className="flex w-44 items-center gap-2">
               <Calendar className="h-4 w-4 text-zinc-500" />
-              <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)} className="flex-1">
+              <Select value={sortBy} onChange={(e) => changeSortBy(e.target.value as SortBy)} className="flex-1">
                 <option value="userOrder">{t('inventory.sortLabel.userOrder')}</option>
                 <option value="value_desc">{t('inventory.sortLabel.value_desc')}</option>
                 <option value="value_asc">{t('inventory.sortLabel.value_asc')}</option>
@@ -837,7 +894,7 @@ export default function InventoryPage() {
                   setYear('')
                   setMonth('')
                   setSearch('')
-                  setSortBy('userOrder')
+                  changeSortBy('userOrder')
                 }}
                 className="ml-auto font-mono text-xs"
               >
@@ -1264,13 +1321,47 @@ export default function InventoryPage() {
 
           {viewMode === 'grid' && sortBy === 'userOrder' && (
             <div className="space-y-2">
-              <div className="font-mono text-xs text-zinc-500">
-                {t('inventory.dragToReorder')}
+              <div className="flex items-center justify-between gap-2">
+                <div className="font-mono text-xs text-zinc-500">
+                  {reorderDraft ? t('inventory.reorderingHint') : t('inventory.dragToReorder')}
+                </div>
+                {!reorderDraft ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={startReorder}
+                    className="gap-1 font-mono text-xs"
+                  >
+                    <GripVertical className="h-3.5 w-3.5" />
+                    {t('inventory.editOrder')}
+                  </Button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={cancelReorder}
+                      className="gap-1 font-mono text-xs"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      {t('inventory.cancelOrder')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={saveReorder}
+                      className="gap-1 font-mono text-xs"
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                      {t('inventory.saveOrder')}
+                    </Button>
+                  </div>
+                )}
               </div>
               <SortableInventoryGrid
-                items={sortedItems}
+                items={reorderDraft ?? sortedItems}
                 onReorder={handleReorder}
                 renderItem={renderInventoryCard}
+                disabled={!reorderDraft}
               />
             </div>
           )}

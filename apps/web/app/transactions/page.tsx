@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dialog'
 import { TransactionDto, CARD_TYPES, GAMES } from '@/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { LanguageBadge } from '@/components/language/language-badge'
+
 import { useLanguage } from '@/lib/i18n/provider'
 import { fetcher, swrOptions } from '@/lib/swr'
 import { FlexCard } from '@/components/flex-card'
@@ -304,7 +304,7 @@ export default function TransactionsPage() {
                             <div className="flex max-w-[220px] flex-col">
                               <span className="truncate text-zinc-200">{tx.card?.name}</span>
                               <span className="truncate text-xs text-zinc-500">{tx.card?.cardType}</span>
-                              <LanguageBadge language={tx.card?.language} className="mt-0.5" />
+
                             </div>
                           </td>
                           <td className="align-middle py-0 pr-4">
@@ -314,7 +314,7 @@ export default function TransactionsPage() {
                           </td>
                           <td className="align-middle py-0 pr-4 text-zinc-400">
                             <div className="flex items-center gap-1.5">
-                              {tx.card?.game} <LanguageBadge language={tx.card?.language} />
+                              {tx.card?.game}
                             </div>
                           </td>
                           <td className="align-middle py-0 pr-4 text-zinc-300">{tx.quantity}</td>
@@ -372,7 +372,7 @@ export default function TransactionsPage() {
                         <div className="min-w-0 flex-1">
                           <div className="line-clamp-2 font-mono text-sm leading-tight text-zinc-200">{tx.card?.name}</div>
                           <div className="truncate font-mono text-xs text-zinc-500">{tx.card?.cardType} · {tx.card?.game}</div>
-                          <LanguageBadge language={tx.card?.language} className="mt-0.5" />
+
                         </div>
                         <Badge variant={tx.type === 'BUY' ? 'buy' : tx.type === 'SELL' ? 'sell' : tx.type === 'GRADING' ? 'grading' : 'default'} className="shrink-0">{tx.type === 'BUY' ? t('transactions.buy') : tx.type === 'SELL' ? t('transactions.sell') : tx.type === 'GRADING' ? t('transactions.grading') : t('transactions.adjustment')}</Badge>
                       </div>

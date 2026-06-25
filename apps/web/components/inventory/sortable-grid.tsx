@@ -26,14 +26,17 @@ interface SortableInventoryGridProps {
   items: InventoryItem[]
   onReorder: (items: InventoryItem[]) => void
   renderItem: (item: InventoryItem) => React.ReactNode
+  disabled?: boolean
 }
 
 function SortableItem({
   item,
   renderItem,
+  disabled,
 }: {
   item: InventoryItem
   renderItem: (item: InventoryItem) => React.ReactNode
+  disabled?: boolean
 }) {
   const {
     attributes,
@@ -42,7 +45,7 @@ function SortableItem({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: item.cardId })
+  } = useSortable({ id: item.cardId, disabled })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -55,13 +58,15 @@ function SortableItem({
       style={style}
       className={cn('group relative', isDragging && 'z-50 opacity-30')}
     >
-      <div
-        {...attributes}
-        {...listeners}
-        className="absolute left-1 top-1 z-10 cursor-grab rounded-md bg-zinc-950/70 p-1 text-zinc-400 opacity-0 transition-opacity hover:text-zinc-100 group-hover:opacity-100"
-      >
-        <GripVertical className="h-3 w-3" />
-      </div>
+      {!disabled && (
+        <div
+          {...attributes}
+          {...listeners}
+          className="absolute left-1 top-1 z-10 cursor-grab rounded-md bg-zinc-950/70 p-1 text-zinc-400 opacity-0 transition-opacity hover:text-zinc-100 group-hover:opacity-100"
+        >
+          <GripVertical className="h-3 w-3" />
+        </div>
+      )}
       {renderItem(item)}
     </div>
   )
@@ -71,6 +76,7 @@ export function SortableInventoryGrid({
   items,
   onReorder,
   renderItem,
+  disabled,
 }: SortableInventoryGridProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
 
@@ -116,6 +122,7 @@ export function SortableInventoryGrid({
               key={item.cardId}
               item={item}
               renderItem={renderItem}
+              disabled={disabled}
             />
           ))}
         </div>

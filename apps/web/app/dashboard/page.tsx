@@ -114,7 +114,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="min-h-[9rem] border border-dashed border-zinc-800 bg-zinc-900/30 lg:col-span-2 lg:h-44">
+        <Card className="min-h-[9rem] border border-dashed border-zinc-800 bg-zinc-900/80 lg:col-span-2 lg:h-44">
           <CardContent className="flex h-full flex-col items-center justify-center gap-1 p-4">
             <span className="font-mono text-xs text-zinc-500">ads / banner</span>
             <span className="text-center font-mono text-[10px] text-zinc-600">
@@ -123,7 +123,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="min-h-[9rem] border-zinc-800 bg-zinc-900/50 lg:h-44">
+        <Card className="min-h-[9rem] border-zinc-800 bg-zinc-900/80 lg:h-44">
           <CardContent className="flex h-full flex-col gap-3 px-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:px-6 lg:py-6">
             <div className="font-mono text-sm text-zinc-400">
               {t('dashboard.periodStats')}
@@ -173,7 +173,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 lg:auto-rows-[minmax(220px,auto)]">
-        <Card className="flex h-full flex-col border-zinc-800 bg-zinc-900/50 md:row-span-2">
+        <Card className="flex h-full flex-col border-zinc-800 bg-zinc-900/80 md:row-span-2">
           <CardHeader className="pb-3">
             <CardTitle className="font-mono text-sm">{t('dashboard.inventorySnapshot')}</CardTitle>
           </CardHeader>
@@ -234,7 +234,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="h-full border-zinc-800 bg-zinc-900/50">
+        <Card className="h-full border-zinc-800 bg-zinc-900/80">
           <CardHeader className="pb-3">
             <CardTitle className="font-mono text-sm">{t('dashboard.topCard')}</CardTitle>
           </CardHeader>
@@ -294,7 +294,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="h-full border-zinc-800 bg-zinc-900/50">
+        <Card className="h-full border-zinc-800 bg-zinc-900/80">
           <CardHeader className="pb-3">
             <CardTitle className="font-mono text-sm">{t('dashboard.topProfit')}</CardTitle>
           </CardHeader>
@@ -354,7 +354,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="h-full border-zinc-800 bg-zinc-900/50">
+        <Card className="h-full border-zinc-800 bg-zinc-900/80">
           <CardHeader className="pb-3">
             <CardTitle className="font-mono text-sm">{t('dashboard.lastAdded')}</CardTitle>
           </CardHeader>
@@ -404,7 +404,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="h-full border-zinc-800 bg-zinc-900/50 md:col-span-2">
+        <Card className="h-full border-zinc-800 bg-zinc-900/80 md:col-span-2">
           <CardHeader className="pb-3">
             <CardTitle className="font-mono text-sm">{t('dashboard.byGame')}</CardTitle>
           </CardHeader>
@@ -414,7 +414,7 @@ export default function DashboardPage() {
             ) : (
               <div className="grid grid-cols-2 gap-2">
                 {gameBreakdown.map((g) => (
-                  <div key={g.game} className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-950/30 p-2">
+                  <div key={g.game} className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-950 p-2">
                     <span className="font-mono text-xs text-zinc-400">{g.game}</span>
                     <div className="text-right">
                       <div className="font-mono text-xs text-zinc-200">{g.count} {t('common.cards')}</div>
@@ -427,7 +427,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="h-full border-zinc-800 bg-zinc-900/50">
+        <Card className="h-full border-zinc-800 bg-zinc-900/80">
           <CardHeader className="pb-3">
             <CardTitle className="font-mono text-sm">{t('dashboard.byCardType')}</CardTitle>
           </CardHeader>
@@ -451,7 +451,7 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <Card className="border-zinc-800 bg-zinc-900/50">
+      <Card className="border-zinc-800 bg-zinc-900/80">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="font-mono text-sm">{t('dashboard.recentTransactions')}</CardTitle>
           <Link href="/transactions">
@@ -499,7 +499,7 @@ export default function DashboardPage() {
               </div>
               <div className="space-y-3 md:hidden">
                 {recent.map((tx) => (
-                  <div key={tx.id} className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3">
+                  <div key={tx.id} className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-mono text-xs text-zinc-400">{formatDate(tx.date)}</span>
                       <Badge variant={tx.type === 'BUY' ? 'buy' : tx.type === 'SELL' ? 'sell' : tx.type === 'COST_ADJUSTMENT' ? 'default' : 'grading'} className="shrink-0">{tx.type === 'BUY' ? t('transactions.buy') : tx.type === 'SELL' ? t('transactions.sell') : tx.type === 'COST_ADJUSTMENT' ? t('transactions.adjustment') : t('transactions.grading')}</Badge>
