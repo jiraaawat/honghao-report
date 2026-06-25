@@ -1,17 +1,18 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const SESSION_COOKIES = [
-  '__Secure-authjs.session-token',
-  'authjs.session-token',
-  '__Secure-next-auth.session-token',
-  'next-auth.session-token',
-]
+const SESSION_COOKIE_RE = /^(?:__Host-|__Secure-)?(?:authjs|next-auth)\.session-token$/
+
+function hasSessionCookie(req: NextRequest) {
+  return req.cookies.getAll().some(
+    ({ name, value }) => SESSION_COOKIE_RE.test(name) && !!value
+  )
+}
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  const isLoggedIn = SESSION_COOKIES.some((name) => req.cookies.get(name)?.value)
+  const isLoggedIn = hasSessionCookie(req)
 
   const isApiAuthRoute = pathname.startsWith('/api/auth')
   const isAuthRoute = pathname.startsWith('/auth')
