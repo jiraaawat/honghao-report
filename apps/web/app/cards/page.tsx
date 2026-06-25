@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Search, Package, Plus } from 'lucide-react'
+import { Search, Package, Plus, Heart } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
@@ -17,9 +17,10 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { CatalogCardDto, CatalogSetDto, CARD_TYPES, CARD_CONDITIONS, GAMES } from '@/types'
+import { CatalogCardDto, CatalogSetDto, CARD_TYPES, CARD_CONDITIONS, GAMES, LANGUAGES, WishlistItemDto } from '@/types'
 import { useLanguage } from '@/lib/i18n/provider'
 import { FullPageLoader } from '@/components/ui/loading'
+import { formatUsdToThb, usdToThb } from '@/lib/utils'
 
 const PAGE_SIZE = 24
 
@@ -65,11 +66,13 @@ export default function CardsPage() {
     cardType: 'Single',
     condition: 'NM',
     game: 'OnePiece',
+    language: 'EN',
     quantity: '1',
     pricePerUnit: '',
     date: new Date().toISOString().split('T')[0],
     note: '',
   })
+  const [wishlistItems, setWishlistItems] = useState<WishlistItemDto[]>([])
   const [adding, setAdding] = useState(false)
 
   useEffect(() => {
@@ -109,11 +112,54 @@ export default function CardsPage() {
       .catch(() => setSets([]))
   }, [])
 
+  const fetchWishlist = useCallback(() => {
+    fetch('/api/wishlist')
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setWishlistItems(Array.isArray(data) ? data : []))
+      .catch(() => setWishlistItems([]))
+  }, [])
+
+  const toggleWishlist = async (card: CatalogCardDto) => {
+    const existing = wishlistItems.find(
+      (w) => w.catalogCardId === card.id && w.language === addForm.language
+    )
+    if (existing) {
+      const res = await fetch(`/api/wishlist/${existing.id}`, { method: 'DELETE' })
+      if (res.ok) {
+        setWishlistItems((prev) => prev.filter((w) => w.id !== existing.id))
+      }
+      return
+    }
+
+    const res = await fetch('/api/wishlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        catalogCardId: card.id,
+        name: card.name,
+        cardNo: card.cardNo,
+        setCode: card.setId,
+        setName: card.setName,
+        imageUrl: card.imagePath,
+        language: addForm.language,
+        cardType: card.type,
+        game: addForm.game,
+      }),
+    })
+    if (res.ok) {
+      const item = await res.json()
+      setWishlistItems((prev) => [item, ...prev])
+    } else if (res.status === 409) {
+      fetchWishlist()
+    }
+  }
+
   useEffect(() => {
     if (status === 'authenticated') {
       fetchSets()
+      fetchWishlist()
     }
-  }, [status, fetchSets])
+  }, [status, fetchSets, fetchWishlist])
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -134,8 +180,9 @@ export default function CardsPage() {
       cardType: 'Single',
       condition: 'NM',
       game: 'OnePiece',
+      language: 'EN',
       quantity: '1',
-      pricePerUnit: card.marketPrice ? String(Number(card.marketPrice)) : '',
+      pricePerUnit: card.marketPrice ? String(usdToThb(Number(card.marketPrice))) : '',
       date: new Date().toISOString().split('T')[0],
       note: '',
     })
@@ -165,6 +212,7 @@ export default function CardsPage() {
           type: card.type,
           cardType: addForm.cardType,
           game: addForm.game,
+          language: addForm.language,
           condition: addForm.condition,
           quantity: Number(addForm.quantity),
           pricePerUnit: Number(addForm.pricePerUnit),
@@ -306,18 +354,36 @@ export default function CardsPage() {
                     )}
                     {card.marketPrice ? (
                       <p className="font-mono text-xs font-medium text-emerald-400">
-                        ${Number(card.marketPrice).toFixed(2)}
+                        {formatUsdToThb(Number(card.marketPrice))}
                       </p>
                     ) : null}
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  className="mt-auto h-8 gap-1 text-xs bg-emerald-600 text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-[0_0_12px_rgba(16,185,129,0.25)]"
-                  onClick={() => openAdd(card)}
-                >
-                  <Plus className="h-3.5 w-3.5" /> {t('cards.add')}
-                </Button>
+                <div className="mt-auto flex items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 shrink-0 p-0"
+                    onClick={() => toggleWishlist(card)}
+                    title={t('wishlist.add')}
+                  >
+                    <Heart
+                      className={`h-4 w-4 ${
+                        wishlistItems.some((w) => w.catalogCardId === card.id)
+                          ? 'fill-red-500 text-red-500'
+                          : 'text-zinc-500'
+                      }`}
+                    />
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="h-8 flex-1 gap-1 text-xs bg-emerald-600 text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-[0_0_12px_rgba(16,185,129,0.25)]"
+                    onClick={() => openAdd(card)}
+                  >
+                    <Plus className="h-3.5 w-3.5" /> {t('cards.add')}
+                  </Button>
+                </div>
               </motion.div>
             ))}
           </motion.div>
@@ -359,7 +425,7 @@ export default function CardsPage() {
                 {addDialog.card?.name} ({addDialog.card?.cardNo})
                 {addDialog.card?.marketPrice ? (
                   <span className="ml-1 text-emerald-400">
-                    {t('cards.marketPrice', { price: Number(addDialog.card.marketPrice).toFixed(2) })}
+                    {t('cards.marketPrice', { price: formatUsdToThb(Number(addDialog.card.marketPrice)) })}
                   </span>
                 ) : null}
               </DialogDescription>
@@ -412,6 +478,22 @@ export default function CardsPage() {
                   </Select>
                 </div>
                 <div className="space-y-1">
+                  <label className="font-mono text-xs text-zinc-400">{t('common.language')}</label>
+                  <Select
+                    value={addForm.language}
+                    onChange={(e) => setAddForm((prev) => ({ ...prev, language: e.target.value }))}
+                  >
+                    {LANGUAGES.map((lang) => (
+                      <option key={lang} value={lang}>
+                        {lang}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
                   <label className="font-mono text-xs text-zinc-400">{t('cards.quantity')}</label>
                   <Input
                     type="number"
@@ -421,9 +503,6 @@ export default function CardsPage() {
                     required
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="font-mono text-xs text-zinc-400">{t('cards.pricePerUnit')}</label>
                   <Input
@@ -435,6 +514,9 @@ export default function CardsPage() {
                     required
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="font-mono text-xs text-zinc-400">{t('cards.date')}</label>
                   <Input

@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/lib/i18n/provider";
 import { ThemeProvider } from "@/lib/theme/provider";
 import { Navbar } from "@/components/layout/navbar";
 import { SocialBar } from "@/components/layout/social-bar";
+import { AmbientGlow } from "@/components/layout/ambient-glow";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -55,6 +56,7 @@ export default function RootLayout({
         />
         <SessionProvider>
           <ThemeProvider>
+            <AmbientGlow />
             <LanguageProvider>
               <Navbar />
               <main className="flex-1 min-w-0 pt-14 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-10">

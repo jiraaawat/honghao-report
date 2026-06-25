@@ -13,9 +13,17 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const year = searchParams.get('year')
   const month = searchParams.get('month')
+  const startDate = searchParams.get('startDate')
+  const endDate = searchParams.get('endDate')
 
   const where: { userId: string; date?: { gte: Date; lt: Date } } = { userId }
-  if (year && month) {
+  if (startDate && endDate) {
+    const start = new Date(startDate)
+    start.setHours(0, 0, 0, 0)
+    const end = new Date(endDate)
+    end.setHours(23, 59, 59, 999)
+    where.date = { gte: start, lt: new Date(end.getTime() + 1) }
+  } else if (year && month) {
     const start = new Date(Date.UTC(Number(year), Number(month) - 1, 1))
     const end = new Date(Date.UTC(Number(year), Number(month), 1))
     where.date = { gte: start, lt: end }

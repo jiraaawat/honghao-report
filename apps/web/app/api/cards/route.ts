@@ -11,6 +11,7 @@ const cardSchema = z.object({
   rarity: z.string().optional(),
   cardType: z.string().optional(),
   game: z.string().optional(),
+  language: z.string().optional(),
   condition: z.string().optional(),
   imageUrl: z.string().url().optional().or(z.literal('')),
 })
@@ -81,6 +82,7 @@ export async function POST(req: NextRequest) {
         rarity: data.rarity || null,
         cardType: data.cardType || 'Single',
         game: data.game || 'OnePiece',
+        language: data.language || 'EN',
         condition: data.condition || null,
         imageUrl: data.imageUrl || null,
         userId,

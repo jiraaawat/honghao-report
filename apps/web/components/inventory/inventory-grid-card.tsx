@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
+import { LanguageBadge } from '@/components/language/language-badge'
 import { Package, PackageCheck, PackageX, Gem, Plus, Minus, Tag, Pencil } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/provider'
 
@@ -17,6 +18,7 @@ interface InventoryGridCardProps {
   onAdd: (item: InventoryItem) => void
   onRemove: (item: InventoryItem) => void
   onEditCost: (item: InventoryItem) => void
+  onOpenDetails?: (item: InventoryItem) => void
   editing: boolean
   onEdit: () => void
   onUpdateValue: (value: string) => void
@@ -28,6 +30,7 @@ export function InventoryGridCard({
   onAdd,
   onRemove,
   onEditCost,
+  onOpenDetails,
   editing,
   onEdit,
   onUpdateValue,
@@ -41,9 +44,12 @@ export function InventoryGridCard({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className="group flex flex-col gap-2 rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 transition-colors hover:border-zinc-700 hover:bg-zinc-900"
+      className="group flex h-full flex-col justify-between gap-2 rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 transition-colors hover:border-zinc-700 hover:bg-zinc-900"
     >
-      <div className="relative aspect-[488/680] overflow-hidden rounded-lg bg-zinc-950">
+      <div
+        className="relative aspect-[488/680] cursor-pointer overflow-hidden rounded-lg bg-zinc-950 sm:cursor-default"
+        onClick={() => onOpenDetails?.(item)}
+      >
         {item.imageUrl ? (
           <Image
             src={item.imageUrl}
@@ -85,7 +91,7 @@ export function InventoryGridCard({
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex flex-nowrap items-center gap-1.5 overflow-hidden">
         {item.condition && (
           <Badge variant="outline" className="text-[10px]">
             {item.condition}
@@ -97,6 +103,7 @@ export function InventoryGridCard({
         <Badge variant="secondary" className="text-[10px]">
           {item.game}
         </Badge>
+        <LanguageBadge language={item.language} />
       </div>
 
       <div className="grid grid-cols-2 gap-2 font-mono text-[10px]">
@@ -146,16 +153,11 @@ export function InventoryGridCard({
               {formatCurrency(item.profit)}
             </span>
           </div>
-          {item.unrealizedProfit !== 0 && (
-            <div className="mt-0.5 flex items-center justify-between text-zinc-500">
-              <span>{t('inventoryGridCard.unrealized')}</span>
-              <span>{formatCurrency(item.unrealizedProfit)}</span>
-            </div>
-          )}
+
         </div>
       </div>
 
-      <div className="mt-auto space-y-2">
+      <div className="mt-auto hidden shrink-0 space-y-2 sm:block">
         {inStock ? (
           <>
             <Button
@@ -202,7 +204,7 @@ export function InventoryGridCard({
             </Button>
           </>
         ) : (
-          <div className="rounded-md border border-zinc-800 bg-zinc-950/30 p-2 font-mono text-[10px] text-zinc-500">
+          <div className="mt-auto flex min-h-[96px] shrink-0 items-center justify-center rounded-md border border-zinc-800 bg-zinc-950/30 p-2 font-mono text-[10px] text-zinc-500 sm:mt-auto">
             {item.status === 'sold_out' && item.soldAt
               ? t('inventoryGridCard.soldAtWithDate', { date: formatDate(item.soldAt) })
               : t('inventoryGridCard.createdAtWithDate', { date: formatDate(item.createdAt) })}

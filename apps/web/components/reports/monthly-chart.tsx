@@ -6,11 +6,12 @@ import { formatCurrency } from '@/lib/utils'
 import { MonthlyReport } from '@/types'
 import {
   Area,
-  AreaChart,
   Bar,
-  BarChart,
   CartesianGrid,
+  ComposedChart,
+  Legend,
   Line,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -48,7 +49,11 @@ function formatPercent(value: number): string {
   return `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(value)}%`
 }
 
-function ChartTooltip({ active, payload, label }: {
+function ChartTooltip({
+  active,
+  payload,
+  label,
+}: {
   active?: boolean
   payload?: Array<{ dataKey: string; value: number; color: string; name: string }>
   label?: string
@@ -57,11 +62,14 @@ function ChartTooltip({ active, payload, label }: {
 
   return (
     <div className="rounded-lg border border-zinc-700 bg-zinc-950 p-3 shadow-xl">
-      <div className="mb-2 font-mono text-xs text-zinc-300">{label}</div>
+      <div className="mb-2 font-mono text-xs font-semibold text-zinc-300">{label}</div>
       <div className="space-y-1">
         {payload.map((p, i) => (
           <div key={i} className="flex items-center gap-2 font-mono text-xs">
-            <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: p.color }} />
+            <span
+              className="inline-block h-2 w-2 rounded-full"
+              style={{ backgroundColor: p.color }}
+            />
             <span className="text-zinc-500">{p.name}:</span>
             <span className="text-zinc-200">
               {p.dataKey === 'roi' ? formatPercent(p.value) : formatCurrency(p.value)}
@@ -82,13 +90,13 @@ function ProfitTrendChart({ data }: { data: ChartRow[] }) {
         <CardTitle className="font-mono text-sm">{t('reports.chart.profitTrend')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-72 w-full">
+        <div className="h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+            <ComposedChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
               <defs>
                 <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
@@ -114,7 +122,14 @@ function ProfitTrendChart({ data }: { data: ChartRow[] }) {
                 tickLine={false}
                 tickFormatter={formatPercent}
               />
-              <Tooltip content={<ChartTooltip />} />
+              <Tooltip
+                content={<ChartTooltip />}
+                cursor={{ stroke: '#52525b', strokeDasharray: '4 4' }}
+              />
+              <Legend
+                wrapperStyle={{ paddingTop: 8, fontSize: 11, fontFamily: 'monospace' }}
+              />
+              <ReferenceLine yAxisId="left" y={0} stroke="#52525b" strokeDasharray="4 4" />
               <Area
                 yAxisId="left"
                 type="monotone"
@@ -123,7 +138,8 @@ function ProfitTrendChart({ data }: { data: ChartRow[] }) {
                 stroke="#10b981"
                 strokeWidth={2}
                 fill="url(#profitGradient)"
-                activeDot={{ r: 4, strokeWidth: 0, fill: '#34d399' }}
+                activeDot={{ r: 5, strokeWidth: 0, fill: '#34d399' }}
+                animationDuration={1200}
               />
               <Line
                 yAxisId="right"
@@ -134,8 +150,9 @@ function ProfitTrendChart({ data }: { data: ChartRow[] }) {
                 strokeWidth={2}
                 dot={{ r: 3, fill: '#f59e0b', strokeWidth: 0 }}
                 activeDot={{ r: 5, strokeWidth: 0 }}
+                animationDuration={1200}
               />
-            </AreaChart>
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       </CardContent>
@@ -152,9 +169,19 @@ function BuySellChart({ data }: { data: ChartRow[] }) {
         <CardTitle className="font-mono text-sm">{t('reports.chart.buySell')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-72 w-full">
+        <div className="h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+            <ComposedChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
+              <defs>
+                <linearGradient id="buyGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.9} />
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.35} />
+                </linearGradient>
+                <linearGradient id="sellGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.9} />
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.35} />
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
               <XAxis
                 dataKey="period"
@@ -169,22 +196,41 @@ function BuySellChart({ data }: { data: ChartRow[] }) {
                 tickLine={false}
                 tickFormatter={formatCompact}
               />
-              <Tooltip content={<ChartTooltip />} />
+              <Tooltip
+                content={<ChartTooltip />}
+                cursor={{ stroke: '#52525b', strokeDasharray: '4 4' }}
+              />
+              <Legend
+                wrapperStyle={{ paddingTop: 8, fontSize: 11, fontFamily: 'monospace' }}
+              />
+              <ReferenceLine y={0} stroke="#52525b" strokeDasharray="4 4" />
               <Bar
                 dataKey="buy"
                 name={t('reports.totalBuy')}
-                fill="#3b82f6"
+                fill="url(#buyGradient)"
                 radius={[4, 4, 0, 0]}
-                maxBarSize={28}
+                maxBarSize={32}
+                animationDuration={1200}
               />
               <Bar
                 dataKey="sell"
                 name={t('reports.totalSell')}
-                fill="#10b981"
+                fill="url(#sellGradient)"
                 radius={[4, 4, 0, 0]}
-                maxBarSize={28}
+                maxBarSize={32}
+                animationDuration={1200}
               />
-            </BarChart>
+              <Line
+                type="monotone"
+                dataKey="profit"
+                name={t('common.totalProfit')}
+                stroke="#f59e0b"
+                strokeWidth={2}
+                dot={{ r: 3, fill: '#f59e0b', strokeWidth: 0 }}
+                activeDot={{ r: 5, strokeWidth: 0 }}
+                animationDuration={1200}
+              />
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       </CardContent>
@@ -203,7 +249,9 @@ export function MonthlyChart({ data }: { data: MonthlyReport[] }) {
           <CardTitle className="font-mono text-sm">{t('reports.chart.title')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="py-12 text-center font-mono text-sm text-zinc-500">{t('common.noData')}</div>
+          <div className="py-12 text-center font-mono text-sm text-zinc-500">
+            {t('common.noData')}
+          </div>
         </CardContent>
       </Card>
     )

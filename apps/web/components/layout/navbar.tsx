@@ -13,6 +13,7 @@ import {
   Boxes,
   Gem,
   Library,
+  Heart,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n/provider'
@@ -24,6 +25,7 @@ const navItems: { href: string; label: DictionaryKey; icon: React.ElementType }[
   { href: '/dashboard', label: 'nav.dashboard', icon: LayoutDashboard },
   { href: '/inventory', label: 'nav.inventory', icon: Boxes },
   { href: '/cards', label: 'nav.cards', icon: Library },
+  { href: '/wishlist', label: 'nav.wishlist', icon: Heart },
   { href: '/grading', label: 'nav.grading', icon: Gem },
   { href: '/transactions', label: 'nav.transactions', icon: Receipt },
   { href: '/reports', label: 'nav.reports', icon: BarChart3 },
@@ -33,6 +35,7 @@ const pageTitles: Record<string, DictionaryKey> = {
   '/dashboard': 'pageTitle.dashboard',
   '/inventory': 'pageTitle.inventory',
   '/cards': 'pageTitle.cardList',
+  '/wishlist': 'pageTitle.wishlist',
   '/grading': 'pageTitle.grading',
   '/grading/send': 'pageTitle.sendToGrade',
   '/transactions': 'pageTitle.transactions',

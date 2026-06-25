@@ -6,6 +6,7 @@ export interface CardDto {
   rarity?: string | null
   cardType?: string | null
   game?: string | null
+  language?: string | null
   condition?: string | null
   status?: string | null
   imageUrl?: string | null
@@ -27,6 +28,20 @@ export interface TransactionDto {
   createdAt: string
   updatedAt: string
   card?: CardDto & { inventory?: { averageCost: number } | null }
+}
+
+export interface WishlistItemDto {
+  id: string
+  catalogCardId: string
+  name: string
+  cardNo?: string | null
+  setCode?: string | null
+  setName?: string | null
+  imageUrl?: string | null
+  language?: string | null
+  cardType?: string | null
+  game?: string | null
+  createdAt: string
 }
 
 export interface GradingRecordDto {
@@ -82,6 +97,8 @@ export interface InventoryItem {
   game: string
   condition?: string | null
   status: 'in_stock' | 'sold_out' | 'grading'
+  language?: string | null
+  order: number | null
   quantity: number
   averageCost: number
   marketValuePerUnit: number
@@ -130,3 +147,5 @@ export const GAMES = ['OnePiece', 'Pokemon', 'Lorcana', 'ETC'] as const
 export const GRADES = ['PSA10', 'PSA9', 'PSA8', 'PSA7', 'PSA6', 'PSA5', 'BGS10', 'BGS9.5', 'CGC10'] as const
 export const TRANSACTION_TYPES = ['BUY', 'SELL', 'GRADING', 'COST_ADJUSTMENT'] as const
 export const CARD_CONDITIONS = ['NM', 'LP', 'MP', 'HP', 'DMG'] as const
+export const LANGUAGES = ['EN', 'JP', 'FR', 'CN', 'TH', 'KR'] as const
+export type Language = (typeof LANGUAGES)[number]

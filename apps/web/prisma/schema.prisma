@@ -44,11 +44,32 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts     Account[]
-  sessions     Session[]
-  cards        Card[]
-  transactions Transaction[]
-  gradings     GradingRecord[]
+  accounts      Account[]
+  sessions      Session[]
+  cards         Card[]
+  transactions  Transaction[]
+  gradings      GradingRecord[]
+  wishlistItems WishlistItem[]
+}
+
+model WishlistItem {
+  id            String   @id @default(cuid())
+  userId        String
+  catalogCardId String
+  name          String
+  cardNo        String?
+  setCode       String?
+  setName       String?
+  imageUrl      String?
+  language      String?  @default("EN")
+  cardType      String?
+  game          String?  @default("OnePiece")
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, catalogCardId, language])
+  @@index([userId])
 }
 
 model VerificationToken {
@@ -67,6 +88,7 @@ model Card {
   rarity      String?
   cardType    String?  @default("Single")
   game        String?  @default("OnePiece")
+  language    String?  @default("EN")
   condition   String?
   status      String   @default("in_stock")
   imageUrl    String?
@@ -83,6 +105,7 @@ model Card {
   @@index([cardType])
   @@index([game])
   @@index([status])
+  @@index([language])
 }
 
 model Transaction {
@@ -112,6 +135,7 @@ model CardInventory {
   id            String   @id @default(cuid())
   cardId        String   @unique
   userId        String
+  order         Int?
   quantity      Int      @default(0)
   averageCost   Decimal  @default(0)
   totalInvested Decimal  @default(0)

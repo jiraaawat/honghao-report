@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
+import { AnimatedCurrency, AnimatedNumber } from '@/components/ui/animated-value'
 import { DashboardStats } from '@/types'
 import { TransactionDto, InventoryItem, CARD_TYPES, GAMES } from '@/types'
 import { formatCurrency, formatNumber, formatDate } from '@/lib/utils'
@@ -15,38 +16,11 @@ import { useLanguage } from '@/lib/i18n/provider'
 import { FullPageLoader } from '@/components/ui/loading'
 import {
   ArrowRight,
-  Receipt,
   Package,
-  TrendingUp,
-  Calendar,
   Plus,
   Boxes,
-  ArrowDownCircle,
-  ArrowUpCircle,
+  Clock,
 } from 'lucide-react'
-
-function formatInputDate(date: Date) {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
-function getMonthRange(date = new Date()) {
-  const start = new Date(date.getFullYear(), date.getMonth(), 1)
-  const end = new Date(date.getFullYear(), date.getMonth() + 1, 0)
-  return { start, end }
-}
-
-function getTodayRange(date = new Date()) {
-  return { start: new Date(date), end: new Date(date) }
-}
-
-function addDays(date: Date, days: number) {
-  const result = new Date(date)
-  result.setDate(result.getDate() + days)
-  return result
-}
 
 export default function DashboardPage() {
   const { data: session, status } = useSession()
@@ -65,22 +39,14 @@ export default function DashboardPage() {
     totalROI: 0,
   })
   const [loading, setLoading] = useState(true)
-  const [{ startDate, endDate }, setDateRange] = useState(() => {
-    const { start, end } = getMonthRange()
-    return { startDate: formatInputDate(start), endDate: formatInputDate(end) }
-  })
 
   useEffect(() => {
     if (status !== 'authenticated') return
 
     let cancelled = false
 
-    const params = new URLSearchParams()
-    if (startDate) params.set('startDate', startDate)
-    if (endDate) params.set('endDate', endDate)
-
     Promise.all([
-      fetch(`/api/dashboard?${params.toString()}`).then((r) => r.json()),
+      fetch('/api/dashboard').then((r) => r.json()),
       fetch('/api/transactions?limit=5').then((r) => r.json()),
       fetch('/api/inventory').then((r) => r.json()),
     ])
@@ -108,37 +74,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true
     }
-  }, [status, startDate, endDate])
-
-  const setRange = (range: 'month' | 'today' | '7d' | '30d' | 'all') => {
-    const today = new Date()
-    let start: Date
-    let end: Date
-
-    switch (range) {
-      case 'month':
-        ;({ start, end } = getMonthRange(today))
-        break
-      case 'today':
-        ;({ start, end } = getTodayRange(today))
-        break
-      case '7d':
-        start = addDays(today, -6)
-        end = today
-        break
-      case '30d':
-        start = addDays(today, -29)
-        end = today
-        break
-      case 'all':
-      default:
-        start = new Date(2020, 0, 1)
-        end = today
-        break
-    }
-
-    setDateRange({ startDate: formatInputDate(start), endDate: formatInputDate(end) })
-  }
+  }, [status])
 
   if (status === 'loading' || loading) {
     return <FullPageLoader />
@@ -166,47 +102,32 @@ export default function DashboardPage() {
     }
   }).filter((t) => t.count > 0)
 
-  const statItems = [
-    {
-      labelKey: 'dashboard.totalSpend',
-      value: stats ? formatCurrency(stats.totalSpend) : '-',
-      icon: ArrowDownCircle,
-      color: 'text-zinc-200',
-    },
-    {
-      labelKey: 'dashboard.totalSell',
-      value: stats ? formatCurrency(stats.totalSell) : '-',
-      icon: ArrowUpCircle,
-      color: 'text-emerald-400',
-    },
-    {
-      labelKey: 'dashboard.profitLoss',
-      value: stats ? formatCurrency(stats.periodProfit) : '-',
-      icon: TrendingUp,
-      color: stats && stats.periodProfit >= 0 ? 'text-emerald-400' : 'text-red-400',
-    },
-    {
-      labelKey: 'dashboard.transactions',
-      value: stats?.totalTransactions ?? 0,
-      icon: Receipt,
-      color: 'text-blue-400',
-    },
-    {
-      labelKey: 'dashboard.activeCards',
-      value: stats?.totalCards ?? 0,
-      icon: Package,
-      color: 'text-emerald-400',
-    },
-    {
-      labelKey: 'dashboard.soldCards',
-      value: stats?.totalSoldCards ?? 0,
-      icon: Boxes,
-      color: 'text-amber-400',
-    },
-  ] as const
+  const candidates = inventory.filter((i) => i.quantity > 0)
+  const topCard =
+    candidates.length > 0
+      ? candidates.reduce((top, item) =>
+          item.marketValuePerUnit > top.marketValuePerUnit ? item : top
+        )
+      : null
+
+  const soldOutProfitable = inventory.filter((i) => i.status === 'sold_out' && i.profit > 0)
+  const topProfitCard =
+    soldOutProfitable.length > 0
+      ? soldOutProfitable.reduce((top, item) => (item.profit > top.profit ? item : top))
+      : null
+
+  const lastAddedCard =
+    inventory.length > 0
+      ? inventory.reduce((latest, item) =>
+          new Date(item.createdAt).getTime() > new Date(latest.createdAt).getTime() ? item : latest
+        )
+      : null
+
+  const periodROI =
+    stats && stats.totalSpend > 0 ? (stats.periodProfit / stats.totalSpend) * 100 : 0
 
   return (
-    <div className="space-y-4 p-3 md:space-y-6 md:p-6">
+    <div className="space-y-6 p-3 pt-4 md:space-y-8 md:p-6 md:pt-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="font-mono text-2xl font-bold text-zinc-100">$ {t('dashboard.title')}</h1>
@@ -230,79 +151,71 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <Card className="border-zinc-800 bg-zinc-900/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 font-mono text-sm">
-            <Calendar className="h-4 w-4" />
-            {t('dashboard.dateRange')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {(['month', 'today', '7d', '30d', 'all'] as const).map((range) => (
-              <Button
-                key={range}
-                variant="outline"
-                size="sm"
-                className="font-mono text-xs"
-                onClick={() => setRange(range)}
-              >
-                {range === 'month' && t('dashboard.thisMonth')}
-                {range === 'today' && t('dashboard.today')}
-                {range === '7d' && t('dashboard.last7Days')}
-                {range === '30d' && t('dashboard.last30Days')}
-                {range === 'all' && t('dashboard.allTime')}
-              </Button>
-            ))}
-          </div>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-            <div className="space-y-1">
-              <label className="font-mono text-xs text-zinc-500">{t('common.startDate')}</label>
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setDateRange((prev) => ({ ...prev, startDate: e.target.value }))}
-                className="border-zinc-800 bg-zinc-950 font-mono text-sm text-zinc-200"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="font-mono text-xs text-zinc-500">{t('common.endDate')}</label>
-              <Input
-                type="date"
-                value={endDate}
-                onChange={(e) => setDateRange((prev) => ({ ...prev, endDate: e.target.value }))}
-                className="border-zinc-800 bg-zinc-950 font-mono text-sm text-zinc-200"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="min-h-[9rem] border border-dashed border-zinc-800 bg-zinc-900/30 lg:col-span-2 lg:h-44">
+          <CardContent className="flex h-full flex-col items-center justify-center gap-1 p-4">
+            <span className="font-mono text-xs text-zinc-500">ads / banner</span>
+            <span className="text-center font-mono text-[10px] text-zinc-600">
+              placeholder for promotional content
+            </span>
+          </CardContent>
+        </Card>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-        {statItems.map((item) => {
-          const Icon = item.icon
-          return (
-            <Card key={item.labelKey} className="border-zinc-800 bg-zinc-900/50">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 font-mono text-xs font-normal text-zinc-500">
-                  <Icon className="h-3.5 w-3.5" />
-                  {t(item.labelKey)}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className={`min-w-0 break-words font-mono text-xl font-bold sm:text-2xl ${item.color}`}>{item.value}</div>
-              </CardContent>
-            </Card>
-          )
-        })}
+        <Card className="min-h-[9rem] border-zinc-800 bg-zinc-900/50 lg:h-44">
+          <CardContent className="flex h-full flex-col gap-3 px-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:px-6 lg:py-6">
+            <div className="font-mono text-sm text-zinc-400">
+              {t('dashboard.periodStats')}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 lg:gap-x-6 lg:gap-y-3 lg:border-l lg:border-zinc-800 lg:pl-6">
+              <div className="space-y-2">
+                <div className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">
+                  {t('dashboard.profitLoss')}
+                </div>
+                <div
+                  className={`font-mono text-3xl font-bold ${
+                    stats && stats.periodProfit >= 0 ? 'text-emerald-400' : 'text-red-400'
+                  }`}
+                >
+                  <AnimatedCurrency value={stats?.periodProfit ?? 0} />
+                </div>
+                <div className="font-mono text-[10px] text-zinc-500">
+                  <AnimatedNumber value={stats?.totalTransactions ?? 0} /> {t('dashboard.transactions')} · {t('dashboard.totalSpend')} <AnimatedCurrency value={stats?.totalSpend ?? 0} />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">
+                  {t('dashboard.totalSell')}
+                </div>
+                <div className="font-mono text-2xl font-bold text-emerald-400">
+                  <AnimatedCurrency value={stats?.totalSell ?? 0} />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">
+                  {t('dashboard.periodRoi')}
+                </div>
+                <div
+                  className={`font-mono text-2xl font-bold ${
+                    periodROI >= 0 ? 'text-emerald-400' : 'text-red-400'
+                  }`}
+                >
+                  <AnimatedNumber value={periodROI} suffix="%" decimals={1} />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="border-zinc-800 bg-zinc-900/50 lg:col-span-1">
-          <CardHeader>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 lg:auto-rows-[minmax(220px,auto)]">
+        <Card className="flex h-full flex-col border-zinc-800 bg-zinc-900/50 md:row-span-2">
+          <CardHeader className="pb-3">
             <CardTitle className="font-mono text-sm">{t('dashboard.inventorySnapshot')}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="flex flex-1 flex-col justify-between gap-4">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
                 <span className="font-mono text-xs text-zinc-400">{t('inventory.totalCards')}</span>
@@ -359,21 +272,194 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-zinc-800 bg-zinc-900/50 lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="font-mono text-sm">{t('dashboard.byGame')}</CardTitle>
+        <Card className="h-full border-zinc-800 bg-zinc-900/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="font-mono text-sm">{t('dashboard.topCard')}</CardTitle>
           </CardHeader>
           <CardContent>
+            {!topCard ? (
+              <div className="py-4 text-center font-mono text-xs text-zinc-500">{t('common.noData')}</div>
+            ) : (
+              <div className="flex h-full gap-3">
+                <div className="relative h-32 w-24 shrink-0 overflow-hidden rounded-lg bg-zinc-950">
+                  {topCard.imageUrl ? (
+                    <Image
+                      src={topCard.imageUrl}
+                      alt={topCard.cardName}
+                      fill
+                      sizes="88px"
+                      className="object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-zinc-600">
+                      <Package className="h-7 w-7" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex min-w-0 flex-1 flex-col justify-between space-y-1">
+                  <div className="truncate font-mono text-sm font-semibold text-zinc-200">
+                    {topCard.cardName}
+                  </div>
+                  <div className="truncate font-mono text-[10px] text-zinc-500">
+                    {[topCard.setCode, topCard.cardNumber, topCard.rarity].filter(Boolean).join(' · ')}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {topCard.condition && (
+                      <Badge variant="outline" className="px-1.5 py-0 text-[10px]">
+                        {topCard.condition}
+                      </Badge>
+                    )}
+                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                      {topCard.game}
+                    </Badge>
+                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                      {topCard.cardType}
+                    </Badge>
+                  </div>
+                  <div className="pt-1">
+                    <div className="font-mono text-[10px] text-zinc-500">{t('inventoryGridCard.marketValue')}</div>
+                    <div className="font-mono text-lg font-bold text-emerald-400">
+                      {formatCurrency(topCard.marketValuePerUnit)}
+                    </div>
+                  </div>
+                  <div className="flex justify-between font-mono text-[10px] text-zinc-500">
+                    <span>{t('inventoryGridCard.qty')} {topCard.quantity}</span>
+                    <span>{formatCurrency(topCard.currentValue)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="h-full border-zinc-800 bg-zinc-900/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="font-mono text-sm">{t('dashboard.topProfit')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!topProfitCard ? (
+              <div className="py-4 text-center font-mono text-xs text-zinc-500">{t('common.noData')}</div>
+            ) : (
+              <div className="flex h-full gap-3">
+                <div className="relative h-32 w-24 shrink-0 overflow-hidden rounded-lg bg-zinc-950">
+                  {topProfitCard.imageUrl ? (
+                    <Image
+                      src={topProfitCard.imageUrl}
+                      alt={topProfitCard.cardName}
+                      fill
+                      sizes="88px"
+                      className="object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-zinc-600">
+                      <Package className="h-7 w-7" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex min-w-0 flex-1 flex-col justify-between space-y-1">
+                  <div className="truncate font-mono text-sm font-medium text-zinc-200">
+                    {topProfitCard.cardName}
+                  </div>
+                  <div className="font-mono text-[10px] text-zinc-500">
+                    {t('inventoryGridCard.soldAt')} {formatDate(topProfitCard.soldAt || topProfitCard.createdAt)}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                      {topProfitCard.game}
+                    </Badge>
+                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                      {topProfitCard.cardType}
+                    </Badge>
+                  </div>
+                  <div className="pt-1">
+                    <div className="font-mono text-[10px] text-zinc-500">{t('inventoryGridCard.profit')}</div>
+                    <div className="font-mono text-lg font-bold text-emerald-400">
+                      {formatCurrency(topProfitCard.profit)}
+                    </div>
+                  </div>
+                  <div className="flex justify-between font-mono text-[10px] text-zinc-500">
+                    <span>{t('dashboard.soldFor')} {formatCurrency(topProfitCard.totalSold)}</span>
+                    <span>
+                      ROI{' '}
+                      {topProfitCard.averageCost > 0 && topProfitCard.soldQty > 0
+                        ? `${formatNumber((topProfitCard.profit / (topProfitCard.soldQty * topProfitCard.averageCost)) * 100)}%`
+                        : '-'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="h-full border-zinc-800 bg-zinc-900/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="font-mono text-sm">{t('dashboard.lastAdded')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!lastAddedCard ? (
+              <div className="py-4 text-center font-mono text-xs text-zinc-500">{t('common.noData')}</div>
+            ) : (
+              <div className="flex h-full gap-3">
+                <div className="relative h-32 w-24 shrink-0 overflow-hidden rounded-lg bg-zinc-950">
+                  {lastAddedCard.imageUrl ? (
+                    <Image
+                      src={lastAddedCard.imageUrl}
+                      alt={lastAddedCard.cardName}
+                      fill
+                      sizes="88px"
+                      className="object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-zinc-600">
+                      <Package className="h-7 w-7" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex min-w-0 flex-1 flex-col justify-between space-y-1">
+                  <div className="truncate font-mono text-sm font-medium text-zinc-200">
+                    {lastAddedCard.cardName}
+                  </div>
+                  <div className="flex items-center gap-1 font-mono text-[10px] text-zinc-500">
+                    <Clock className="h-3 w-3" />
+                    {formatDate(lastAddedCard.createdAt)}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                      {lastAddedCard.game}
+                    </Badge>
+                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                      {lastAddedCard.cardType}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between font-mono text-[10px] text-zinc-500">
+                    <span>{t('inventoryGridCard.qty')} {lastAddedCard.quantity}</span>
+                    <span>{formatCurrency(lastAddedCard.averageCost)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="h-full border-zinc-800 bg-zinc-900/50 md:col-span-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="font-mono text-sm">{t('dashboard.byGame')}</CardTitle>
+          </CardHeader>
+          <CardContent className="h-full flex flex-col justify-between">
             {gameBreakdown.length === 0 ? (
               <div className="py-4 text-center font-mono text-xs text-zinc-500">{t('common.noData')}</div>
             ) : (
-              <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
                 {gameBreakdown.map((g) => (
-                  <div key={g.game} className="flex items-center justify-between">
+                  <div key={g.game} className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-950/30 p-2">
                     <span className="font-mono text-xs text-zinc-400">{g.game}</span>
                     <div className="text-right">
-                      <div className="font-mono text-sm text-zinc-200">{g.count} {t('common.cards')}</div>
-                      <div className="font-mono text-xs text-zinc-500">{formatCurrency(g.value)}</div>
+                      <div className="font-mono text-xs text-zinc-200">{g.count} {t('common.cards')}</div>
+                      <div className="font-mono text-[10px] text-zinc-500">{formatCurrency(g.value)}</div>
                     </div>
                   </div>
                 ))}
@@ -382,21 +468,21 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-zinc-800 bg-zinc-900/50 lg:col-span-1">
-          <CardHeader>
+        <Card className="h-full border-zinc-800 bg-zinc-900/50">
+          <CardHeader className="pb-3">
             <CardTitle className="font-mono text-sm">{t('dashboard.byCardType')}</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="h-full flex flex-col justify-between">
             {typeBreakdown.length === 0 ? (
               <div className="py-4 text-center font-mono text-xs text-zinc-500">{t('common.noData')}</div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {typeBreakdown.map((typeItem) => (
                   <div key={typeItem.type} className="flex items-center justify-between">
                     <span className="font-mono text-xs text-zinc-400">{typeItem.type}</span>
                     <div className="text-right">
-                      <div className="font-mono text-sm text-zinc-200">{typeItem.count} {t('common.cards')}</div>
-                      <div className="font-mono text-xs text-zinc-500">{formatCurrency(typeItem.value)}</div>
+                      <div className="font-mono text-xs text-zinc-200">{typeItem.count} {t('common.cards')}</div>
+                      <div className="font-mono text-[10px] text-zinc-500">{formatCurrency(typeItem.value)}</div>
                     </div>
                   </div>
                 ))}

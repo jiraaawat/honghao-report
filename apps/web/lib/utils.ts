@@ -5,6 +5,17 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export const USD_TO_THB_RATE = 35
+
+export function usdToThb(amount: number): number {
+  return amount * USD_TO_THB_RATE
+}
+
+export function formatUsdToThb(amount: number | null | undefined): string {
+  if (amount == null) return '-'
+  return formatCurrency(usdToThb(amount))
+}
+
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('th-TH', {
     style: 'currency',
@@ -21,9 +32,9 @@ export function formatDate(date: string | Date): string {
   }).format(new Date(date))
 }
 
-export function formatNumber(value: number): string {
+export function formatNumber(value: number, decimals = 2): string {
   return new Intl.NumberFormat('th-TH', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
   }).format(value)
 }

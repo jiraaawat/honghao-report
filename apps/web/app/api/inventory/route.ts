@@ -43,7 +43,10 @@ export async function GET(req: NextRequest) {
         orderBy: { date: 'asc' },
       },
     },
-    orderBy: { updatedAt: 'desc' },
+    orderBy: [
+      { inventory: { order: { sort: 'asc', nulls: 'last' } } },
+      { updatedAt: 'desc' },
+    ],
   })
 
   const items = cards.map((card) => {
@@ -82,6 +85,7 @@ export async function GET(req: NextRequest) {
       imageUrl: card.imageUrl,
       cardType: card.cardType || 'Single',
       game: card.game || 'OnePiece',
+      language: card.language || 'EN',
       condition: card.condition,
       status: effectiveStatus,
       quantity,
@@ -94,6 +98,7 @@ export async function GET(req: NextRequest) {
       realizedProfit,
       unrealizedProfit,
       profit,
+      order: card.inventory?.order ?? null,
       lastTransaction: card.transactions.length > 0
         ? card.transactions[card.transactions.length - 1].date.toISOString()
         : null,

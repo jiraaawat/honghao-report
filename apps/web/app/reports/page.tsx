@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Select } from '@/components/ui/select'
+import { Calendar } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -16,18 +16,19 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { MonthlyReport } from '@/types'
-import { formatCurrency, formatNumber } from '@/lib/utils'
+import { cn, formatCurrency, formatNumber } from '@/lib/utils'
+import { AnimatedCurrency, AnimatedNumber } from '@/components/ui/animated-value'
 import { useLanguage } from '@/lib/i18n/provider'
 import { MonthlyChart } from '@/components/reports/monthly-chart'
 import { FullPageLoader } from '@/components/ui/loading'
-import { Download, TrendingUp, TrendingDown, Calendar, AlertTriangle, Trash2 } from 'lucide-react'
+import { Download, TrendingUp, TrendingDown, AlertTriangle, Trash2 } from 'lucide-react'
 
 export default function ReportsPage() {
   const { status } = useSession()
   const { t } = useLanguage()
   const [report, setReport] = useState<MonthlyReport[]>([])
-  const [filterYear, setFilterYear] = useState('')
-  const [filterMonth, setFilterMonth] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const [loading, setLoading] = useState(true)
 
   const [resetDialog, setResetDialog] = useState(false)
@@ -42,8 +43,8 @@ export default function ReportsPage() {
 
     const fetchReport = async () => {
       const params = new URLSearchParams()
-      if (filterYear) params.append('year', filterYear)
-      if (filterMonth) params.append('month', filterMonth)
+      if (startDate) params.append('startDate', startDate)
+      if (endDate) params.append('endDate', endDate)
 
       const res = await fetch(`/api/reports?${params}`)
       const data = await res.json()
@@ -58,12 +59,12 @@ export default function ReportsPage() {
     return () => {
       cancelled = true
     }
-  }, [status, filterYear, filterMonth])
+  }, [status, startDate, endDate])
 
   const handleExport = () => {
     const params = new URLSearchParams()
-    if (filterYear) params.append('year', filterYear)
-    if (filterMonth) params.append('month', filterMonth)
+    if (startDate) params.append('startDate', startDate)
+    if (endDate) params.append('endDate', endDate)
     window.location.href = `/api/reports/export?${params}`
   }
 
@@ -105,92 +106,108 @@ export default function ReportsPage() {
     redirect('/auth/signin')
   }
 
-  const years = Array.from({ length: 5 }, (_, i) => (new Date().getFullYear() - 2 + i).toString())
-  const months = Array.from({ length: 12 }, (_, i) => (i + 1).toString())
-
   const totalProfit = report.reduce((sum, r) => sum + r.totalProfit, 0)
   const totalBuy = report.reduce((sum, r) => sum + r.totalBuy, 0)
   const totalROI = totalBuy > 0 ? (totalProfit / totalBuy) * 100 : 0
 
   return (
     <div className="space-y-4 p-3 md:space-y-6 md:p-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <h1 className="font-mono text-2xl font-bold text-zinc-100">$ {t('reports.title')}</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <Select value={filterYear} onChange={(e) => setFilterYear(e.target.value)}>
-            <option value="">{t('transactions.allYears')}</option>
-            {years.map((y) => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </Select>
-          <Select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)}>
-            <option value="">{t('transactions.allMonths')}</option>
-            {months.map((m) => (
-              <option key={m} value={m}>{m.padStart(2, '0')}</option>
-            ))}
-          </Select>
-          <Button onClick={handleExport} className="gap-2">
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-zinc-500" />
+            <div className="space-y-1">
+              <label className="font-mono text-[10px] text-zinc-500">{t('common.startDate')}</label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="h-8 border-zinc-800 bg-zinc-950 px-2 font-mono text-xs text-zinc-200"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="font-mono text-[10px] text-zinc-500">{t('common.endDate')}</label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="h-8 border-zinc-800 bg-zinc-950 px-2 font-mono text-xs text-zinc-200"
+              />
+            </div>
+          </div>
+          <Button onClick={handleExport} className="h-8 gap-2">
             <Download className="h-4 w-4" />
             <span className="hidden sm:inline">{t('reports.exportExcel')}</span>
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Card className="border-zinc-800 bg-zinc-900/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 font-mono text-xs font-normal text-zinc-500">
-              <TrendingUp className="h-3.5 w-3.5" />
-              {t('common.totalProfit')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={`min-w-0 break-words font-mono text-xl font-bold sm:text-2xl ${totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-              {formatCurrency(totalProfit)}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Card className="relative h-28 overflow-hidden border-zinc-800/60 bg-zinc-900/50 p-3 transition-colors hover:border-zinc-700/80 hover:bg-zinc-900/70">
+          <div className="grid h-full grid-rows-[auto_1fr_auto] gap-1">
+            <div className="flex items-start justify-between gap-2">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">{t('common.totalProfit')}</span>
+              <TrendingUp className="h-4 w-4 shrink-0 text-emerald-400/60" />
             </div>
-          </CardContent>
+            <div className="flex min-w-0 items-center">
+              <AnimatedCurrency
+                value={totalProfit}
+                className={cn('block truncate font-mono text-xl font-bold sm:text-2xl', totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400')}
+              />
+            </div>
+            <div className="invisible font-mono text-[10px]">–</div>
+          </div>
         </Card>
 
-        <Card className="border-zinc-800 bg-zinc-900/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 font-mono text-xs font-normal text-zinc-500">
-              <Calendar className="h-3.5 w-3.5" />
-              {t('reports.totalBuy')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="min-w-0 break-words font-mono text-xl font-bold text-zinc-200 sm:text-2xl">
-              {formatCurrency(totalBuy)}
+        <Card className="relative h-28 overflow-hidden border-zinc-800/60 bg-zinc-900/50 p-3 transition-colors hover:border-zinc-700/80 hover:bg-zinc-900/70">
+          <div className="grid h-full grid-rows-[auto_1fr_auto] gap-1">
+            <div className="flex items-start justify-between gap-2">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">{t('reports.totalBuy')}</span>
+              <Calendar className="h-4 w-4 shrink-0 text-zinc-400/60" />
             </div>
-          </CardContent>
+            <div className="flex min-w-0 items-center">
+              <AnimatedCurrency
+                value={totalBuy}
+                className="block truncate font-mono text-xl font-bold text-zinc-200 sm:text-2xl"
+              />
+            </div>
+            <div className="invisible font-mono text-[10px]">–</div>
+          </div>
         </Card>
 
-        <Card className="border-zinc-800 bg-zinc-900/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 font-mono text-xs font-normal text-zinc-500">
-              <TrendingDown className="h-3.5 w-3.5" />
-              {t('reports.totalSell')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="min-w-0 break-words font-mono text-xl font-bold text-blue-400 sm:text-2xl">
-              {formatCurrency(report.reduce((sum, r) => sum + r.totalSell, 0))}
+        <Card className="relative h-28 overflow-hidden border-zinc-800/60 bg-zinc-900/50 p-3 transition-colors hover:border-zinc-700/80 hover:bg-zinc-900/70">
+          <div className="grid h-full grid-rows-[auto_1fr_auto] gap-1">
+            <div className="flex items-start justify-between gap-2">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">{t('reports.totalSell')}</span>
+              <TrendingDown className="h-4 w-4 shrink-0 text-blue-400/60" />
             </div>
-          </CardContent>
+            <div className="flex min-w-0 items-center">
+              <AnimatedCurrency
+                value={report.reduce((sum, r) => sum + r.totalSell, 0)}
+                className="block truncate font-mono text-xl font-bold text-blue-400 sm:text-2xl"
+              />
+            </div>
+            <div className="invisible font-mono text-[10px]">–</div>
+          </div>
         </Card>
 
-        <Card className="border-zinc-800 bg-zinc-900/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 font-mono text-xs font-normal text-zinc-500">
-              <TrendingUp className="h-3.5 w-3.5" />
-              {t('common.overallRoi')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={`min-w-0 break-words font-mono text-xl font-bold sm:text-2xl ${totalROI >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-              {formatNumber(totalROI)}%
+        <Card className="relative h-28 overflow-hidden border-zinc-800/60 bg-zinc-900/50 p-3 transition-colors hover:border-zinc-700/80 hover:bg-zinc-900/70">
+          <div className="grid h-full grid-rows-[auto_1fr_auto] gap-1">
+            <div className="flex items-start justify-between gap-2">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">{t('common.overallRoi')}</span>
+              <TrendingUp className="h-4 w-4 shrink-0 text-emerald-400/60" />
             </div>
-          </CardContent>
+            <div className="flex min-w-0 items-center">
+              <AnimatedNumber
+                value={totalROI}
+                suffix="%"
+                decimals={1}
+                className={cn('block truncate font-mono text-xl font-bold sm:text-2xl', totalROI >= 0 ? 'text-emerald-400' : 'text-red-400')}
+              />
+            </div>
+            <div className="invisible font-mono text-[10px]">–</div>
+          </div>
         </Card>
       </div>
 

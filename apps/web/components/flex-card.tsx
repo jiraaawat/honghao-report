@@ -3,6 +3,7 @@
 import { forwardRef } from 'react'
 import { TransactionDto } from '@/types'
 import { formatCurrency, formatDate, formatNumber } from '@/lib/utils'
+import { LanguageBadge } from '@/components/language/language-badge'
 import { TrendingUp, TrendingDown, Zap } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/provider'
 
@@ -41,8 +42,8 @@ export const FlexCard = forwardRef<HTMLDivElement, FlexCardProps>(function FlexC
 
       <div className="mt-6">
         <div className="text-lg font-bold leading-tight">{tx.card?.name}</div>
-        <div className="mt-1 text-xs text-zinc-400">
-          {tx.card?.cardType} · {tx.card?.game}
+        <div className="mt-1 flex items-center gap-1.5 text-xs text-zinc-400">
+          {tx.card?.cardType} · {tx.card?.game} <LanguageBadge language={tx.card?.language} />
         </div>
       </div>
 

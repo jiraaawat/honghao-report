@@ -28,14 +28,16 @@ Schema location: `apps/web/prisma/schema.prisma`
 
 Models:
 - `User` / `Account` / `Session` / `VerificationToken` (NextAuth)
-- `Card` - trading cards with `cardType`, `game`, and `status` fields
+- `Card` - trading cards with `cardType`, `game`, `language`, and `status` fields
 - `Transaction` - buy/sell records, grading costs use `isGradingCost: true`
 - `CardInventory` - computed inventory & average cost per card
 - `GradingRecord` - tracks cards sent for grading
+- `WishlistItem` - catalog cards saved to the user's wishlist
 
 Card categories:
 - `cardType`: Single, Bundle, PSA10, PSA9, Sealed Product
 - `game`: Pokemon, OnePiece, Lorcana, ETC
+- `language`: EN, JP, FR, CN, TH, KR (displayed as color-coded badges)
 
 Card status:
 - `in_stock`
@@ -67,7 +69,8 @@ Local dev uses SQLite. Ensure `apps/web/.env.local` exists with `DATABASE_URL`, 
 
 - `/dashboard` - Summary stats, game/type breakdown, recent transactions
 - `/inventory` - Main card browser with search & filters
-- `/cards` - Browse the external One Piece TCG catalog and add cards to inventory
+- `/cards` - Browse the external One Piece TCG catalog, add cards to inventory, and toggle wishlist
+- `/wishlist` - Saved catalog cards with quick add-to-inventory action
 - `/grading` - Track and manage cards being graded
 - `/grading/send` - Send a card to grading
 - `/transactions` - Add cards and record buy/sell transactions

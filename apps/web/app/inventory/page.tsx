@@ -17,9 +17,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { InventoryItem, CardDto, CARD_TYPES, GAMES, CARD_CONDITIONS } from '@/types'
+import { InventoryItem, CardDto, CARD_TYPES, GAMES, CARD_CONDITIONS, LANGUAGES } from '@/types'
 import { InventoryGridCard } from '@/components/inventory/inventory-grid-card'
+import { SortableInventoryGrid } from '@/components/inventory/sortable-grid'
+import { InventoryDetailsDialog } from '@/components/inventory/inventory-details-dialog'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
+import { LanguageBadge } from '@/components/language/language-badge'
+import { AnimatedCurrency, AnimatedNumber } from '@/components/ui/animated-value'
 import { useLanguage } from '@/lib/i18n/provider'
 import { FullPageLoader } from '@/components/ui/loading'
 import {
@@ -73,7 +77,18 @@ export default function InventoryPage() {
   const [game, setGame] = useState('')
   const [year, setYear] = useState('')
   const [month, setMonth] = useState('')
-  const [sortBy, setSortBy] = useState<'lastTransaction_desc' | 'createdAt_desc' | 'createdAt_asc' | 'name_asc' | 'name_desc' | 'quantity_desc' | 'quantity_asc'>('lastTransaction_desc')
+  type SortBy =
+    | 'userOrder'
+    | 'value_desc'
+    | 'value_asc'
+    | 'lastTransaction_desc'
+    | 'createdAt_desc'
+    | 'createdAt_asc'
+    | 'name_asc'
+    | 'name_desc'
+    | 'quantity_desc'
+    | 'quantity_asc'
+  const [sortBy, setSortBy] = useState<SortBy>('userOrder')
   const [showFilters, setShowFilters] = useState(false)
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
 
@@ -106,6 +121,7 @@ export default function InventoryPage() {
     rarity: '',
     cardType: 'Single',
     game: 'OnePiece',
+    language: 'EN',
     condition: '',
   })
   const [addQty, setAddQty] = useState('')
@@ -142,6 +158,7 @@ export default function InventoryPage() {
     item: null,
   })
   const [costValue, setCostValue] = useState('')
+  const [detailsItem, setDetailsItem] = useState<InventoryItem | null>(null)
 
   const years = useMemo(
     () => Array.from({ length: 5 }, (_, i) => (new Date().getFullYear() - 2 + i).toString()),
@@ -225,6 +242,7 @@ export default function InventoryPage() {
       rarity: '',
       cardType: 'Single',
       game: 'OnePiece',
+      language: 'EN',
       condition: '',
     })
     setAddQty('1')
@@ -387,6 +405,7 @@ export default function InventoryPage() {
           rarity: addCard.rarity || undefined,
           cardType: addCard.cardType,
           game: addCard.game,
+          language: addCard.language,
           condition: addCard.condition || undefined,
         }),
       })
@@ -513,6 +532,17 @@ export default function InventoryPage() {
         return list.sort((a, b) => b.quantity - a.quantity)
       case 'quantity_asc':
         return list.sort((a, b) => a.quantity - b.quantity)
+      case 'userOrder':
+        return list.sort((a, b) => {
+          if (a.order === null && b.order === null) return 0
+          if (a.order === null) return 1
+          if (b.order === null) return -1
+          return a.order - b.order
+        })
+      case 'value_desc':
+        return list.sort((a, b) => b.currentValue - a.currentValue)
+      case 'value_asc':
+        return list.sort((a, b) => a.currentValue - b.currentValue)
       case 'lastTransaction_desc':
       default:
         return list.sort((a, b) => {
@@ -548,6 +578,32 @@ export default function InventoryPage() {
       sealed: items.filter((i) => formatGroups.sealed.includes(i.cardType)).length,
     }
   }, [items, formatGroups])
+
+  const handleReorder = useCallback(
+    (newSortedItems: InventoryItem[]) => {
+      if (!data) return
+      const visibleIds = new Set(newSortedItems.map((i) => i.cardId))
+      const sortedIterator = [...newSortedItems]
+      let idx = 0
+      const combined = data.items.map((item) => {
+        if (visibleIds.has(item.cardId)) {
+          return sortedIterator[idx++]
+        }
+        return item
+      })
+      const orders: Record<string, number> = {}
+      combined.forEach((item, i) => {
+        orders[item.cardId] = i
+      })
+      setData({ ...data, items: combined })
+      fetch('/api/inventory/order', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orders }),
+      }).catch(() => {})
+    },
+    [data]
+  )
 
   if (status === 'loading' || loading) {
     return <FullPageLoader />
@@ -587,15 +643,17 @@ export default function InventoryPage() {
     },
     {
       label: t('inventory.currentValue'),
-      value: formatCurrency(summary.totalValue),
+      value: summary.totalValue,
       icon: Wallet,
       color: 'text-zinc-200',
+      isCurrency: true,
     },
     {
       label: t('inventory.totalProfit'),
-      value: formatCurrency(summary.totalProfit),
+      value: summary.totalProfit,
       icon: TrendingUp,
       color: (summary?.totalProfit ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400',
+      isCurrency: true,
     },
   ]
 
@@ -620,24 +678,33 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-        {statCards.map((s) => {
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        {statCards.map((s, i) => {
           const Icon = s.icon
           return (
-            <Card key={s.label} className="border-zinc-800 bg-zinc-900/50">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 font-mono text-xs font-normal text-zinc-500">
-                  <Icon className="h-3.5 w-3.5" />
-                  {s.label}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className={`min-w-0 break-words font-mono text-xl font-bold sm:text-2xl ${s.color}`}>{s.value}</div>
-                {s.note && (
-                  <div className="mt-1 font-mono text-[10px] text-zinc-600">{s.note}</div>
-                )}
-              </CardContent>
-            </Card>
+            <motion.div
+              key={s.label}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <Card className="relative h-28 overflow-hidden border-zinc-800/60 bg-zinc-900/50 p-3 transition-colors hover:border-zinc-700/80 hover:bg-zinc-900/70">
+                <div className="grid h-full grid-rows-[auto_1fr_auto] gap-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">{s.label}</span>
+                    <Icon className={cn('h-4 w-4 shrink-0 opacity-60', s.color)} />
+                  </div>
+                  <div className="flex min-w-0 items-center">
+                    {s.isCurrency ? (
+                      <AnimatedCurrency value={s.value as number} className={cn('block truncate font-mono text-xl font-bold sm:text-2xl', s.color)} />
+                    ) : (
+                      <AnimatedNumber value={s.value as number} className={cn('block truncate font-mono text-xl font-bold sm:text-2xl', s.color)} />
+                    )}
+                  </div>
+                  <div className={cn('font-mono text-[10px]', s.note ? 'text-zinc-600' : 'invisible')}>{s.note || '–'}</div>
+                </div>
+              </Card>
+            </motion.div>
           )
         })}
       </div>
@@ -747,7 +814,10 @@ export default function InventoryPage() {
 
             <div className="flex w-44 items-center gap-2">
               <Calendar className="h-4 w-4 text-zinc-500" />
-              <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)} className="flex-1">
+              <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)} className="flex-1">
+                <option value="userOrder">{t('inventory.sortLabel.userOrder')}</option>
+                <option value="value_desc">{t('inventory.sortLabel.value_desc')}</option>
+                <option value="value_asc">{t('inventory.sortLabel.value_asc')}</option>
                 <option value="lastTransaction_desc">{t('inventory.sortLabel.lastTransaction_desc')}</option>
                 <option value="createdAt_desc">{t('inventory.sortLabel.createdAt_desc')}</option>
                 <option value="createdAt_asc">{t('inventory.sortLabel.createdAt_asc')}</option>
@@ -770,7 +840,7 @@ export default function InventoryPage() {
                   setYear('')
                   setMonth('')
                   setSearch('')
-                  setSortBy('lastTransaction_desc')
+                  setSortBy('userOrder')
                 }}
                 className="ml-auto font-mono text-xs"
               >
@@ -782,7 +852,7 @@ export default function InventoryPage() {
       </Card>
 
       <Card className="border-zinc-800 bg-zinc-900/50">
-        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4">
+        <CardHeader className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <CardTitle className="font-mono text-sm">{t('inventory.itemsWithCount', { count: items.length })}</CardTitle>
           <div className="flex shrink-0 items-center gap-2">
             <div className="flex shrink-0 items-center rounded-lg border border-zinc-700 bg-zinc-950 p-1 shadow-sm">
@@ -818,7 +888,7 @@ export default function InventoryPage() {
                 )}
                 title={t('inventory.listView')}
               >
-                <LayoutList className="h-4 w-4" /> {t('common.list')}
+                <LayoutList className="h-4 w-4" /> <span className="hidden sm:inline">{t('common.list')}</span>
               </button>
               <button
                 type="button"
@@ -831,7 +901,7 @@ export default function InventoryPage() {
                 )}
                 title={t('inventory.gridView')}
               >
-                <LayoutGrid className="h-4 w-4" /> {t('common.grid')}
+                <LayoutGrid className="h-4 w-4" /> <span className="hidden sm:inline">{t('common.grid')}</span>
               </button>
             </div>
           </div>
@@ -850,6 +920,7 @@ export default function InventoryPage() {
                       <th className="pb-2 pr-4">{t('inventory.table.card')}</th>
                       <th className="pb-2 pr-4">{t('inventory.table.type')}</th>
                       <th className="pb-2 pr-4">{t('inventory.table.game')}</th>
+                      <th className="pb-2 pr-4">{t('common.language')}</th>
                       <th className="pb-2 pr-4">{t('inventory.table.condition')}</th>
                       <th className="pb-2 pr-4">{t('inventory.table.status')}</th>
                       <th className="pb-2 pr-4">{t('inventory.table.createdSold')}</th>
@@ -884,6 +955,9 @@ export default function InventoryPage() {
                         </td>
                         <td className="py-3 pr-4 text-zinc-400">{item.cardType}</td>
                         <td className="py-3 pr-4 text-zinc-400">{item.game}</td>
+                        <td className="py-3 pr-4">
+                          <LanguageBadge language={item.language} />
+                        </td>
                         <td className="py-3 pr-4">
                           {item.condition ? (
                             <Badge variant="outline" className="text-xs">
@@ -1053,6 +1127,7 @@ export default function InventoryPage() {
                             </Badge>
                           )}
                           <span className="font-mono text-[10px] text-zinc-500">{item.game}</span>
+                          <LanguageBadge language={item.language} />
                         </div>
                       </div>
 
@@ -1190,12 +1265,37 @@ export default function InventoryPage() {
             </>
           )}
 
-          {viewMode === 'grid' && (
+          {viewMode === 'grid' && sortBy === 'userOrder' && (
+            <div className="space-y-2">
+              <div className="font-mono text-xs text-zinc-500">
+                {t('inventory.dragToReorder')}
+              </div>
+              <SortableInventoryGrid
+                items={sortedItems}
+                onReorder={handleReorder}
+                renderItem={(item) => (
+                  <InventoryGridCard
+                    item={item}
+                    onSell={openSell}
+                    onAdd={openAdd}
+                    onRemove={openRemove}
+                    onEditCost={openCost}
+                    onOpenDetails={setDetailsItem}
+                    editing={editingValue?.cardId === item.cardId}
+                    onEdit={() => setEditingValue({ cardId: item.cardId, value: String(item.marketValuePerUnit) })}
+                    onUpdateValue={(value) => updateCurrentValue(item.cardId, value)}
+                  />
+                )}
+              />
+            </div>
+          )}
+
+          {viewMode === 'grid' && sortBy !== 'userOrder' && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.2 }}
-              className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+              className="grid grid-cols-2 gap-4 auto-rows-[1fr] sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
             >
               {sortedItems.map((item) => (
                 <InventoryGridCard
@@ -1205,6 +1305,7 @@ export default function InventoryPage() {
                   onAdd={openAdd}
                   onRemove={openRemove}
                   onEditCost={openCost}
+                  onOpenDetails={setDetailsItem}
                   editing={editingValue?.cardId === item.cardId}
                   onEdit={() => setEditingValue({ cardId: item.cardId, value: String(item.marketValuePerUnit) })}
                   onUpdateValue={(value) => updateCurrentValue(item.cardId, value)}
@@ -1499,6 +1600,19 @@ export default function InventoryPage() {
                         </Select>
                       </div>
                     </div>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="font-mono text-xs text-zinc-400">{t('common.language')}</label>
+                        <Select
+                          value={addCard.language}
+                          onChange={(e) => setAddCard({ ...addCard, language: e.target.value })}
+                        >
+                          {LANGUAGES.map((lang) => (
+                            <option key={lang} value={lang}>{lang}</option>
+                          ))}
+                        </Select>
+                      </div>
+                    </div>
                   </>
                 )}
 
@@ -1654,6 +1768,12 @@ export default function InventoryPage() {
               <span className="text-zinc-200">{addCard.game}</span>
             </div>
           )}
+          {addConfirm.isNewCard && (
+            <div className="flex justify-between border-b border-zinc-800 pb-2">
+              <span className="text-zinc-500">{t('common.language')}</span>
+              <span className="text-zinc-200">{addCard.language}</span>
+            </div>
+          )}
           <div className="flex justify-between border-b border-zinc-800 pb-2">
             <span className="text-zinc-500">{t('common.quantity')}</span>
             <span className="text-zinc-200">{addConfirm.qty}</span>
@@ -1753,6 +1873,17 @@ export default function InventoryPage() {
           </DialogFooter>
         </form>
       </Dialog>
+
+      <InventoryDetailsDialog
+        item={detailsItem}
+        open={!!detailsItem}
+        onClose={() => setDetailsItem(null)}
+        onSell={openSell}
+        onAdd={openAdd}
+        onRemove={openRemove}
+        onEditCost={openCost}
+        onUpdateValue={updateCurrentValue}
+      />
     </div>
   )
 }
