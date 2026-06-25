@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
-import { useSession } from 'next-auth/react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import useSWR from 'swr'
 import Image from 'next/image'
+
 import { motion } from 'framer-motion'
 import { Package, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -20,8 +21,7 @@ import {
 import { WishlistItemDto, CARD_TYPES, GAMES, CARD_CONDITIONS, LANGUAGES } from '@/types'
 import { LanguageBadge } from '@/components/language/language-badge'
 import { useLanguage } from '@/lib/i18n/provider'
-import { FullPageLoader } from '@/components/ui/loading'
-import { formatCurrency } from '@/lib/utils'
+import { fetcher, swrOptions } from '@/lib/swr'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -41,12 +41,11 @@ const itemVariants = {
 }
 
 export default function WishlistPage() {
-  const { status } = useSession()
   const router = useRouter()
   const { t } = useLanguage()
 
-  const [items, setItems] = useState<WishlistItemDto[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data: wishlistData, isLoading: wishlistLoading, mutate: mutateWishlist } = useSWR<WishlistItemDto[]>('/api/wishlist', fetcher, swrOptions)
+  const items = wishlistData ?? []
 
   const [addDialog, setAddDialog] = useState<{ open: boolean; item: WishlistItemDto | null }>({
     open: false,
@@ -63,31 +62,10 @@ export default function WishlistPage() {
   })
   const [adding, setAdding] = useState(false)
 
-  const fetchWishlist = useCallback(() => {
-    setLoading(true)
-    fetch('/api/wishlist')
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setItems(Array.isArray(data) ? data : []))
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false))
-  }, [])
-
-  useEffect(() => {
-    if (status === 'authenticated') {
-      fetchWishlist()
-    }
-  }, [status, fetchWishlist])
-
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin')
-    }
-  }, [status, router])
-
   const removeItem = async (id: string) => {
     const res = await fetch(`/api/wishlist/${id}`, { method: 'DELETE' })
     if (res.ok) {
-      setItems((prev) => prev.filter((i) => i.id !== id))
+      await mutateWishlist()
     }
   }
 
@@ -152,8 +130,21 @@ export default function WishlistPage() {
     }
   }
 
-  if (status === 'loading') return <FullPageLoader />
-  if (status === 'unauthenticated') return null
+  if (wishlistLoading && !wishlistData) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
+        <div className="mb-6 space-y-2">
+          <div className="h-7 w-40 animate-pulse rounded bg-zinc-800" />
+          <div className="h-4 w-64 animate-pulse rounded bg-zinc-800" />
+        </div>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} className="aspect-[488/680] w-full animate-pulse rounded-xl bg-zinc-800" />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
@@ -167,7 +158,7 @@ export default function WishlistPage() {
         <p className="font-mono text-xs text-zinc-500">{t('wishlist.subtitle')}</p>
       </motion.div>
 
-      {loading ? (
+      {wishlistLoading ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="aspect-[488/680] w-full animate-pulse rounded-xl bg-zinc-800" />
@@ -203,7 +194,6 @@ export default function WishlistPage() {
                     fill
                     sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
-                    unoptimized
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center font-mono text-xs text-zinc-600">

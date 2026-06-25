@@ -1,10 +1,11 @@
 'use client'
 
 import { forwardRef } from 'react'
+import Image from 'next/image'
 import { TransactionDto } from '@/types'
 import { formatCurrency, formatDate, formatNumber } from '@/lib/utils'
 import { LanguageBadge } from '@/components/language/language-badge'
-import { TrendingUp, TrendingDown, Zap } from 'lucide-react'
+import { TrendingUp, TrendingDown, Zap, Package } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/provider'
 
 interface FlexCardProps {
@@ -40,10 +41,27 @@ export const FlexCard = forwardRef<HTMLDivElement, FlexCardProps>(function FlexC
         <span className="text-[10px] text-zinc-500">{t('flexCard.honghaoReport')}</span>
       </div>
 
-      <div className="mt-6">
-        <div className="text-lg font-bold leading-tight">{tx.card?.name}</div>
-        <div className="mt-1 flex items-center gap-1.5 text-xs text-zinc-400">
-          {tx.card?.cardType} · {tx.card?.game} <LanguageBadge language={tx.card?.language} />
+      <div className="mt-6 flex items-start gap-3">
+        <div className="relative aspect-[488/680] w-16 shrink-0 overflow-hidden rounded-md bg-zinc-950">
+          {tx.card?.imageUrl ? (
+            <Image
+              src={tx.card.imageUrl}
+              alt={tx.card.name}
+              fill
+              sizes="64px"
+              className="object-cover"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-zinc-600">
+              <Package className="h-6 w-6" />
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-lg font-bold leading-tight">{tx.card?.name}</div>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-zinc-400">
+            {tx.card?.cardType} · {tx.card?.game} <LanguageBadge language={tx.card?.language} />
+          </div>
         </div>
       </div>
 

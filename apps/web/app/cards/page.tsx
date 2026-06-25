@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
-import { useSession } from 'next-auth/react'
+import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import useSWR from 'swr'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Search, Package, Plus, Heart } from 'lucide-react'
@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/dialog'
 import { CatalogCardDto, CatalogSetDto, CARD_TYPES, CARD_CONDITIONS, GAMES, LANGUAGES, WishlistItemDto } from '@/types'
 import { useLanguage } from '@/lib/i18n/provider'
-import { FullPageLoader } from '@/components/ui/loading'
+import { fetcher, swrOptions } from '@/lib/swr'
 import { formatUsdToThb, usdToThb } from '@/lib/utils'
 
 const PAGE_SIZE = 24
@@ -44,19 +44,14 @@ const itemVariants = {
 }
 
 export default function CardsPage() {
-  const { status } = useSession()
   const router = useRouter()
   const { t } = useLanguage()
 
-  const [items, setItems] = useState<CatalogCardDto[]>([])
-  const [sets, setSets] = useState<CatalogSetDto[]>([])
-  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [setId, setSetId] = useState('')
   const [typeFilter, setTypeFilter] = useState('All')
   const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
 
   const [addDialog, setAddDialog] = useState<{ open: boolean; card: CatalogCardDto | null }>({
     open: false,
@@ -72,8 +67,29 @@ export default function CardsPage() {
     date: new Date().toISOString().split('T')[0],
     note: '',
   })
-  const [wishlistItems, setWishlistItems] = useState<WishlistItemDto[]>([])
   const [adding, setAdding] = useState(false)
+
+  const catalogParams = useMemo(() => {
+    const params = new URLSearchParams()
+    if (debouncedSearch) params.set('search', debouncedSearch)
+    if (setId) params.set('setId', setId)
+    params.set('page', page.toString())
+    params.set('limit', PAGE_SIZE.toString())
+    return params
+  }, [debouncedSearch, setId, page])
+
+  const catalogKey = `/api/catalog/cards?${catalogParams.toString()}`
+  const { data: catalogData, isLoading: catalogLoading } = useSWR<{
+    items: CatalogCardDto[]
+    pagination: { pages: number }
+  }>(catalogKey, fetcher, swrOptions)
+  const { data: setsData } = useSWR<CatalogSetDto[]>('/api/catalog/sets', fetcher, swrOptions)
+  const { data: wishlistData, mutate: mutateWishlist } = useSWR<WishlistItemDto[]>('/api/wishlist', fetcher, swrOptions)
+
+  const items = catalogData?.items ?? []
+  const totalPages = catalogData?.pagination?.pages ?? 1
+  const sets = setsData ?? []
+  const wishlistItems = wishlistData ?? []
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -83,42 +99,6 @@ export default function CardsPage() {
     return () => clearTimeout(timer)
   }, [search])
 
-  const fetchCards = useCallback(() => {
-    setLoading(true)
-    const params = new URLSearchParams()
-    if (debouncedSearch) params.set('search', debouncedSearch)
-    if (setId) params.set('setId', setId)
-    params.set('page', page.toString())
-    params.set('limit', PAGE_SIZE.toString())
-
-    fetch(`/api/catalog/cards?${params.toString()}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setItems(Array.isArray(data.items) ? data.items : [])
-        setTotalPages(data.pagination?.pages || 1)
-        setLoading(false)
-      })
-      .catch(() => {
-        setItems([])
-        setTotalPages(1)
-        setLoading(false)
-      })
-  }, [debouncedSearch, setId, page])
-
-  const fetchSets = useCallback(() => {
-    fetch('/api/catalog/sets')
-      .then((res) => res.json())
-      .then((data) => setSets(Array.isArray(data) ? data : []))
-      .catch(() => setSets([]))
-  }, [])
-
-  const fetchWishlist = useCallback(() => {
-    fetch('/api/wishlist')
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setWishlistItems(Array.isArray(data) ? data : []))
-      .catch(() => setWishlistItems([]))
-  }, [])
-
   const toggleWishlist = async (card: CatalogCardDto) => {
     const existing = wishlistItems.find(
       (w) => w.catalogCardId === card.id && w.language === addForm.language
@@ -126,7 +106,7 @@ export default function CardsPage() {
     if (existing) {
       const res = await fetch(`/api/wishlist/${existing.id}`, { method: 'DELETE' })
       if (res.ok) {
-        setWishlistItems((prev) => prev.filter((w) => w.id !== existing.id))
+        await mutateWishlist()
       }
       return
     }
@@ -147,32 +127,9 @@ export default function CardsPage() {
       }),
     })
     if (res.ok) {
-      const item = await res.json()
-      setWishlistItems((prev) => [item, ...prev])
-    } else if (res.status === 409) {
-      fetchWishlist()
+      await mutateWishlist()
     }
   }
-
-  useEffect(() => {
-    if (status === 'authenticated') {
-      fetchSets()
-      fetchWishlist()
-    }
-  }, [status, fetchSets, fetchWishlist])
-
-  useEffect(() => {
-    if (status === 'authenticated') {
-      const timeout = setTimeout(fetchCards, 0)
-      return () => clearTimeout(timeout)
-    }
-  }, [status, fetchCards])
-
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin')
-    }
-  }, [status, router])
 
   const openAdd = (card: CatalogCardDto) => {
     setAddDialog({ open: true, card })
@@ -235,8 +192,26 @@ export default function CardsPage() {
     }
   }
 
-  if (status === 'loading') return <FullPageLoader />
-  if (status === 'unauthenticated') return null
+  if (catalogLoading && !catalogData) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
+        <div className="mb-6 space-y-2">
+          <div className="h-7 w-40 animate-pulse rounded bg-zinc-800" />
+          <div className="h-4 w-64 animate-pulse rounded bg-zinc-800" />
+        </div>
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row">
+          <div className="h-10 flex-1 animate-pulse rounded bg-zinc-800" />
+          <div className="h-10 w-56 animate-pulse rounded bg-zinc-800" />
+          <div className="h-10 w-44 animate-pulse rounded bg-zinc-800" />
+        </div>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          {Array.from({ length: PAGE_SIZE }).map((_, i) => (
+            <div key={i} className="aspect-[488/680] w-full animate-pulse rounded-xl bg-zinc-800" />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   const visibleItems =
     typeFilter === 'All'
@@ -294,7 +269,7 @@ export default function CardsPage() {
         </Select>
       </motion.div>
 
-      {loading ? (
+      {catalogLoading ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {Array.from({ length: PAGE_SIZE }).map((_, i) => (
             <div key={i} className="aspect-[488/680] w-full animate-pulse rounded-xl bg-zinc-800" />
@@ -331,7 +306,6 @@ export default function CardsPage() {
                       fill
                       sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
-                      unoptimized
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center font-mono text-xs text-zinc-600">

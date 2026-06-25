@@ -11,6 +11,7 @@ import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { LanguageBadge } from '@/components/language/language-badge'
 import { Package, PackageCheck, PackageX, Gem, Plus, Minus, Tag, Pencil } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/provider'
+import { memo } from 'react'
 
 interface InventoryGridCardProps {
   item: InventoryItem
@@ -24,7 +25,7 @@ interface InventoryGridCardProps {
   onUpdateValue: (value: string) => void
 }
 
-export function InventoryGridCard({
+function InventoryGridCardRaw({
   item,
   onSell,
   onAdd,
@@ -40,7 +41,6 @@ export function InventoryGridCard({
 
   return (
     <motion.div
-      layout
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
@@ -57,7 +57,6 @@ export function InventoryGridCard({
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
             className="object-cover transition-transform duration-300 group-hover:scale-105"
-            unoptimized
           />
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-1 font-mono text-xs text-zinc-600">
@@ -214,3 +213,5 @@ export function InventoryGridCard({
     </motion.div>
   )
 }
+
+export const InventoryGridCard = memo(InventoryGridCardRaw)

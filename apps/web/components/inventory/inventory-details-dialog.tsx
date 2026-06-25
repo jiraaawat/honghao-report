@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { InventoryItem } from '@/types'
@@ -41,14 +41,7 @@ export function InventoryDetailsDialog({
 }: InventoryDetailsDialogProps) {
   const { t } = useLanguage()
   const [editing, setEditing] = useState(false)
-  const [value, setValue] = useState('')
-
-  useEffect(() => {
-    if (item) {
-      setValue(String(item.marketValuePerUnit))
-      setEditing(false)
-    }
-  }, [item])
+  const [value, setValue] = useState(String(item?.marketValuePerUnit ?? ''))
 
   if (!item) return null
 
@@ -86,7 +79,6 @@ export function InventoryDetailsDialog({
               alt={item.cardName}
               fill
               className="object-cover"
-              unoptimized
             />
           ) : (
             <div className="flex h-full items-center justify-center text-zinc-600">

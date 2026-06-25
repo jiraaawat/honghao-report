@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
-import { redirect } from 'next/navigation'
+import { useState } from 'react'
+import useSWR from 'swr'
+import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Calendar } from 'lucide-react'
@@ -19,47 +19,31 @@ import { MonthlyReport } from '@/types'
 import { cn, formatCurrency, formatNumber } from '@/lib/utils'
 import { AnimatedCurrency, AnimatedNumber } from '@/components/ui/animated-value'
 import { useLanguage } from '@/lib/i18n/provider'
-import { MonthlyChart } from '@/components/reports/monthly-chart'
-import { FullPageLoader } from '@/components/ui/loading'
+import { fetcher, swrOptions } from '@/lib/swr'
+import { ReportsSkeleton } from '@/components/reports/reports-skeleton'
+
+const MonthlyChart = dynamic(() => import('@/components/reports/monthly-chart').then((mod) => mod.MonthlyChart), {
+  ssr: false,
+  loading: () => <div className="h-64 w-full animate-pulse rounded-xl bg-zinc-800" />,
+})
 import { Download, TrendingUp, TrendingDown, AlertTriangle, Trash2 } from 'lucide-react'
 
 export default function ReportsPage() {
-  const { status } = useSession()
   const { t } = useLanguage()
-  const [report, setReport] = useState<MonthlyReport[]>([])
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
-  const [loading, setLoading] = useState(true)
 
   const [resetDialog, setResetDialog] = useState(false)
   const [resetPassword, setResetPassword] = useState('')
   const [resetConfirm, setResetConfirm] = useState('')
   const [resetting, setResetting] = useState(false)
 
-  useEffect(() => {
-    if (status !== 'authenticated') return
-
-    let cancelled = false
-
-    const fetchReport = async () => {
-      const params = new URLSearchParams()
-      if (startDate) params.append('startDate', startDate)
-      if (endDate) params.append('endDate', endDate)
-
-      const res = await fetch(`/api/reports?${params}`)
-      const data = await res.json()
-      if (!cancelled) {
-        setReport(data)
-        setLoading(false)
-      }
-    }
-
-    fetchReport()
-
-    return () => {
-      cancelled = true
-    }
-  }, [status, startDate, endDate])
+  const reportParams = new URLSearchParams()
+  if (startDate) reportParams.append('startDate', startDate)
+  if (endDate) reportParams.append('endDate', endDate)
+  const reportKey = `/api/reports?${reportParams.toString()}`
+  const { data: reportData, isLoading: reportLoading } = useSWR<MonthlyReport[]>(reportKey, fetcher, swrOptions)
+  const report = reportData ?? []
 
   const handleExport = () => {
     const params = new URLSearchParams()
@@ -98,12 +82,8 @@ export default function ReportsPage() {
     }
   }
 
-  if (status === 'loading' || loading) {
-    return <FullPageLoader />
-  }
-
-  if (status === 'unauthenticated') {
-    redirect('/auth/signin')
+  if (reportLoading && !reportData) {
+    return <ReportsSkeleton />
   }
 
   const totalProfit = report.reduce((sum, r) => sum + r.totalProfit, 0)

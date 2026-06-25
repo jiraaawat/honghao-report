@@ -1,8 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSession } from 'next-auth/react'
-import { redirect } from 'next/navigation'
+import { useMemo, useRef, useState } from 'react'
+import useSWR from 'swr'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
@@ -19,16 +18,14 @@ import { TransactionDto, CARD_TYPES, GAMES } from '@/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { LanguageBadge } from '@/components/language/language-badge'
 import { useLanguage } from '@/lib/i18n/provider'
-import { toPng } from 'html-to-image'
+import { fetcher, swrOptions } from '@/lib/swr'
 import { FlexCard } from '@/components/flex-card'
-import { FullPageLoader, InlineLoader } from '@/components/ui/loading'
-import { Trash2, Search, Calendar, Pencil, ChevronUp, ChevronDown, Zap } from 'lucide-react'
+import { InlineLoader } from '@/components/ui/loading'
+import { TransactionsSkeleton } from '@/components/transactions/transactions-skeleton'
+import { Trash2, Search, Calendar, Pencil, ChevronUp, ChevronDown, Zap, Download, Share2 } from 'lucide-react'
 
 export default function TransactionsPage() {
-  const { status } = useSession()
   const { t } = useLanguage()
-  const [transactions, setTransactions] = useState<TransactionDto[]>([])
-  const [loading, setLoading] = useState(true)
 
   const [filterYear, setFilterYear] = useState('')
   const [filterMonth, setFilterMonth] = useState('')
@@ -37,6 +34,21 @@ export default function TransactionsPage() {
   const [filterCardType, setFilterCardType] = useState('')
   const [filterGame, setFilterGame] = useState('')
   const [showFilters, setShowFilters] = useState(false)
+
+  const txParams = useMemo(() => {
+    const params = new URLSearchParams()
+    if (filterYear) params.append('year', filterYear)
+    if (filterMonth) params.append('month', filterMonth)
+    if (search) params.append('search', search)
+    if (filterType) params.append('type', filterType)
+    if (filterCardType) params.append('cardType', filterCardType)
+    if (filterGame) params.append('game', filterGame)
+    return params
+  }, [filterYear, filterMonth, search, filterType, filterCardType, filterGame])
+
+  const txKey = `/api/transactions?${txParams.toString()}`
+  const { data: txData, isLoading: txLoading, mutate: mutateTransactions } = useSWR<TransactionDto[]>(txKey, fetcher, swrOptions)
+  const transactions = txData ?? []
 
   const [editDialog, setEditDialog] = useState<{ open: boolean; tx: TransactionDto | null }>({
     open: false,
@@ -52,6 +64,7 @@ export default function TransactionsPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [flexTx, setFlexTx] = useState<TransactionDto | null>(null)
+  const [flexOpen, setFlexOpen] = useState(false)
   const flexRef = useRef<HTMLDivElement>(null)
 
   const years = useMemo(
@@ -60,78 +73,53 @@ export default function TransactionsPage() {
   )
   const months = useMemo(() => Array.from({ length: 12 }, (_, i) => (i + 1).toString()), [])
 
-  const buildTxParams = useCallback(() => {
-    const params = new URLSearchParams()
-    if (filterYear) params.append('year', filterYear)
-    if (filterMonth) params.append('month', filterMonth)
-    if (search) params.append('search', search)
-    if (filterType) params.append('type', filterType)
-    if (filterCardType) params.append('cardType', filterCardType)
-    if (filterGame) params.append('game', filterGame)
-    return params
-  }, [filterYear, filterMonth, search, filterType, filterCardType, filterGame])
 
-  const fetchTransactions = useCallback(async () => {
-    setLoading(true)
-    const res = await fetch(`/api/transactions?${buildTxParams()}`)
-    const data = await res.json()
-    setLoading(false)
-    return data as TransactionDto[]
-  }, [buildTxParams])
-
-  useEffect(() => {
-    if (status !== 'authenticated') return
-
-    let cancelled = false
-
-    const load = async () => {
-      const txData = await fetchTransactions()
-      if (!cancelled) {
-        setTransactions(txData)
-      }
-    }
-
-    load()
-
-    return () => {
-      cancelled = true
-    }
-  }, [status, fetchTransactions])
-
-  useEffect(() => {
-    if (!flexTx || !flexRef.current) return
-
-    const run = async () => {
-      try {
-        const dataUrl = await toPng(flexRef.current!, { pixelRatio: 2 })
-        const blob = await fetch(dataUrl).then((r) => r.blob())
-        const file = new File([blob], `flex-${flexTx.id}.png`, { type: 'image/png' })
-
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: t('flexCard.shareTitle'),
-            text: t('flexCard.shareText', { name: flexTx.card?.name ?? '', amount: formatCurrency(Number(flexTx.totalAmount)) }),
-          })
-        } else {
-          const link = document.createElement('a')
-          link.href = dataUrl
-          link.download = `flex-${flexTx.id}.png`
-          link.click()
-        }
-      } catch (err) {
-        console.error(err)
-      } finally {
-        setFlexTx(null)
-      }
-    }
-
-    run()
-  }, [flexTx, t])
 
   const handleFlex = (tx: TransactionDto) => {
     if (tx.type !== 'SELL') return
     setFlexTx(tx)
+    setFlexOpen(true)
+  }
+
+  const closeFlex = () => {
+    setFlexOpen(false)
+    setFlexTx(null)
+  }
+
+  const handleFlexDownload = async () => {
+    if (!flexTx || !flexRef.current) return
+    try {
+      const { toPng } = await import('html-to-image')
+      const dataUrl = await toPng(flexRef.current, { pixelRatio: 2 })
+      const link = document.createElement('a')
+      link.href = dataUrl
+      link.download = `flex-${flexTx.id}.png`
+      link.click()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleFlexShare = async () => {
+    if (!flexTx || !flexRef.current) return
+    try {
+      const { toPng } = await import('html-to-image')
+      const dataUrl = await toPng(flexRef.current, { pixelRatio: 2 })
+      const blob = await fetch(dataUrl).then((r) => r.blob())
+      const file = new File([blob], `flex-${flexTx.id}.png`, { type: 'image/png' })
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: t('flexCard.shareTitle'),
+          text: t('flexCard.shareText', { name: flexTx.card?.name ?? '', amount: formatCurrency(Number(flexTx.totalAmount)) }),
+        })
+      } else {
+        handleFlexDownload()
+      }
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   const handleDelete = async (id: string) => {
@@ -140,8 +128,7 @@ export default function TransactionsPage() {
     setIsSubmitting(true)
     const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' })
     if (res.ok) {
-      const txData = await fetchTransactions()
-      setTransactions(txData)
+      await mutateTransactions()
     }
     setIsSubmitting(false)
   }
@@ -181,8 +168,7 @@ export default function TransactionsPage() {
 
     if (res.ok) {
       closeEdit()
-      const txData = await fetchTransactions()
-      setTransactions(txData)
+      await mutateTransactions()
     }
     setIsSubmitting(false)
   }
@@ -196,12 +182,8 @@ export default function TransactionsPage() {
     setFilterGame('')
   }
 
-  if (status === 'loading') {
-    return <FullPageLoader />
-  }
-
-  if (status === 'unauthenticated') {
-    redirect('/auth/signin')
+  if (txLoading && !txData) {
+    return <TransactionsSkeleton />
   }
 
   return (
@@ -210,7 +192,7 @@ export default function TransactionsPage() {
         <h1 className="font-mono text-2xl font-bold text-zinc-100">$ {t('transactions.title')}</h1>
       </div>
 
-      <Card className="border-zinc-800 bg-zinc-900/50">
+      <Card className="border-zinc-800 bg-zinc-900/80">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="font-mono text-sm">{t('common.filters')}</CardTitle>
           <Button
@@ -284,14 +266,14 @@ export default function TransactionsPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-zinc-800 bg-zinc-900/50">
+      <Card className="border-zinc-800 bg-zinc-900/80">
           <CardHeader>
             <CardTitle className="font-mono text-sm">
               {t('transactions.transactionsWithCount', { count: transactions.length })}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {txLoading ? (
               <InlineLoader />
             ) : transactions.length === 0 ? (
               <div className="py-12 text-center font-mono text-sm text-zinc-500">
@@ -316,36 +298,36 @@ export default function TransactionsPage() {
                     </thead>
                     <tbody>
                       {transactions.map((tx) => (
-                        <tr key={tx.id} className="border-b border-zinc-800/50 last:border-0">
-                          <td className="py-3 pr-4 text-zinc-400">{formatDate(tx.date)}</td>
-                          <td className="py-3 pr-4">
-                            <div className="flex flex-col">
-                              <span className="text-zinc-200">{tx.card?.name}</span>
-                              <span className="text-xs text-zinc-500">{tx.card?.cardType}</span>
+                        <tr key={tx.id} className="h-16 border-b border-zinc-800/50 last:border-0">
+                          <td className="align-middle py-0 pr-4 text-zinc-400">{formatDate(tx.date)}</td>
+                          <td className="align-middle py-0 pr-4">
+                            <div className="flex max-w-[220px] flex-col">
+                              <span className="truncate text-zinc-200">{tx.card?.name}</span>
+                              <span className="truncate text-xs text-zinc-500">{tx.card?.cardType}</span>
                               <LanguageBadge language={tx.card?.language} className="mt-0.5" />
                             </div>
                           </td>
-                          <td className="py-3 pr-4">
+                          <td className="align-middle py-0 pr-4">
                             <Badge variant={tx.type === 'BUY' ? 'buy' : tx.type === 'SELL' ? 'sell' : tx.type === 'GRADING' ? 'grading' : 'default'}>
                               {tx.type === 'BUY' ? t('transactions.buy') : tx.type === 'SELL' ? t('transactions.sell') : tx.type === 'GRADING' ? t('transactions.grading') : t('transactions.adjustment')}
                             </Badge>
                           </td>
-                          <td className="py-3 pr-4 text-zinc-400">
+                          <td className="align-middle py-0 pr-4 text-zinc-400">
                             <div className="flex items-center gap-1.5">
                               {tx.card?.game} <LanguageBadge language={tx.card?.language} />
                             </div>
                           </td>
-                          <td className="py-3 pr-4 text-zinc-300">{tx.quantity}</td>
-                          <td className="py-3 pr-4 text-zinc-300">
+                          <td className="align-middle py-0 pr-4 text-zinc-300">{tx.quantity}</td>
+                          <td className="align-middle py-0 pr-4 text-zinc-300">
                             {formatCurrency(Number(tx.pricePerUnit))}
                           </td>
-                          <td className="py-3 pr-4 text-zinc-300">
+                          <td className="align-middle py-0 pr-4 text-zinc-300">
                             {tx.shippingCost ? formatCurrency(Number(tx.shippingCost)) : '-'}
                           </td>
-                          <td className="py-3 pr-4 text-zinc-300">
+                          <td className="align-middle py-0 pr-4 text-zinc-300">
                             {formatCurrency(Number(tx.totalAmount))}
                           </td>
-                          <td className="py-3 text-right">
+                          <td className="align-middle py-0 text-right">
                             {tx.type === 'SELL' && (
                               <Button
                                 variant="ghost"
@@ -383,26 +365,26 @@ export default function TransactionsPage() {
                     </tbody>
                   </table>
                 </div>
-                <div className="space-y-3 md:hidden">
+                <div className="grid grid-cols-1 gap-3 md:hidden">
                   {transactions.map((tx) => (
-                    <div key={tx.id} className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3">
-                      <div className="flex items-start justify-between gap-2">
+                    <div key={tx.id} className="flex h-40 flex-col overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 p-3">
+                      <div className="flex min-h-0 items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
-                          <div className="truncate font-mono text-sm text-zinc-200">{tx.card?.name}</div>
+                          <div className="line-clamp-2 font-mono text-sm leading-tight text-zinc-200">{tx.card?.name}</div>
                           <div className="truncate font-mono text-xs text-zinc-500">{tx.card?.cardType} · {tx.card?.game}</div>
                           <LanguageBadge language={tx.card?.language} className="mt-0.5" />
                         </div>
                         <Badge variant={tx.type === 'BUY' ? 'buy' : tx.type === 'SELL' ? 'sell' : tx.type === 'GRADING' ? 'grading' : 'default'} className="shrink-0">{tx.type === 'BUY' ? t('transactions.buy') : tx.type === 'SELL' ? t('transactions.sell') : tx.type === 'GRADING' ? t('transactions.grading') : t('transactions.adjustment')}</Badge>
                       </div>
-                      <div className="mt-2 flex items-center justify-between gap-2 font-mono text-xs">
+                      <div className="mt-2 flex shrink-0 items-center justify-between gap-2 font-mono text-xs">
                         <span className="text-zinc-500">{formatDate(tx.date)}</span>
-                        <span className="min-w-0 break-words text-right text-zinc-300">{tx.quantity} × {formatCurrency(Number(tx.pricePerUnit))}</span>
+                        <span className="min-w-0 truncate text-right text-zinc-300">{tx.quantity} × {formatCurrency(Number(tx.pricePerUnit))}</span>
                       </div>
-                      <div className="mt-1 flex items-center justify-between gap-2 font-mono text-xs">
-                        <span className="text-zinc-500">{t('transactions.table.shipping')} {tx.shippingCost ? formatCurrency(Number(tx.shippingCost)) : '-'}</span>
-                        <span className="min-w-0 break-words text-right font-medium text-zinc-200">{formatCurrency(Number(tx.totalAmount))}</span>
+                      <div className="flex shrink-0 items-center justify-between gap-2 font-mono text-xs">
+                        <span className="truncate text-zinc-500">{t('transactions.table.shipping')} {tx.shippingCost ? formatCurrency(Number(tx.shippingCost)) : '-'}</span>
+                        <span className="min-w-0 truncate text-right font-medium text-zinc-200">{formatCurrency(Number(tx.totalAmount))}</span>
                       </div>
-                      <div className="mt-2 flex justify-end gap-1">
+                      <div className="mt-auto flex shrink-0 justify-end gap-1">
                         {tx.type === 'SELL' && (
                           <Button
                             variant="ghost"
@@ -524,11 +506,35 @@ export default function TransactionsPage() {
         </form>
       </Dialog>
 
-      {flexTx && (
-        <div className="fixed left-[-9999px] top-0">
-          <FlexCard ref={flexRef} tx={flexTx} />
-        </div>
-      )}
+      <Dialog open={flexOpen} onOpenChange={(v) => !v && closeFlex()}>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 font-mono text-base">
+            <Zap className="h-4 w-4 text-amber-400" />
+            {t('flexCard.previewTitle')}
+          </DialogTitle>
+          <DialogDescription>{flexTx?.card?.name}</DialogDescription>
+        </DialogHeader>
+
+        {flexTx && (
+          <div className="flex justify-center py-2">
+            <FlexCard ref={flexRef} tx={flexTx} />
+          </div>
+        )}
+
+        <DialogFooter className="gap-2">
+          <Button variant="ghost" size="sm" onClick={closeFlex}>
+            {t('common.cancel')}
+          </Button>
+          <Button variant="outline" size="sm" className="gap-2" onClick={handleFlexDownload}>
+            <Download className="h-4 w-4" />
+            {t('flexCard.download')}
+          </Button>
+          <Button size="sm" className="gap-2" onClick={handleFlexShare}>
+            <Share2 className="h-4 w-4" />
+            {t('flexCard.share')}
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </div>
   )
 }

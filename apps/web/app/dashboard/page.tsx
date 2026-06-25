@@ -1,10 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useSession } from 'next-auth/react'
+import useSWR from 'swr'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -13,7 +12,8 @@ import { DashboardStats } from '@/types'
 import { TransactionDto, InventoryItem, CARD_TYPES, GAMES } from '@/types'
 import { formatCurrency, formatNumber, formatDate } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n/provider'
-import { FullPageLoader } from '@/components/ui/loading'
+import { fetcher, swrOptions } from '@/lib/swr'
+import { DashboardSkeleton } from '@/components/dashboard/dashboard-skeleton'
 import {
   ArrowRight,
   Package,
@@ -23,12 +23,15 @@ import {
 } from 'lucide-react'
 
 export default function DashboardPage() {
-  const { data: session, status } = useSession()
+  const { data: session } = useSession()
   const { t } = useLanguage()
-  const [stats, setStats] = useState<DashboardStats | null>(null)
-  const [recent, setRecent] = useState<TransactionDto[]>([])
-  const [inventory, setInventory] = useState<InventoryItem[]>([])
-  const [inventorySummary, setInventorySummary] = useState({
+  const { data: stats } = useSWR<DashboardStats>('/api/dashboard', fetcher, swrOptions)
+  const { data: recentData } = useSWR<TransactionDto[]>('/api/transactions?limit=5', fetcher, swrOptions)
+  const { data: inventoryData } = useSWR<{ items: InventoryItem[]; summary: { totalCards: number; inStock: number; grading: number; soldOut: number; totalValue: number; totalInvested: number; totalProfit: number; totalROI: number } }>('/api/inventory', fetcher, swrOptions)
+
+  const recent = recentData?.slice(0, 5) ?? []
+  const inventory = inventoryData?.items ?? []
+  const inventorySummary = inventoryData?.summary ?? {
     totalCards: 0,
     inStock: 0,
     grading: 0,
@@ -37,51 +40,10 @@ export default function DashboardPage() {
     totalInvested: 0,
     totalProfit: 0,
     totalROI: 0,
-  })
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    if (status !== 'authenticated') return
-
-    let cancelled = false
-
-    Promise.all([
-      fetch('/api/dashboard').then((r) => r.json()),
-      fetch('/api/transactions?limit=5').then((r) => r.json()),
-      fetch('/api/inventory').then((r) => r.json()),
-    ])
-      .then(([statsData, recentData, inventoryData]) => {
-        if (cancelled) return
-        setStats(statsData)
-        setRecent(recentData.slice(0, 5))
-        setInventory(inventoryData.items)
-        setInventorySummary({
-          totalCards: inventoryData.summary.totalCards,
-          inStock: inventoryData.summary.inStock,
-          grading: inventoryData.summary.grading,
-          soldOut: inventoryData.summary.soldOut,
-          totalValue: inventoryData.summary.totalValue,
-          totalInvested: inventoryData.summary.totalInvested,
-          totalProfit: inventoryData.summary.totalProfit,
-          totalROI: inventoryData.summary.totalROI,
-        })
-        setLoading(false)
-      })
-      .catch(() => {
-        if (!cancelled) setLoading(false)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [status])
-
-  if (status === 'loading' || loading) {
-    return <FullPageLoader />
   }
 
-  if (status === 'unauthenticated') {
-    redirect('/auth/signin')
+  if (!stats || !recentData || !inventoryData) {
+    return <DashboardSkeleton />
   }
 
   const gameBreakdown = GAMES.map((game) => {
@@ -289,7 +251,6 @@ export default function DashboardPage() {
                       fill
                       sizes="88px"
                       className="object-cover"
-                      unoptimized
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center text-zinc-600">
@@ -350,7 +311,6 @@ export default function DashboardPage() {
                       fill
                       sizes="88px"
                       className="object-cover"
-                      unoptimized
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center text-zinc-600">
@@ -411,7 +371,6 @@ export default function DashboardPage() {
                       fill
                       sizes="88px"
                       className="object-cover"
-                      unoptimized
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center text-zinc-600">

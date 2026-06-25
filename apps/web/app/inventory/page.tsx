@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { useSession } from 'next-auth/react'
-import { redirect } from 'next/navigation'
+import useSWR from 'swr'
 import Link from 'next/link'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
@@ -25,7 +24,8 @@ import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { LanguageBadge } from '@/components/language/language-badge'
 import { AnimatedCurrency, AnimatedNumber } from '@/components/ui/animated-value'
 import { useLanguage } from '@/lib/i18n/provider'
-import { FullPageLoader } from '@/components/ui/loading'
+import { fetcher, swrOptions } from '@/lib/swr'
+import { InventorySkeleton } from '@/components/inventory/inventory-skeleton'
 import {
   Search,
   Package,
@@ -63,10 +63,20 @@ interface InventoryResponse {
 }
 
 export default function InventoryPage() {
-  const { status } = useSession()
-  const [data, setData] = useState<InventoryResponse | null>(null)
-  const [cards, setCards] = useState<CardDto[]>([])
-  const [loading, setLoading] = useState(true)
+  const emptySummary = useMemo(
+    () => ({
+      totalCards: 0,
+      inStock: 0,
+      grading: 0,
+      soldOut: 0,
+      soldCards: 0,
+      totalValue: 0,
+      totalProfit: 0,
+      totalInvested: 0,
+      totalROI: 0,
+    }),
+    []
+  )
 
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -91,6 +101,26 @@ export default function InventoryPage() {
   const [sortBy, setSortBy] = useState<SortBy>('userOrder')
   const [showFilters, setShowFilters] = useState(false)
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
+
+  const inventoryParams = useMemo(() => {
+    const params = new URLSearchParams()
+    if (debouncedSearch) params.append('search', debouncedSearch)
+    if (statusFilter) params.append('status', statusFilter)
+    if (cardType) params.append('cardType', cardType)
+    if (game) params.append('game', game)
+    return params
+  }, [debouncedSearch, statusFilter, cardType, game])
+
+  const inventoryKey = `/api/inventory?${inventoryParams.toString()}`
+  const { data: inventoryData, isLoading: inventoryLoading, mutate: mutateInventory } = useSWR<InventoryResponse>(
+    inventoryKey,
+    fetcher,
+    swrOptions
+  )
+  const { data: cardsData, mutate: mutateCards } = useSWR<CardDto[]>('/api/cards', fetcher, swrOptions)
+
+  const data = inventoryData ?? { items: [], summary: emptySummary }
+  const cards = cardsData ?? []
 
   const [sellDialog, setSellDialog] = useState<{ open: boolean; item: InventoryItem | null }>({
     open: false,
@@ -173,65 +203,34 @@ export default function InventoryPage() {
     return t('common.all')
   }
 
-  const fetchInventory = useCallback(() => {
-    const params = new URLSearchParams()
-    if (debouncedSearch) params.append('search', debouncedSearch)
-    if (statusFilter) params.append('status', statusFilter)
-    if (cardType) params.append('cardType', cardType)
-    if (game) params.append('game', game)
-
-    fetch(`/api/inventory?${params}`)
-      .then((r) => r.json())
-      .then((d) => {
-        setData(d)
-        setLoading(false)
-      })
-      .catch(() => setLoading(false))
-  }, [debouncedSearch, statusFilter, cardType, game])
-
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 400)
     return () => clearTimeout(timer)
   }, [search])
 
-  const fetchCards = useCallback(() => {
-    fetch('/api/cards')
-      .then((r) => r.json())
-      .then((d) => setCards(d))
-      .catch(() => setCards([]))
-  }, [])
-
-  useEffect(() => {
-    if (status === 'authenticated') {
-      fetchCards()
-      const timeout = setTimeout(fetchInventory, 200)
-      return () => clearTimeout(timeout)
-    }
-  }, [status, fetchCards, fetchInventory])
-
-  const openSell = (item: InventoryItem) => {
+  const openSell = useCallback((item: InventoryItem) => {
     setSellDialog({ open: true, item })
     setSellQty(item.quantity.toString())
     setSellPrice('')
     setSellShipping('')
     setSellDate(new Date().toISOString().split('T')[0])
     setSellNote('')
-  }
+  }, [])
 
   const closeSell = () => {
     setSellDialog({ open: false, item: null })
   }
 
-  const openRemove = (item: InventoryItem) => {
+  const openRemove = useCallback((item: InventoryItem) => {
     setRemoveDialog({ open: true, item })
     setRemoveQty('1')
-  }
+  }, [])
 
   const closeRemove = () => {
     setRemoveDialog({ open: false, item: null })
   }
 
-  const openAdd = (item: InventoryItem | null = null) => {
+  const openAdd = useCallback((item: InventoryItem | null = null) => {
     setAddDialog({ open: true, item })
     setAddMode(item ? 'existing' : 'new')
     setAddCardId(item ? item.cardId : '')
@@ -249,16 +248,16 @@ export default function InventoryPage() {
     setAddPrice('')
     setAddDate(new Date().toISOString().split('T')[0])
     setAddNote('stock in')
-  }
+  }, [])
 
   const closeAdd = () => {
     setAddDialog({ open: false, item: null })
   }
 
-  const openCost = (item: InventoryItem) => {
+  const openCost = useCallback((item: InventoryItem) => {
     setCostDialog({ open: true, item })
     setCostValue(String(item.averageCost))
-  }
+  }, [])
 
   const closeCost = () => {
     setCostDialog({ open: false, item: null })
@@ -282,7 +281,7 @@ export default function InventoryPage() {
 
     if (res.ok) {
       closeCost()
-      fetchInventory()
+      mutateInventory()
     }
     setIsSubmitting(false)
   }
@@ -330,7 +329,7 @@ export default function InventoryPage() {
     if (res.ok) {
       setSellConfirm({ open: false, item: null, qty: 0, price: 0, shipping: 0, date: '', note: '' })
       closeSell()
-      fetchInventory()
+      mutateInventory()
     }
     setIsSubmitting(false)
   }
@@ -352,7 +351,7 @@ export default function InventoryPage() {
 
     if (res.ok) {
       closeRemove()
-      fetchInventory()
+      mutateInventory()
     }
     setIsSubmitting(false)
   }
@@ -415,7 +414,7 @@ export default function InventoryPage() {
       }
       const newCard = await res.json()
       cardId = newCard.id
-      fetchCards()
+      mutateCards()
     }
 
     if (!cardId) {
@@ -439,7 +438,7 @@ export default function InventoryPage() {
     if (res.ok) {
       setAddConfirm({ open: false, cardName: '', qty: 0, price: 0, date: '', note: '', cardId: '', isNewCard: false })
       closeAdd()
-      fetchInventory()
+      mutateInventory()
     }
     setIsSubmitting(false)
   }
@@ -453,7 +452,7 @@ export default function InventoryPage() {
     })
   }
 
-  const updateCurrentValue = async (cardId: string, value: string) => {
+  const updateCurrentValue = useCallback(async (cardId: string, value: string) => {
     const num = Number(value)
     if (Number.isNaN(num) || num < 0) return
 
@@ -465,9 +464,26 @@ export default function InventoryPage() {
 
     if (res.ok) {
       setEditingValue(null)
-      fetchInventory()
+      mutateInventory()
     }
-  }
+  }, [mutateInventory])
+
+  const renderInventoryCard = useCallback(
+    (item: InventoryItem) => (
+      <InventoryGridCard
+        item={item}
+        onSell={openSell}
+        onAdd={openAdd}
+        onRemove={openRemove}
+        onEditCost={openCost}
+        onOpenDetails={setDetailsItem}
+        editing={editingValue?.cardId === item.cardId}
+        onEdit={() => setEditingValue({ cardId: item.cardId, value: String(item.marketValuePerUnit) })}
+        onUpdateValue={(value) => updateCurrentValue(item.cardId, value)}
+      />
+    ),
+    [editingValue, openSell, openAdd, openRemove, openCost, updateCurrentValue]
+  )
 
   const sellTotal = useMemo(() => {
     const qty = Number(sellQty || 0)
@@ -476,7 +492,7 @@ export default function InventoryPage() {
     return qty * price + shipping
   }, [sellQty, sellPrice, sellShipping])
 
-  const items = useMemo(() => data?.items ?? [], [data])
+  const items = useMemo(() => data.items ?? [], [data.items])
 
   const searchSuggestions = useMemo(() => {
     if (!search || search.length < 1) return []
@@ -554,21 +570,7 @@ export default function InventoryPage() {
     }
   }, [filteredItems, sortBy])
 
-  const summary = useMemo(() => {
-    return (
-      data?.summary ?? {
-        totalCards: 0,
-        inStock: 0,
-        grading: 0,
-        soldOut: 0,
-        soldCards: 0,
-        totalValue: 0,
-        totalProfit: 0,
-        totalInvested: 0,
-        totalROI: 0,
-      }
-    )
-  }, [data?.summary])
+  const summary = useMemo(() => data.summary, [data.summary])
 
   const formatCounts = useMemo(() => {
     return {
@@ -581,7 +583,6 @@ export default function InventoryPage() {
 
   const handleReorder = useCallback(
     (newSortedItems: InventoryItem[]) => {
-      if (!data) return
       const visibleIds = new Set(newSortedItems.map((i) => i.cardId))
       const sortedIterator = [...newSortedItems]
       let idx = 0
@@ -595,22 +596,18 @@ export default function InventoryPage() {
       combined.forEach((item, i) => {
         orders[item.cardId] = i
       })
-      setData({ ...data, items: combined })
+      mutateInventory((current) => (current ? { ...current, items: combined } : current), false)
       fetch('/api/inventory/order', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orders }),
       }).catch(() => {})
     },
-    [data]
+    [data.items, mutateInventory]
   )
 
-  if (status === 'loading' || loading) {
-    return <FullPageLoader />
-  }
-
-  if (status === 'unauthenticated') {
-    redirect('/auth/signin')
+  if (inventoryLoading && !inventoryData) {
+    return <InventorySkeleton />
   }
 
   const statCards = [
@@ -1273,19 +1270,7 @@ export default function InventoryPage() {
               <SortableInventoryGrid
                 items={sortedItems}
                 onReorder={handleReorder}
-                renderItem={(item) => (
-                  <InventoryGridCard
-                    item={item}
-                    onSell={openSell}
-                    onAdd={openAdd}
-                    onRemove={openRemove}
-                    onEditCost={openCost}
-                    onOpenDetails={setDetailsItem}
-                    editing={editingValue?.cardId === item.cardId}
-                    onEdit={() => setEditingValue({ cardId: item.cardId, value: String(item.marketValuePerUnit) })}
-                    onUpdateValue={(value) => updateCurrentValue(item.cardId, value)}
-                  />
-                )}
+                renderItem={renderInventoryCard}
               />
             </div>
           )}
@@ -1298,18 +1283,7 @@ export default function InventoryPage() {
               className="grid grid-cols-2 gap-4 auto-rows-[1fr] sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
             >
               {sortedItems.map((item) => (
-                <InventoryGridCard
-                  key={item.cardId}
-                  item={item}
-                  onSell={openSell}
-                  onAdd={openAdd}
-                  onRemove={openRemove}
-                  onEditCost={openCost}
-                  onOpenDetails={setDetailsItem}
-                  editing={editingValue?.cardId === item.cardId}
-                  onEdit={() => setEditingValue({ cardId: item.cardId, value: String(item.marketValuePerUnit) })}
-                  onUpdateValue={(value) => updateCurrentValue(item.cardId, value)}
-                />
+                <div key={item.cardId}>{renderInventoryCard(item)}</div>
               ))}
             </motion.div>
           )}
@@ -1875,6 +1849,7 @@ export default function InventoryPage() {
       </Dialog>
 
       <InventoryDetailsDialog
+        key={detailsItem?.cardId ?? 'empty'}
         item={detailsItem}
         open={!!detailsItem}
         onClose={() => setDetailsItem(null)}

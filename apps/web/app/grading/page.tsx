@@ -1,8 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
-import { redirect } from 'next/navigation'
+import { useState } from 'react'
+import useSWR from 'swr'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,7 +11,8 @@ import { Badge } from '@/components/ui/badge'
 import { GRADES } from '@/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n/provider'
-import { FullPageLoader } from '@/components/ui/loading'
+import { fetcher, swrOptions } from '@/lib/swr'
+import { GradingSkeleton } from '@/components/grading/grading-skeleton'
 import { Plus, CheckCircle, XCircle, Gem, ArrowRight, ChevronUp, ChevronDown } from 'lucide-react'
 
 interface GradingWithCard {
@@ -38,46 +38,19 @@ interface GradingWithCard {
 }
 
 export default function GradingPage() {
-  const { status } = useSession()
   const { t } = useLanguage()
-  const [gradings, setGradings] = useState<GradingWithCard[]>([])
-  const [completed, setCompleted] = useState<GradingWithCard[]>([])
-  const [loading, setLoading] = useState(true)
   const [completeForm, setCompleteForm] = useState<Record<string, { grade: string; currentValue: string }>>({})
   const [showCompleted, setShowCompleted] = useState(false)
 
-  const fetchData = useCallback(async () => {
-    const [activeRes, completedRes] = await Promise.all([
-      fetch('/api/grading?status=grading'),
-      fetch('/api/grading?status=completed'),
-    ])
-    return {
-      gradings: (await activeRes.json()) as GradingWithCard[],
-      completed: (await completedRes.json()) as GradingWithCard[],
-    }
-  }, [])
+  const { data: gradingsData, mutate: mutateGradings } = useSWR<GradingWithCard[]>('/api/grading?status=grading', fetcher, swrOptions)
+  const { data: completedData, mutate: mutateCompleted } = useSWR<GradingWithCard[]>('/api/grading?status=completed', fetcher, swrOptions)
+  const gradings = gradingsData ?? []
+  const completed = completedData ?? []
 
-  useEffect(() => {
-    if (status !== 'authenticated') return
-
-    let cancelled = false
-
-    const load = async () => {
-      setLoading(true)
-      const data = await fetchData()
-      if (!cancelled) {
-        setGradings(data.gradings)
-        setCompleted(data.completed)
-        setLoading(false)
-      }
-    }
-
-    load()
-
-    return () => {
-      cancelled = true
-    }
-  }, [status, fetchData])
+  const mutateAll = () => {
+    mutateGradings()
+    mutateCompleted()
+  }
 
   const handleCancel = async (id: string) => {
     if (!confirm(t('grading.cancelConfirm'))) return
@@ -87,9 +60,7 @@ export default function GradingPage() {
       body: JSON.stringify({ action: 'cancel' }),
     })
     if (res.ok) {
-      const data = await fetchData()
-      setGradings(data.gradings)
-      setCompleted(data.completed)
+      await mutateAll()
     }
   }
 
@@ -110,16 +81,12 @@ export default function GradingPage() {
 
     if (res.ok) {
       setCompleteForm((prev) => ({ ...prev, [id]: { grade: '', currentValue: '' } }))
-      fetchData()
+      await mutateAll()
     }
   }
 
-  if (status === 'loading' || loading) {
-    return <FullPageLoader />
-  }
-
-  if (status === 'unauthenticated') {
-    redirect('/auth/signin')
+  if ((!gradingsData || !completedData)) {
+    return <GradingSkeleton />
   }
 
   return (
@@ -137,7 +104,7 @@ export default function GradingPage() {
         </Link>
       </div>
 
-      <Card className="border-zinc-800 bg-zinc-900/50">
+      <Card className="border-zinc-800 bg-zinc-900/80">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-mono text-sm">
             <Gem className="h-4 w-4 text-amber-400" />
@@ -161,7 +128,7 @@ export default function GradingPage() {
               {gradings.map((g) => (
                 <div
                   key={g.id}
-                  className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3 md:p-4"
+                  className="rounded-lg border border-zinc-800 bg-zinc-950 p-3 md:p-4"
                 >
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
@@ -240,7 +207,7 @@ export default function GradingPage() {
       </Card>
 
       {completed.length > 0 && (
-        <Card className="border-zinc-800 bg-zinc-900/50">
+        <Card className="border-zinc-800 bg-zinc-900/80">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2 font-mono text-sm">
               <CheckCircle className="h-4 w-4 text-emerald-400" />
@@ -290,7 +257,7 @@ export default function GradingPage() {
             </div>
             <div className="space-y-3 md:hidden">
               {completed.map((g) => (
-                <div key={g.id} className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3">
+                <div key={g.id} className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
                   <div className="flex items-center justify-between gap-2">
                     <span className="min-w-0 truncate font-mono text-sm text-zinc-200">{g.card?.name}</span>
                     <Badge variant="default" className="shrink-0">{g.grade}</Badge>

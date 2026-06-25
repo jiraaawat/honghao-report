@@ -463,6 +463,9 @@ export const dictionary = {
   'inventoryGridCard.soldAtWithDate': { en: 'sold {date}', th: 'ขาย {date}' },
 
   'flexCard.flex': { en: 'FLEX', th: 'FLEX' },
+  'flexCard.previewTitle': { en: 'FLEX preview', th: 'ดูตัวอย่าง FLEX' },
+  'flexCard.download': { en: 'download image', th: 'ดาวน์โหลดรูป' },
+  'flexCard.share': { en: 'share', th: 'แชร์' },
   'flexCard.honghaoReport': { en: 'honghao report', th: 'honghao report' },
   'flexCard.totalProfit': { en: 'total profit', th: 'กำไรรวม' },
   'flexCard.profitPerCard': { en: 'profit / card', th: 'กำไร / ใบ' },

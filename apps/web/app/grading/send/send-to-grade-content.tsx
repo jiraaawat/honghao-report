@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
-import { redirect, useRouter, useSearchParams } from 'next/navigation'
+import { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import useSWR from 'swr'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CardDto, CARD_TYPES, GAMES, GRADES, LANGUAGES } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n/provider'
-import { FullPageLoader } from '@/components/ui/loading'
+import { fetcher, swrOptions } from '@/lib/swr'
 import { ArrowLeft, Gem, Send, Search, Plus } from 'lucide-react'
 
 interface CardWithInventory extends CardDto {
@@ -26,8 +26,8 @@ export default function SendToGradeContent() {
   const { t } = useLanguage()
   const searchParams = useSearchParams()
   const preselectedCardId = searchParams.get('cardId') || ''
-  const { status } = useSession()
-  const [cards, setCards] = useState<CardWithInventory[]>([])
+  const { data: cardsData, isLoading: cardsLoading } = useSWR<CardWithInventory[]>('/api/cards?status=in_stock', fetcher, swrOptions)
+  const cards = cardsData?.filter((c) => c.status === 'in_stock') ?? []
 
   const [mode, setMode] = useState<'existing' | 'new'>(preselectedCardId ? 'existing' : 'new')
   const [existingCardId, setExistingCardId] = useState(preselectedCardId || '')
@@ -46,24 +46,6 @@ export default function SendToGradeContent() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [loading, setLoading] = useState(false)
   const [showOptional, setShowOptional] = useState(false)
-
-  useEffect(() => {
-    if (status !== 'authenticated') return
-
-    let cancelled = false
-
-    fetch('/api/cards?status=in_stock')
-      .then((r) => r.json())
-      .then((data: CardWithInventory[]) => {
-        if (!cancelled) setCards(data.filter((c) => c.status === 'in_stock'))
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [status])
-
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -123,14 +105,6 @@ export default function SendToGradeContent() {
 
   const selectedCard = cards.find((c) => c.id === existingCardId)
 
-  if (status === 'loading') {
-    return <FullPageLoader />
-  }
-
-  if (status === 'unauthenticated') {
-    redirect('/auth/signin')
-  }
-
   return (
     <div className="mx-auto max-w-2xl p-3 md:p-6">
       <Link href="/grading">
@@ -139,7 +113,7 @@ export default function SendToGradeContent() {
         </Button>
       </Link>
 
-      <Card className="border-zinc-800 bg-zinc-900/50">
+      <Card className="border-zinc-800 bg-zinc-900/80">
         <CardHeader className="text-center">
           <div className="mx-auto mb-1 flex h-10 w-10 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 md:mb-2 md:h-12 md:w-12">
             <Gem className="h-5 w-5 text-amber-400 md:h-6 md:w-6" />
@@ -181,6 +155,7 @@ export default function SendToGradeContent() {
                   value={existingCardId}
                   onChange={(e) => setExistingCardId(e.target.value)}
                   required={mode === 'existing'}
+                  disabled={cardsLoading}
                 >
                   <option value="">{t('gradingSend.chooseCardInStock')}</option>
                   {cards.map((card) => (
