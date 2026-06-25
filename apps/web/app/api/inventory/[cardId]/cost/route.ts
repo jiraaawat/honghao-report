@@ -38,6 +38,13 @@ export async function POST(
     const newAverageCost = data.newAverageCost
     const delta = (newAverageCost - oldAverageCost) * quantity
 
+    const latestBuy = await prisma.transaction.findFirst({
+      where: { cardId, userId, type: 'BUY' },
+      orderBy: { date: 'desc' },
+      select: { date: true },
+    })
+    const adjustmentDate = latestBuy?.date ?? new Date()
+
     const [updatedInventory] = await prisma.$transaction(async (tx) => {
       await tx.transaction.create({
         data: {
@@ -48,7 +55,7 @@ export async function POST(
           pricePerUnit: newAverageCost - oldAverageCost,
           totalAmount: delta,
           shippingCost: null,
-          date: new Date(),
+          date: adjustmentDate,
           note: `Cost adjustment: ${oldAverageCost} → ${newAverageCost}`,
           isGradingCost: false,
         },
