@@ -8,87 +8,91 @@ import { useLanguage } from '@/lib/i18n/provider'
 import { LanguageToggle } from '@/components/i18n/language-toggle'
 import { AdSlot } from '@/components/ads/ad-slot'
 import { AppPreview } from './app-preview'
-import {
-  Terminal,
-  Boxes,
-  TrendingUp,
-  BarChart3,
-  Gem,
-  ArrowRight,
-  UserPlus,
-  Search,
-  Receipt,
-  FileSpreadsheet,
-  RotateCcw,
-} from 'lucide-react'
+import { BoosterLoader } from './booster-loader'
+import { TcgIcon } from './tcg-icon'
+import { ArrowRight } from 'lucide-react'
 
 export function LandingPage() {
   const { t } = useLanguage()
 
   const features = [
     {
-      icon: Boxes,
+      symbol: 'cards' as const,
       title: t('landing.featureInventory'),
       description: t('landing.featureInventoryDesc'),
       className: 'md:col-span-2',
+      rarity: 'RARE',
     },
     {
-      icon: TrendingUp,
+      symbol: 'sword' as const,
       title: t('landing.featureProfit'),
       description: t('landing.featureProfitDesc'),
+      rarity: 'UNCOMMON',
     },
     {
-      icon: Gem,
+      symbol: 'gem' as const,
       title: t('landing.featureGrading'),
       description: t('landing.featureGradingDesc'),
+      rarity: 'EPIC',
     },
     {
-      icon: BarChart3,
+      symbol: 'scroll' as const,
       title: t('landing.featureReports'),
       description: t('landing.featureReportsDesc'),
       className: 'md:col-span-2',
+      rarity: 'MYTHIC',
     },
   ]
 
   const steps = [
     {
-      icon: UserPlus,
+      symbol: 'sun' as const,
       title: t('landing.manualStep1Title'),
       description: t('landing.manualStep1Desc'),
     },
     {
-      icon: Search,
+      symbol: 'drop' as const,
       title: t('landing.manualStep2Title'),
       description: t('landing.manualStep2Desc'),
     },
     {
-      icon: Receipt,
+      symbol: 'leaf' as const,
       title: t('landing.manualStep3Title'),
       description: t('landing.manualStep3Desc'),
     },
     {
-      icon: Gem,
+      symbol: 'gem' as const,
       title: t('landing.manualStep4Title'),
       description: t('landing.manualStep4Desc'),
     },
     {
-      icon: FileSpreadsheet,
+      symbol: 'scroll' as const,
       title: t('landing.manualStep5Title'),
       description: t('landing.manualStep5Desc'),
     },
     {
-      icon: RotateCcw,
+      symbol: 'skull' as const,
       title: t('landing.manualStep6Title'),
       description: t('landing.manualStep6Desc'),
     },
   ]
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-zinc-950 text-zinc-100">
+    <>
+      <BoosterLoader />
+      <div className="relative min-h-screen overflow-hidden bg-zinc-950 text-zinc-100">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-1/4 top-0 h-[600px] w-[600px] rounded-full bg-emerald-500/10 blur-[120px]" />
         <div className="absolute -right-1/4 top-1/3 h-[500px] w-[500px] rounded-full bg-cyan-500/10 blur-[120px]" />
         <div className="absolute bottom-0 left-1/3 h-[600px] w-[600px] rounded-full bg-emerald-600/5 blur-[120px]" />
+        {/* Card-back pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              'repeating-linear-gradient(45deg, rgba(255,255,255,0.08) 0px, rgba(255,255,255,0.08) 1px, transparent 1px, transparent 20px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 24px)',
+          }}
+        />
       </div>
 
       <header className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-zinc-800/60 bg-zinc-950/70 backdrop-blur-md">
@@ -125,8 +129,8 @@ export function LandingPage() {
             transition={{ duration: 0.6, ease: 'easeOut' }}
             className="max-w-4xl"
           >
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10 shadow-[0_0_40px_-10px_rgba(16,185,129,0.3)]">
-              <Terminal className="h-10 w-10 text-emerald-400" />
+            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-emerald-400/30 bg-gradient-to-br from-emerald-500/20 to-emerald-900/20 shadow-[0_0_40px_-10px_rgba(16,185,129,0.35)]">
+              <TcgIcon symbol="cards" className="h-10 w-10 text-emerald-400" />
             </div>
             <h1 className="bg-gradient-to-r from-emerald-300 via-cyan-300 to-emerald-300 bg-clip-text font-mono text-5xl font-bold tracking-tight text-transparent md:text-7xl">
               $ honghao-report
@@ -181,7 +185,6 @@ export function LandingPage() {
             </motion.h2>
             <div className="grid gap-4 md:grid-cols-2">
               {features.map((feature, index) => {
-                const Icon = feature.icon
                 return (
                   <motion.div
                     key={feature.title}
@@ -191,12 +194,17 @@ export function LandingPage() {
                     transition={{ delay: index * 0.1 }}
                     className={feature.className}
                   >
-                    <Card className="group relative h-full overflow-hidden border-zinc-800/60 bg-zinc-900/40 backdrop-blur transition-colors hover:border-emerald-500/30 hover:bg-zinc-900/60">
+                    <Card className="group relative h-full overflow-hidden border-emerald-500/30 bg-zinc-900/40 backdrop-blur transition-colors hover:bg-zinc-900/60">
+                      {/* Foil / holo shimmer */}
+                      <div className="pointer-events-none absolute inset-0 -translate-x-[150%] bg-gradient-to-r from-transparent via-emerald-300/20 via-white/10 to-transparent opacity-0 transition-all duration-1000 ease-in-out group-hover:translate-x-[150%] group-hover:opacity-100" />
                       <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-emerald-500/5 blur-2xl transition-opacity group-hover:opacity-100" />
+                      <div className="absolute right-3 top-3 rounded border border-emerald-500/30 px-1.5 py-0.5 font-mono text-[9px] font-black uppercase tracking-wider text-emerald-400">
+                        {feature.rarity}
+                      </div>
                       <CardContent className="relative flex h-full flex-col justify-between p-6">
                         <div>
-                          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-950/50">
-                            <Icon className="h-6 w-6 text-emerald-400" />
+                          <div className="mb-4 flex h-24 items-center justify-center rounded-lg border border-zinc-800/60 bg-gradient-to-br from-emerald-500/10 to-cyan-500/10">
+                            <TcgIcon symbol={feature.symbol} className="h-10 w-10 text-emerald-400" />
                           </div>
                           <h3 className="font-mono text-lg font-bold text-zinc-200">
                             {feature.title}
@@ -236,7 +244,6 @@ export function LandingPage() {
                 </motion.h2>
                 <div className="relative space-y-6 pl-8 before:absolute before:left-3 before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-zinc-800">
                   {steps.map((step, index) => {
-                    const Icon = step.icon
                     return (
                       <motion.div
                         key={step.title}
@@ -251,7 +258,7 @@ export function LandingPage() {
                         </span>
                         <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-5 backdrop-blur transition-colors hover:border-zinc-700 hover:bg-zinc-900/60">
                           <div className="flex items-center gap-2 font-mono text-sm font-bold text-zinc-200">
-                            <Icon className="h-4 w-4 text-emerald-400" />
+                            <TcgIcon symbol={step.symbol} className="h-4 w-4 text-emerald-400" />
                             {step.title}
                           </div>
                           <p className="mt-1 font-mono text-xs leading-relaxed text-zinc-500">
@@ -281,7 +288,7 @@ export function LandingPage() {
         </section>
 
         <section className="border-t border-zinc-800/60 px-4 py-24 md:px-6">
-          <div className="mx-auto max-w-3xl rounded-2xl border border-zinc-800/60 bg-zinc-900/40 p-8 text-center backdrop-blur md:p-12">
+          <div className="mx-auto max-w-3xl rounded-2xl border-2 border-emerald-500/30 bg-gradient-to-b from-zinc-900/60 to-zinc-950/80 p-8 text-center backdrop-blur md:p-12">
             <h2 className="font-mono text-2xl font-bold text-zinc-100 md:text-3xl">
               {t('landing.ctaTitle')}
             </h2>
@@ -312,5 +319,6 @@ export function LandingPage() {
         </footer>
       </main>
     </div>
+    </>
   )
 }

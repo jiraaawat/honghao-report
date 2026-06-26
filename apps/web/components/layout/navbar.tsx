@@ -59,7 +59,7 @@ export function Navbar() {
 
   if (status === 'loading') {
     return (
-      <header className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur">
+      <header className="fixed top-0 left-0 right-0 z-50 h-14 transform-gpu border-b border-zinc-800 bg-zinc-950/80 backdrop-blur">
         <div className="flex h-full items-center justify-between px-4 md:px-6">
           <div className="h-4 w-32 rounded bg-zinc-800" />
           <div className="h-8 w-20 rounded-md bg-zinc-800" />
@@ -71,7 +71,7 @@ export function Navbar() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur">
+      <header className="fixed top-0 left-0 right-0 z-50 h-14 transform-gpu border-b border-zinc-800 bg-zinc-950/80 backdrop-blur">
         <div className="flex h-full items-center justify-between px-4 md:px-6">
           <Link
             href="/dashboard"
@@ -139,7 +139,7 @@ export function Navbar() {
         </div>
       </header>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-800 bg-zinc-950/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 transform-gpu border-t border-zinc-800 bg-zinc-950/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
         <ul className="flex items-center justify-around px-2 pt-1">
           {navItems.map((item) => {
             const Icon = item.icon

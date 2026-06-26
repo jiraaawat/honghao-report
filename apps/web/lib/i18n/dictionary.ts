@@ -436,6 +436,8 @@ export const dictionary = {
   'auth.register.name': { en: 'name', th: 'ชื่อ' },
   'auth.register.email': { en: 'email', th: 'อีเมล' },
   'auth.register.password': { en: 'password', th: 'รหัสผ่าน' },
+  'auth.register.confirmPassword': { en: 'confirm password', th: 'ยืนยันรหัสผ่าน' },
+  'auth.register.passwordMismatch': { en: 'passwords do not match', th: 'รหัสผ่านไม่ตรงกัน' },
   'auth.register.creating': { en: 'creating...', th: 'กำลังสร้าง...' },
   'auth.register.createAccount': { en: 'create account', th: 'สร้างบัญชี' },
   'auth.register.alreadyHaveAccount': { en: 'already have an account?', th: 'มีบัญชีอยู่แล้ว?' },

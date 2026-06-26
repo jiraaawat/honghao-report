@@ -7,9 +7,11 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Terminal, AlertCircle, ArrowLeft } from 'lucide-react'
+import { AlertCircle, ArrowLeft } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/provider'
 import { SocialLoginButtons } from '@/components/auth/social-login-buttons'
+import { TcgIcon } from '@/components/landing/tcg-icon'
+import { EntryBooster } from '@/components/landing/entry-booster'
 
 export default function SignInPage() {
   const { t } = useLanguage()
@@ -19,12 +21,13 @@ export default function SignInPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [entering, setEntering] = useState(false)
 
   useEffect(() => {
-    if (status === 'authenticated') {
+    if (status === 'authenticated' && !entering) {
       router.replace('/dashboard')
     }
-  }, [status, router])
+  }, [status, entering, router])
 
   if (status === 'loading') {
     return (
@@ -50,26 +53,54 @@ export default function SignInPage() {
     if (result?.error) {
       setError(t('auth.signin.invalidCredentials'))
     } else {
-      router.push('/dashboard')
-      router.refresh()
+      setEntering(true)
     }
   }
 
+  if (entering) {
+    return (
+      <EntryBooster
+        duration={3500}
+        onComplete={() => {
+          router.push('/dashboard')
+          router.refresh()
+        }}
+      />
+    )
+  }
+
   return (
-    <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center p-4">
-      <Card className="relative w-full max-w-md border-zinc-800 bg-zinc-900/80">
+    <div className="relative flex min-h-[calc(100vh-3.5rem)] items-center justify-center overflow-hidden p-4">
+      {/* Background */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -left-1/4 top-0 h-[500px] w-[500px] rounded-full bg-emerald-500/10 blur-[120px]" />
+        <div className="absolute -right-1/4 bottom-0 h-[500px] w-[500px] rounded-full bg-cyan-500/10 blur-[120px]" />
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              'repeating-linear-gradient(45deg, rgba(255,255,255,0.08) 0px, rgba(255,255,255,0.08) 1px, transparent 1px, transparent 20px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 24px)',
+          }}
+        />
+      </div>
+
+      <Card className="group relative w-full max-w-md overflow-hidden border-emerald-500/30 bg-zinc-900/80 backdrop-blur">
+        {/* Foil shimmer */}
+        <div className="pointer-events-none absolute inset-0 -translate-x-[150%] bg-gradient-to-r from-transparent via-emerald-300/10 via-white/5 to-transparent opacity-0 transition-all duration-1000 ease-in-out group-hover:translate-x-[150%] group-hover:opacity-100" />
+
         <Link
           href="/"
-          className="absolute left-4 top-4 flex items-center gap-1 font-mono text-xs text-zinc-500 transition-colors hover:text-zinc-300"
+          className="absolute left-4 top-4 z-10 flex items-center gap-1 font-mono text-xs text-zinc-500 transition-colors hover:text-zinc-300"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           {t('common.back')}
         </Link>
-        <CardHeader className="space-y-2 text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10">
-            <Terminal className="h-6 w-6 text-emerald-400" />
+
+        <CardHeader className="space-y-2 pt-12 text-center">
+          <div className="mx-auto mb-2 flex items-center justify-center gap-2 font-mono text-xl font-bold text-emerald-400">
+            <TcgIcon symbol="cards" className="h-6 w-6" />
+            <span>$ {t('auth.signin.signIn')}</span>
           </div>
-          <CardTitle className="font-mono text-xl text-emerald-400">$ {t('auth.signin.title')}</CardTitle>
           <CardDescription>{t('auth.signin.subtitle')}</CardDescription>
         </CardHeader>
         <CardContent>

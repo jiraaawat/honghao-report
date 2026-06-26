@@ -19,7 +19,7 @@ export function SocialBar({ className }: { className?: string }) {
   return (
     <footer
       className={cn(
-        'fixed bottom-0 left-0 right-0 z-40 hidden h-10 items-center justify-between border-t border-zinc-800 bg-zinc-950/80 px-6 backdrop-blur md:flex',
+        'fixed bottom-0 left-0 right-0 z-40 hidden h-10 transform-gpu items-center justify-between border-t border-zinc-800 bg-zinc-950/80 px-6 backdrop-blur md:flex',
         className
       )}
     >

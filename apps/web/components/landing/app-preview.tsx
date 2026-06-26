@@ -1,6 +1,8 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { Sparkles } from 'lucide-react'
+import { TcgIcon } from './tcg-icon'
 
 export function AppPreview() {
   return (
@@ -8,18 +10,28 @@ export function AppPreview() {
       initial={{ opacity: 0, y: 40, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.7, delay: 0.2, ease: 'easeOut' }}
-      className="relative mx-auto mt-14 w-full max-w-4xl"
+      className="group relative mx-auto mt-14 w-full max-w-4xl"
     >
-      <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-cyan-500/20 to-emerald-500/20 blur-lg" />
-      <div className="relative overflow-hidden rounded-xl border border-zinc-700 bg-zinc-900/90 shadow-2xl backdrop-blur">
-        <div className="flex items-center gap-3 border-b border-zinc-800 bg-zinc-950/80 px-4 py-3">
-          <div className="flex gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
-            <span className="h-2.5 w-2.5 rounded-full bg-amber-500/80" />
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/80" />
+      <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-emerald-400/30 via-cyan-400/20 to-emerald-400/30 blur-lg" />
+      <div className="relative overflow-hidden rounded-xl border-2 border-emerald-500/40 bg-zinc-900/90 shadow-2xl backdrop-blur">
+        {/* Holographic sheen */}
+        <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-0 transition-all duration-1000 group-hover:translate-x-full group-hover:opacity-100" />
+
+        {/* Card title bar */}
+        <div className="relative flex items-center justify-between border-b-2 border-emerald-500/30 bg-gradient-to-r from-emerald-950/60 via-zinc-950/80 to-zinc-950/80 px-4 py-3">
+          <div className="flex items-center gap-2 font-mono text-sm font-bold text-emerald-200">
+            <TcgIcon symbol="cards" className="h-4 w-4 text-emerald-400" />
+            <span>Portfolio Dashboard</span>
           </div>
-          <div className="mx-2 flex-1 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1 text-center font-mono text-[10px] text-zinc-500">
-            honghao-report.vercel.app/dashboard
+          <div className="flex items-center gap-1">
+            {(['leaf', 'flame', 'drop'] as const).map((symbol) => (
+              <span
+                key={symbol}
+                className="flex h-5 w-5 items-center justify-center rounded-full border border-white/20 bg-zinc-950/50 text-emerald-400 shadow-sm"
+              >
+                <TcgIcon symbol={symbol} className="h-3 w-3" />
+              </span>
+            ))}
           </div>
         </div>
 
@@ -75,6 +87,17 @@ export function AppPreview() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* Card type line / footer */}
+        <div className="relative flex items-center justify-between border-t border-zinc-800 bg-zinc-950/80 px-4 py-2">
+          <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+            Legendary Tracker
+          </span>
+          <div className="flex items-center gap-1 text-emerald-400">
+            <Sparkles className="h-3 w-3" />
+            <span className="font-mono text-[10px] font-black">MYTHIC</span>
           </div>
         </div>
       </div>
