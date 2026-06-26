@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { recalculateInventoryFromTransactions } from '@/lib/inventory-recalc'
 import { z } from 'zod'
 
 const costSchema = z.object({
@@ -45,7 +46,7 @@ export async function POST(
     })
     const adjustmentDate = latestBuy?.date ?? new Date()
 
-    const [updatedInventory] = await prisma.$transaction(async (tx) => {
+    const updatedInventory = await prisma.$transaction(async (tx) => {
       await tx.transaction.create({
         data: {
           cardId,
@@ -61,14 +62,7 @@ export async function POST(
         },
       })
 
-      const inv = await tx.cardInventory.update({
-        where: { cardId },
-        data: {
-          averageCost: newAverageCost,
-          totalInvested: newAverageCost * quantity,
-        },
-      })
-      return [inv]
+      return recalculateInventoryFromTransactions(tx, cardId, userId)
     })
 
     return NextResponse.json({

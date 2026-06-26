@@ -3,6 +3,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { z } from 'zod'
+import { recalculateInventoryFromTransactions } from '@/lib/inventory-recalc'
 
 const createSchema = z.object({
   cardId: z.string().min(1).optional(),
@@ -207,6 +208,8 @@ export async function POST(req: NextRequest) {
           isGradingCost: true,
         },
       })
+
+      await recalculateInventoryFromTransactions(tx, cardId, userId)
 
       return { grading, card }
     })

@@ -3,6 +3,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { z } from 'zod'
+import { recalculateInventoryFromTransactions } from '@/lib/inventory-recalc'
 
 async function syncCardStatus(tx: Prisma.TransactionClient, cardId: string) {
   const inventory = await tx.cardInventory.findUnique({
@@ -112,17 +113,27 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const data = transactionSchema.parse(body)
 
-    const card = await prisma.card.findFirst({
-      where: { id: data.cardId, userId },
-    })
-    if (!card) {
-      return NextResponse.json({ error: 'Card not found' }, { status: 404 })
-    }
-
-    const shippingCost = data.shippingCost ?? 0
-    const totalAmount = data.quantity * data.pricePerUnit + shippingCost
-
     const result = await prisma.$transaction(async (tx) => {
+      const card = await tx.card.findFirst({
+        where: { id: data.cardId, userId },
+        include: { inventory: true },
+      })
+      if (!card) {
+        throw new Error('Card not found')
+      }
+
+      if (data.type === 'SELL') {
+        if (card.status === 'grading') {
+          throw new Error('Card is being graded')
+        }
+        if (!card.inventory || card.inventory.quantity < data.quantity) {
+          throw new Error('Insufficient stock')
+        }
+      }
+
+      const shippingCost = data.shippingCost ?? 0
+      const totalAmount = data.quantity * data.pricePerUnit + shippingCost
+
       const transaction = await tx.transaction.create({
         data: {
           cardId: data.cardId,
@@ -137,52 +148,7 @@ export async function POST(req: NextRequest) {
         },
       })
 
-      let inventory = await tx.cardInventory.findUnique({
-        where: { cardId: data.cardId },
-      })
-
-      if (!inventory) {
-        inventory = await tx.cardInventory.create({
-          data: {
-            cardId: data.cardId,
-            userId,
-            quantity: 0,
-            averageCost: 0,
-            totalInvested: 0,
-          },
-        })
-      }
-
-      if (data.type === 'SELL' && inventory.quantity < data.quantity) {
-        throw new Error('Insufficient stock')
-      }
-
-      if (data.type === 'BUY') {
-        const newTotalInvested = Number(inventory.totalInvested) + totalAmount
-        const newQuantity = inventory.quantity + data.quantity
-        const newAverageCost = newQuantity > 0 ? newTotalInvested / newQuantity : 0
-
-        await tx.cardInventory.update({
-          where: { cardId: data.cardId },
-          data: {
-            quantity: newQuantity,
-            averageCost: newAverageCost,
-            totalInvested: newTotalInvested,
-          },
-        })
-      } else {
-        const newQuantity = inventory.quantity - data.quantity
-        const newTotalInvested = Number(inventory.totalInvested) - Number(inventory.averageCost) * data.quantity
-
-        await tx.cardInventory.update({
-          where: { cardId: data.cardId },
-          data: {
-            quantity: newQuantity < 0 ? 0 : newQuantity,
-            totalInvested: newTotalInvested < 0 ? 0 : newTotalInvested,
-          },
-        })
-      }
-
+      await recalculateInventoryFromTransactions(tx, data.cardId, userId)
       await syncCardStatus(tx, data.cardId)
 
       return transaction
@@ -193,8 +159,13 @@ export async function POST(req: NextRequest) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors }, { status: 400 })
     }
-    if (error instanceof Error && error.message === 'Insufficient stock') {
-      return NextResponse.json({ error: error.message }, { status: 400 })
+    if (error instanceof Error) {
+      if (error.message === 'Card not found') {
+        return NextResponse.json({ error: error.message }, { status: 404 })
+      }
+      if (error.message === 'Insufficient stock' || error.message === 'Card is being graded') {
+        return NextResponse.json({ error: error.message }, { status: 400 })
+      }
     }
     console.error(error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

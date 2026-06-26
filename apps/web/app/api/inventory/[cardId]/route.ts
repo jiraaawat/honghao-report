@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
-import { calculateAverageCost } from '@/lib/calculations'
+import { recalculateInventoryFromTransactions } from '@/lib/inventory-recalc'
 import { z } from 'zod'
 
 const updateSchema = z.object({
@@ -74,61 +74,22 @@ export async function POST(
       }
 
       // Recalculate inventory from remaining transactions.
-      const remainingBuyTxs = await tx.transaction.findMany({
-        where: {
-          cardId,
-          userId,
-          OR: [
-            { type: 'BUY', isGradingCost: false },
-            { type: 'GRADING', isGradingCost: false },
-          ],
-        },
-      })
-      const gradingCostTxs = await tx.transaction.findMany({
-        where: {
-          cardId,
-          userId,
-          OR: [
-            { type: 'BUY', isGradingCost: true },
-            { type: 'GRADING', isGradingCost: true },
-          ],
-        },
-      })
-      const sellTxs = await tx.transaction.findMany({
-        where: { cardId, userId, type: 'SELL' },
-      })
-      const adjustmentTxs = await tx.transaction.findMany({
-        where: { cardId, userId, type: 'COST_ADJUSTMENT' },
-      })
-
-      const totalBuyQty = remainingBuyTxs.reduce((sum, t) => sum + t.quantity, 0)
-      const totalSellQty = sellTxs.reduce((sum, t) => sum + t.quantity, 0)
-
-      let newQuantity = totalBuyQty - totalSellQty
-      let avgCost = calculateAverageCost(
-        [...remainingBuyTxs, ...gradingCostTxs, ...adjustmentTxs],
-        newQuantity
-      )
-      let totalInvested = avgCost * newQuantity
-
-      // Fallback: if no normal buy tx was found to reverse, just reduce the existing inventory.
-      if (buyTxs.length === 0) {
-        newQuantity = inventory.quantity - data.quantity
+      if (buyTxs.length > 0) {
+        await recalculateInventoryFromTransactions(tx, cardId, userId)
+      } else {
+        // Fallback: if no normal buy tx was found to reverse, just reduce the existing inventory.
+        const newQuantity = inventory.quantity - data.quantity
         const fallbackAvgCost = Number(inventory.averageCost)
-        totalInvested = Math.max(0, fallbackAvgCost * newQuantity)
-        avgCost = newQuantity > 0 ? totalInvested / newQuantity : 0
+        const totalInvested = Math.max(0, fallbackAvgCost * newQuantity)
+        const avgCost = newQuantity > 0 ? totalInvested / newQuantity : 0
+        await tx.cardInventory.update({
+          where: { cardId },
+          data: { quantity: newQuantity, averageCost: avgCost, totalInvested },
+        })
       }
 
-      await tx.cardInventory.update({
-        where: { cardId },
-        data: {
-          quantity: newQuantity,
-          averageCost: avgCost,
-          totalInvested: totalInvested,
-        },
-      })
-
-      return { quantity: newQuantity }
+      const updated = await tx.cardInventory.findUnique({ where: { cardId } })
+      return { quantity: updated?.quantity ?? 0 }
     })
 
     return NextResponse.json({ success: true, quantity: result.quantity })

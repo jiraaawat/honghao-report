@@ -6,9 +6,10 @@ interface DialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   children: React.ReactNode
+  className?: string
 }
 
-export function Dialog({ open, onOpenChange, children }: DialogProps) {
+export function Dialog({ open, onOpenChange, children, className }: DialogProps) {
   if (!open) return null
 
   return (
@@ -18,7 +19,12 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
         if (e.target === e.currentTarget) onOpenChange(false)
       }}
     >
-      <div className="relative max-h-[90vh] w-full min-w-0 max-w-md overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900 p-4 md:p-6 shadow-xl">
+      <div
+        className={cn(
+          'relative max-h-[90vh] w-full min-w-0 max-w-md overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900 p-4 md:p-6 shadow-xl',
+          className
+        )}
+      >
         <button
           type="button"
           onClick={() => onOpenChange(false)}

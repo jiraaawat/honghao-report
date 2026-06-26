@@ -3,6 +3,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { z } from 'zod'
+import { recalculateInventoryFromTransactions } from '@/lib/inventory-recalc'
 
 async function syncCardStatus(tx: Prisma.TransactionClient, cardId: string) {
   const inventory = await tx.cardInventory.findUnique({
@@ -80,82 +81,38 @@ export async function PUT(
     const totalAmount = data.quantity * data.pricePerUnit + shippingCost
 
     await prisma.$transaction(async (tx) => {
-      let inventory = await tx.cardInventory.findUnique({
-        where: { cardId: transaction.cardId },
+      const card = await tx.card.findFirst({
+        where: { id: transaction.cardId, userId },
+        include: { inventory: true },
       })
+      if (!card) {
+        throw new Error('Card not found')
+      }
 
-      if (!inventory) {
-        inventory = await tx.cardInventory.create({
-          data: {
+      // For SELL edits, ensure enough stock after reverting the old sell.
+      if (transaction.type === 'SELL') {
+        const otherSells = await tx.transaction.aggregate({
+          where: {
             cardId: transaction.cardId,
-            userId,
-            quantity: 0,
-            averageCost: 0,
-            totalInvested: 0,
+            type: 'SELL',
+            id: { not: transaction.id },
           },
+          _sum: { quantity: true },
         })
-      }
-
-      // Revert old transaction effect
-      if (transaction.type === 'BUY') {
-        const newQuantity = inventory.quantity - transaction.quantity
-        const newTotalInvested = Number(inventory.totalInvested) - Number(transaction.totalAmount)
-        const newAverageCost = newQuantity > 0 ? newTotalInvested / newQuantity : 0
-
-        await tx.cardInventory.update({
-          where: { cardId: transaction.cardId },
-          data: {
-            quantity: newQuantity < 0 ? 0 : newQuantity,
-            averageCost: newAverageCost < 0 ? 0 : newAverageCost,
-            totalInvested: newTotalInvested < 0 ? 0 : newTotalInvested,
+        const buyLike = await tx.transaction.aggregate({
+          where: {
+            cardId: transaction.cardId,
+            OR: [
+              { type: 'BUY', isGradingCost: false },
+              { type: 'GRADING', isGradingCost: false },
+            ],
           },
+          _sum: { quantity: true },
         })
-      } else {
-        const newQuantity = inventory.quantity + transaction.quantity
-        const newTotalInvested = Number(inventory.totalInvested) + Number(inventory.averageCost) * transaction.quantity
-
-        await tx.cardInventory.update({
-          where: { cardId: transaction.cardId },
-          data: {
-            quantity: newQuantity,
-            totalInvested: newTotalInvested,
-          },
-        })
-      }
-
-      // Apply new transaction effect
-      inventory = await tx.cardInventory.findUnique({
-        where: { cardId: transaction.cardId },
-      })
-
-      if (transaction.type === 'SELL' && inventory!.quantity < data.quantity) {
-        throw new Error('Insufficient stock')
-      }
-
-      if (transaction.type === 'BUY') {
-        const newTotalInvested = Number(inventory!.totalInvested) + totalAmount
-        const newQuantity = inventory!.quantity + data.quantity
-        const newAverageCost = newQuantity > 0 ? newTotalInvested / newQuantity : 0
-
-        await tx.cardInventory.update({
-          where: { cardId: transaction.cardId },
-          data: {
-            quantity: newQuantity,
-            averageCost: newAverageCost,
-            totalInvested: newTotalInvested,
-          },
-        })
-      } else {
-        const newQuantity = inventory!.quantity - data.quantity
-        const newTotalInvested = Number(inventory!.totalInvested) - Number(inventory!.averageCost) * data.quantity
-
-        await tx.cardInventory.update({
-          where: { cardId: transaction.cardId },
-          data: {
-            quantity: newQuantity < 0 ? 0 : newQuantity,
-            totalInvested: newTotalInvested < 0 ? 0 : newTotalInvested,
-          },
-        })
+        const available = (buyLike._sum.quantity ?? 0) - (otherSells._sum.quantity ?? 0)
+        if (data.quantity > available) {
+          throw new Error('Insufficient stock')
+        }
       }
 
       await tx.transaction.update({
@@ -170,6 +127,7 @@ export async function PUT(
         },
       })
 
+      await recalculateInventoryFromTransactions(tx, transaction.cardId, userId)
       await syncCardStatus(tx, transaction.cardId)
     })
 
@@ -178,8 +136,13 @@ export async function PUT(
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors }, { status: 400 })
     }
-    if (error instanceof Error && error.message === 'Insufficient stock') {
-      return NextResponse.json({ error: error.message }, { status: 400 })
+    if (error instanceof Error) {
+      if (error.message === 'Card not found') {
+        return NextResponse.json({ error: error.message }, { status: 404 })
+      }
+      if (error.message === 'Insufficient stock') {
+        return NextResponse.json({ error: error.message }, { status: 400 })
+      }
     }
     console.error(error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -212,60 +175,28 @@ export async function DELETE(
     )
   }
 
-  if (transaction.type === 'COST_ADJUSTMENT') {
-    return NextResponse.json(
-      { error: 'Cost adjustments cannot be deleted. Edit the inventory cost instead.' },
-      { status: 400 }
-    )
-  }
+  try {
+    await prisma.$transaction(async (tx) => {
+      const card = await tx.card.findFirst({
+        where: { id: transaction.cardId, userId },
+        include: { inventory: true },
+      })
+      if (!card) {
+        throw new Error('Card not found')
+      }
 
-  await prisma.$transaction(async (tx) => {
-    let inventory = await tx.cardInventory.findUnique({
-      where: { cardId: transaction.cardId },
+      await tx.transaction.delete({ where: { id } })
+
+      await recalculateInventoryFromTransactions(tx, transaction.cardId, userId)
+      await syncCardStatus(tx, transaction.cardId)
     })
 
-    if (!inventory) {
-      inventory = await tx.cardInventory.create({
-        data: {
-          cardId: transaction.cardId,
-          userId,
-          quantity: 0,
-          averageCost: 0,
-          totalInvested: 0,
-        },
-      })
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Card not found') {
+      return NextResponse.json({ error: error.message }, { status: 404 })
     }
-
-    if (transaction.type === 'BUY') {
-      const newQuantity = inventory.quantity - transaction.quantity
-      const newTotalInvested = Number(inventory.totalInvested) - Number(transaction.totalAmount)
-      const newAverageCost = newQuantity > 0 ? newTotalInvested / newQuantity : 0
-
-      await tx.cardInventory.update({
-        where: { cardId: transaction.cardId },
-        data: {
-          quantity: newQuantity < 0 ? 0 : newQuantity,
-          averageCost: newAverageCost < 0 ? 0 : newAverageCost,
-          totalInvested: newTotalInvested < 0 ? 0 : newTotalInvested,
-        },
-      })
-    } else {
-      const newQuantity = inventory.quantity + transaction.quantity
-      const newTotalInvested = Number(inventory.totalInvested) + Number(inventory.averageCost) * transaction.quantity
-
-      await tx.cardInventory.update({
-        where: { cardId: transaction.cardId },
-        data: {
-          quantity: newQuantity,
-          totalInvested: newTotalInvested,
-        },
-      })
-    }
-
-    await tx.transaction.delete({ where: { id } })
-
-    await syncCardStatus(tx, transaction.cardId)
-  })
-
-  return NextResponse.json({ success: true })
+    console.error(error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }

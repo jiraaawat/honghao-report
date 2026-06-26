@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
-import { calculateAverageCost } from '@/lib/calculations'
+import { aggregateInventoryItem, aggregateInventorySummary } from '@/lib/inventory-aggregate'
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -49,74 +49,7 @@ export async function GET(req: NextRequest) {
     ],
   })
 
-  const items = cards.map((card) => {
-    const sellTxs = card.transactions.filter((t) => t.type === 'SELL')
-    const totalSellQty = sellTxs.reduce((sum, t) => sum + t.quantity, 0)
-    const totalSellAmount = sellTxs.reduce((sum, t) => sum + Number(t.totalAmount), 0)
-    const quantity = card.inventory?.quantity ?? 0
-    const avgCost = calculateAverageCost(card.transactions, quantity)
-
-    const effectiveStatus: 'in_stock' | 'sold_out' | 'grading' =
-      card.status === 'grading'
-        ? 'grading'
-        : totalSellQty > 0 && quantity === 0
-          ? 'sold_out'
-          : 'in_stock'
-
-    const marketValuePerUnit = card.inventory?.currentValue
-      ? Number(card.inventory.currentValue)
-      : avgCost
-    const currentValue = quantity * marketValuePerUnit
-    const realizedProfit = totalSellAmount - totalSellQty * avgCost
-    const unrealizedProfit =
-      effectiveStatus !== 'sold_out' && card.inventory?.currentValue
-        ? (marketValuePerUnit - avgCost) * quantity
-        : 0
-    const profit = realizedProfit
-
-    const grading = card.gradings[0]
-
-    return {
-      cardId: card.id,
-      cardName: card.name,
-      setCode: card.setCode,
-      cardNumber: card.cardNumber,
-      rarity: card.rarity,
-      imageUrl: card.imageUrl,
-      cardType: card.cardType || 'Single',
-      game: card.game || 'OnePiece',
-      language: card.language || 'EN',
-      condition: card.condition,
-      status: effectiveStatus,
-      quantity,
-      averageCost: avgCost,
-      marketValuePerUnit,
-      currentValue,
-      totalInvested: avgCost * quantity,
-      totalSold: totalSellAmount,
-      soldQty: totalSellQty,
-      realizedProfit,
-      unrealizedProfit,
-      profit,
-      order: card.inventory?.order ?? null,
-      lastTransaction: card.transactions.length > 0
-        ? card.transactions[card.transactions.length - 1].date.toISOString()
-        : null,
-      createdAt: card.createdAt.toISOString(),
-      soldAt: sellTxs.length > 0 ? sellTxs[sellTxs.length - 1].date.toISOString() : null,
-      grading: grading
-        ? {
-            id: grading.id,
-            cardId: grading.cardId,
-            status: grading.status,
-            gradingCost: Number(grading.gradingCost),
-            grade: grading.grade,
-            currentValue: grading.currentValue ? Number(grading.currentValue) : null,
-            sentDate: grading.sentDate.toISOString(),
-          }
-        : null,
-    }
-  })
+  const items = cards.map((card) => aggregateInventoryItem(card))
 
   const visibleItems = items.filter(
     (i) => i.quantity > 0 || i.status === 'sold_out' || i.status === 'grading'
@@ -126,30 +59,7 @@ export async function GET(req: NextRequest) {
   if (status === 'in_stock') filtered = visibleItems.filter((i) => i.status === 'in_stock')
   if (status === 'sold_out') filtered = visibleItems.filter((i) => i.status === 'sold_out')
 
-  // Summary reflects all visible items regardless of status filter.
-  const allInStockQty = visibleItems
-    .filter((i) => i.status === 'in_stock')
-    .reduce((sum, i) => sum + i.quantity, 0)
-  const allGradingQty = visibleItems
-    .filter((i) => i.status === 'grading')
-    .reduce((sum, i) => sum + i.quantity, 0)
-  const allSoldOutCount = visibleItems.reduce((sum, i) => sum + i.soldQty, 0)
-
-  const allTotalValue = visibleItems.reduce((sum, i) => sum + i.currentValue, 0)
-  const allTotalProfit = visibleItems.reduce((sum, i) => sum + i.profit, 0)
-  const allTotalInvested = visibleItems.reduce((sum, i) => sum + i.totalInvested, 0)
-
-  const summary = {
-    totalCards: allInStockQty + allGradingQty, // total unsold card quantity
-    inStock: allInStockQty,
-    grading: allGradingQty,
-    soldOut: allSoldOutCount,
-    soldCards: allSoldOutCount,
-    totalValue: allTotalValue,
-    totalProfit: allTotalProfit,
-    totalROI: allTotalInvested > 0 ? (allTotalProfit / allTotalInvested) * 100 : 0,
-    totalInvested: allTotalInvested,
-  }
+  const summary = aggregateInventorySummary(items)
 
   return NextResponse.json({ items: filtered, summary })
 }

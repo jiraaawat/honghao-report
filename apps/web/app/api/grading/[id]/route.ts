@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { recalculateInventoryFromTransactions } from '@/lib/inventory-recalc'
 
 const completeSchema = z.object({
   action: z.literal('complete'),
@@ -63,6 +64,8 @@ export async function PATCH(
             isGradingCost: true,
           },
         })
+
+        await recalculateInventoryFromTransactions(tx, grading.cardId, userId)
       })
 
       return NextResponse.json({ success: true })
@@ -110,6 +113,8 @@ export async function PATCH(
             note: `Grading cost for ${grading.card.name} → ${data.grade}`,
           },
         })
+
+        await recalculateInventoryFromTransactions(tx, grading.cardId, userId)
       })
 
       return NextResponse.json({ success: true })

@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import useSWR from 'swr'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,11 +18,12 @@ import { TransactionDto, CARD_TYPES, GAMES } from '@/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
 import { useLanguage } from '@/lib/i18n/provider'
+import { useSession } from 'next-auth/react'
 import { fetcher, swrOptions } from '@/lib/swr'
 import { FlexCard } from '@/components/flex-card'
 import { InlineLoader } from '@/components/ui/loading'
 import { TransactionsSkeleton } from '@/components/transactions/transactions-skeleton'
-import { Trash2, Search, Calendar, Pencil, ChevronUp, ChevronDown, Zap, Download, Share2 } from 'lucide-react'
+import { Search, Calendar, ChevronUp, ChevronDown, Zap, Download, Share2, Eye } from 'lucide-react'
 
 export default function TransactionsPage() {
   const { t } = useLanguage()
@@ -47,25 +48,37 @@ export default function TransactionsPage() {
   }, [filterYear, filterMonth, search, filterType, filterCardType, filterGame])
 
   const txKey = `/api/transactions?${txParams.toString()}`
-  const { data: txData, isLoading: txLoading, mutate: mutateTransactions } = useSWR<TransactionDto[]>(txKey, fetcher, swrOptions)
+  const { data: txData, isLoading: txLoading } = useSWR<TransactionDto[]>(txKey, fetcher, swrOptions)
   const transactions = txData ?? []
 
-  const [editDialog, setEditDialog] = useState<{ open: boolean; tx: TransactionDto | null }>({
-    open: false,
-    tx: null,
-  })
-  const [editForm, setEditForm] = useState({
-    quantity: '',
-    pricePerUnit: '',
-    shippingCost: '',
-    date: '',
-    note: '',
-  })
-
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { data: session } = useSession()
   const [flexTx, setFlexTx] = useState<TransactionDto | null>(null)
   const [flexOpen, setFlexOpen] = useState(false)
+  const [flexVariant, setFlexVariant] = useState<'wide' | 'portrait'>('wide')
   const flexRef = useRef<HTMLDivElement>(null)
+  const previewRef = useRef<HTMLDivElement>(null)
+
+  const cardWidth = flexVariant === 'wide' ? 1200 : 720
+  const cardHeight = flexVariant === 'wide' ? 630 : 1080
+
+  const [previewScale, setPreviewScale] = useState(() => {
+    if (typeof window === 'undefined') return 1
+    const width = window.innerWidth - 48
+    const maxHeight = window.innerHeight * 0.6
+    return Math.max(0.25, Math.min(1, width / cardWidth, maxHeight / cardHeight))
+  })
+
+  useEffect(() => {
+    const calc = () => {
+      const width = previewRef.current?.clientWidth ?? window.innerWidth - 48
+      const maxHeight = window.innerHeight * 0.6
+      const scale = Math.min(1, width / cardWidth, maxHeight / cardHeight)
+      setPreviewScale(Math.max(scale, 0.25))
+    }
+    calc()
+    window.addEventListener('resize', calc)
+    return () => window.removeEventListener('resize', calc)
+  }, [cardWidth, cardHeight])
 
   const years = useMemo(
     () => Array.from({ length: 5 }, (_, i) => (new Date().getFullYear() - 2 + i).toString()),
@@ -120,57 +133,6 @@ export default function TransactionsPage() {
     } catch (err) {
       console.error(err)
     }
-  }
-
-  const handleDelete = async (id: string) => {
-    if (!confirm(t('transactions.deleteConfirm'))) return
-    if (isSubmitting) return
-    setIsSubmitting(true)
-    const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' })
-    if (res.ok) {
-      await mutateTransactions()
-    }
-    setIsSubmitting(false)
-  }
-
-  const openEdit = (tx: TransactionDto) => {
-    setEditDialog({ open: true, tx })
-    setEditForm({
-      quantity: tx.quantity.toString(),
-      pricePerUnit: tx.pricePerUnit.toString(),
-      shippingCost: tx.shippingCost?.toString() ?? '',
-      date: new Date(tx.date).toISOString().split('T')[0],
-      note: tx.note ?? '',
-    })
-  }
-
-  const closeEdit = () => {
-    setEditDialog({ open: false, tx: null })
-  }
-
-  const handleEdit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const tx = editDialog.tx
-    if (!tx || isSubmitting) return
-    setIsSubmitting(true)
-
-    const res = await fetch(`/api/transactions/${tx.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        quantity: Number(editForm.quantity),
-        pricePerUnit: Number(editForm.pricePerUnit),
-        shippingCost: editForm.shippingCost ? Number(editForm.shippingCost) : undefined,
-        date: new Date(editForm.date).toISOString(),
-        note: editForm.note || undefined,
-      }),
-    })
-
-    if (res.ok) {
-      closeEdit()
-      await mutateTransactions()
-    }
-    setIsSubmitting(false)
   }
 
   const clearFilters = () => {
@@ -339,26 +301,15 @@ export default function TransactionsPage() {
                                 <Zap className="h-4 w-4" />
                               </Button>
                             )}
-                            {tx.type !== 'GRADING' && tx.type !== 'COST_ADJUSTMENT' && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => openEdit(tx)}
-                                  className="h-8 w-8 text-zinc-500 hover:text-emerald-400"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleDelete(tx.id)}
-                                  className="h-8 w-8 text-zinc-500 hover:text-red-400"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </>
-                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => navigator.clipboard?.writeText(tx.id)}
+                              className="h-8 w-8 text-zinc-500 hover:text-blue-400"
+                              title={`TX ID: ${tx.id}`}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
                           </td>
                         </tr>
                       ))}
@@ -396,26 +347,15 @@ export default function TransactionsPage() {
                             <Zap className="h-4 w-4" />
                           </Button>
                         )}
-                        {tx.type !== 'GRADING' && tx.type !== 'COST_ADJUSTMENT' && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEdit(tx)}
-                              className="h-8 w-8 text-zinc-500 hover:text-emerald-400"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDelete(tx.id)}
-                              className="h-8 w-8 text-zinc-500 hover:text-red-400"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => navigator.clipboard?.writeText(tx.id)}
+                          className="h-8 w-8 text-zinc-500 hover:text-blue-400"
+                          title={`TX ID: ${tx.id}`}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -425,103 +365,59 @@ export default function TransactionsPage() {
           </CardContent>
         </Card>
 
-      <Dialog open={editDialog.open} onOpenChange={closeEdit}>
-        <form onSubmit={handleEdit}>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Pencil className="h-4 w-4 text-emerald-400" />
-              {t('transactions.editTransaction')}
+      <Dialog open={flexOpen} onOpenChange={(v) => !v && closeFlex()} className="max-w-7xl">
+        <DialogHeader>
+          <div className="flex items-center justify-between gap-4">
+            <DialogTitle className="flex items-center gap-2 font-mono text-base">
+              <Zap className="h-4 w-4 text-amber-400" />
+              {t('flexCard.previewTitle')}
             </DialogTitle>
-            <DialogDescription>
-              {t('transactions.editDescription')}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="space-y-2">
-                <label className="font-mono text-xs text-zinc-400">{t('transactions.quantity')}</label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={editForm.quantity}
-                  onChange={(e) => setEditForm({ ...editForm, quantity: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="font-mono text-xs text-zinc-400">{t('transactions.pricePerUnit')}</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  value={editForm.pricePerUnit}
-                  onChange={(e) => setEditForm({ ...editForm, pricePerUnit: e.target.value })}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="font-mono text-xs text-zinc-400">{t('transactions.shippingCost')}</label>
-              <Input
-                type="number"
-                step="0.01"
-                min={0}
-                value={editForm.shippingCost}
-                onChange={(e) => setEditForm({ ...editForm, shippingCost: e.target.value })}
-                placeholder="0.00"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="font-mono text-xs text-zinc-400">{t('common.date')}</label>
-              <Input
-                type="date"
-                value={editForm.date}
-                onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="font-mono text-xs text-zinc-400">{t('common.note')}</label>
-              <Input
-                value={editForm.note}
-                onChange={(e) => setEditForm({ ...editForm, note: e.target.value })}
-                placeholder={t('common.optional')}
-              />
+            <div className="flex rounded-lg border border-zinc-700 bg-zinc-950 p-0.5">
+              <button
+                type="button"
+                onClick={() => setFlexVariant('wide')}
+                className={`rounded px-2.5 py-1 text-[11px] font-black uppercase tracking-wider ${
+                  flexVariant === 'wide' ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                Wide
+              </button>
+              <button
+                type="button"
+                onClick={() => setFlexVariant('portrait')}
+                className={`rounded px-2.5 py-1 text-[11px] font-black uppercase tracking-wider ${
+                  flexVariant === 'portrait' ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                Portrait
+              </button>
             </div>
           </div>
-
-          <DialogFooter>
-            <Button type="button" variant="ghost" size="sm" onClick={closeEdit}>
-              {t('common.cancel')}
-            </Button>
-            <Button type="submit" disabled={isSubmitting} size="sm" className="gap-2">
-              <Pencil className="h-3.5 w-3.5" />
-              {t('transactions.saveChanges')}
-            </Button>
-          </DialogFooter>
-        </form>
-      </Dialog>
-
-      <Dialog open={flexOpen} onOpenChange={(v) => !v && closeFlex()}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 font-mono text-base">
-            <Zap className="h-4 w-4 text-amber-400" />
-            {t('flexCard.previewTitle')}
-          </DialogTitle>
           <DialogDescription>{flexTx?.card?.name}</DialogDescription>
         </DialogHeader>
 
         {flexTx && (
-          <div className="flex justify-center py-2">
-            <FlexCard ref={flexRef} tx={flexTx} />
+          <div ref={previewRef} className="w-full">
+            <div className="flex items-center justify-center py-2 sm:py-4">
+              <div
+                className="rounded-2xl border border-zinc-800/70 bg-zinc-950/60 p-3 shadow-2xl"
+                style={{
+                  width: (cardWidth + 24) * previewScale,
+                  height: (cardHeight + 24) * previewScale,
+                }}
+              >
+                <div
+                  className="rounded-xl"
+                  style={{ zoom: previewScale, width: cardWidth, height: cardHeight }}
+                >
+                  <FlexCard ref={flexRef} tx={flexTx} userName={session?.user?.name} variant={flexVariant} />
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="flex-wrap justify-center gap-2 sm:justify-end">
           <Button variant="ghost" size="sm" onClick={closeFlex}>
             {t('common.cancel')}
           </Button>

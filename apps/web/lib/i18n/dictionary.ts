@@ -477,6 +477,8 @@ export const dictionary = {
   'flexCard.costPerCard': { en: 'cost / card', th: 'ต้นทุน / ใบ' },
   'flexCard.sellPerCard': { en: 'sell / card', th: 'ขาย / ใบ' },
   'flexCard.qty': { en: 'qty', th: 'จำนวน' },
+  'flexCard.toTheMoon': { en: 'TO THE MOON', th: 'พุ่งไปดวงจันทร์' },
+  'flexCard.ngmi': { en: 'NGMI', th: 'ไม่รอด' },
   'flexCard.shareTitle': { en: 'FLEX by honghao report', th: 'FLEX by honghao report' },
   'flexCard.shareText': { en: 'Sold {name} for {amount}', th: 'ขาย {name} ในราคา {amount}' },
 

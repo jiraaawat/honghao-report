@@ -14,13 +14,18 @@ export interface MonthlyStats {
 }
 
 function isBuyLike(tx: Transaction): boolean {
-  // BUY transactions and grading-cost transactions count as spend and quantity.
-  return tx.type === 'BUY' || (tx.type === 'GRADING' && tx.isGradingCost)
+  // Normal buys and grading transactions that add quantity count as spend and quantity.
+  return (tx.type === 'BUY' && !tx.isGradingCost) || (tx.type === 'GRADING' && !tx.isGradingCost)
 }
 
 function isCostLike(tx: Transaction): boolean {
-  // Anything that changes the cost basis, including manual adjustments.
-  return tx.type === 'BUY' || (tx.type === 'GRADING' && tx.isGradingCost) || tx.type === 'COST_ADJUSTMENT'
+  // Anything that changes the cost basis, including grading-cost buys, grading costs, and manual adjustments.
+  return (
+    isBuyLike(tx) ||
+    (tx.type === 'BUY' && !!tx.isGradingCost) ||
+    (tx.type === 'GRADING' && !!tx.isGradingCost) ||
+    tx.type === 'COST_ADJUSTMENT'
+  )
 }
 
 export function calculateMonthlyReport(
@@ -113,10 +118,10 @@ export function calculateAverageCost(
   currentQuantity?: number
 ): number {
   const costBasisTxs = transactions.filter(
-    (t) => t.type === 'BUY' || (t.type === 'GRADING' && !t.isGradingCost)
+    (t) => (t.type === 'BUY' && !t.isGradingCost) || (t.type === 'GRADING' && !t.isGradingCost)
   )
   const gradingCostTxs = transactions.filter(
-    (t) => (t.type === 'BUY' && t.isGradingCost) || (t.type === 'GRADING' && t.isGradingCost)
+    (t) => (t.type === 'BUY' && !!t.isGradingCost) || (t.type === 'GRADING' && !!t.isGradingCost)
   )
   const adjustmentTxs = transactions.filter((t) => t.type === 'COST_ADJUSTMENT')
 

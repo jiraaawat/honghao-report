@@ -50,6 +50,18 @@ pnpm db:generate
 pnpm db:migrate
 ```
 
+## Testing
+
+Unit tests use Vitest in `apps/web`.
+
+- Run tests: `pnpm --filter web test`
+- Watch mode: `pnpm --filter web test:watch`
+- Coverage: `pnpm --filter web test:coverage`
+- Place unit tests next to the code under test in `lib/__tests__/*`.
+- Use factory helpers in `lib/__tests__/factories.ts` to build Prisma-shaped test data.
+- Keep calculation and aggregation logic pure so it can be tested without a database.
+- After any transaction mutation, recalculate `CardInventory` via `recalculateInventoryFromTransactions` in `lib/inventory-recalc.ts` so quantity, average cost, and total invested stay consistent.
+
 ## UI Components
 
 Custom shadcn/ui-style components live in `apps/web/components/ui/`:
