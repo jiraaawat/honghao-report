@@ -397,24 +397,29 @@ export default function TransactionsPage() {
         </DialogHeader>
 
         {flexTx && (
-          <div ref={previewRef} className="w-full">
-            <div className="flex items-center justify-center py-2 sm:py-4">
-              <div
-                className="rounded-2xl border border-zinc-800/70 bg-zinc-950/60 p-3 shadow-2xl"
-                style={{
-                  width: (cardWidth + 24) * previewScale,
-                  height: (cardHeight + 24) * previewScale,
-                }}
-              >
+          <>
+            <div ref={previewRef} className="w-full">
+              <div className="flex items-center justify-center py-2 sm:py-4">
                 <div
-                  className="rounded-xl"
-                  style={{ zoom: previewScale, width: cardWidth, height: cardHeight }}
+                  className="rounded-2xl border border-zinc-800/70 bg-zinc-950/60 p-3 shadow-2xl"
+                  style={{
+                    width: (cardWidth + 24) * previewScale,
+                    height: (cardHeight + 24) * previewScale,
+                  }}
                 >
-                  <FlexCard ref={flexRef} tx={flexTx} userName={session?.user?.name} variant={flexVariant} />
+                  <div
+                    className="rounded-xl"
+                    style={{ zoom: previewScale, width: cardWidth, height: cardHeight }}
+                  >
+                    <FlexCard tx={flexTx} userName={session?.user?.name} variant={flexVariant} />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+            <div className="fixed -left-[9999px] top-0">
+              <FlexCard ref={flexRef} tx={flexTx} userName={session?.user?.name} variant={flexVariant} />
+            </div>
+          </>
         )}
 
         <DialogFooter className="flex-wrap justify-center gap-2 sm:justify-end">
