@@ -107,7 +107,7 @@ export default function GradingPage() {
       <Card className="border-zinc-800 bg-zinc-900/80">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-mono text-sm">
-            <Gem className="h-4 w-4 text-amber-400" />
+            <Gem className="h-4 w-4 text-orange-400" />
             {t('grading.currentlyGradingWithCount', { count: gradings.length })}
           </CardTitle>
         </CardHeader>
@@ -133,16 +133,16 @@ export default function GradingPage() {
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="min-w-0 truncate font-mono font-medium text-amber-400">{g.card?.name}</h3>
+                        <h3 className="min-w-0 truncate font-mono font-medium text-orange-400">{g.card?.name}</h3>
                         <Badge variant="grading" className="shrink-0">{t('common.grading')}</Badge>
                       </div>
                       <p className="mt-1 min-w-0 truncate font-mono text-xs text-zinc-500">
                         {[g.card?.setCode, g.card?.cardNumber, g.card?.rarity].filter(Boolean).join(' · ')} · {g.card?.game}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-x-3 font-mono text-xs text-zinc-400">
-                        <span>{t('grading.qty')}: <span className="text-amber-400">{g.quantity}</span></span>
-                        <span>{t('grading.target')}: <span className="text-amber-400">{g.grade || '-'}</span></span>
-                        <span>{t('grading.cost')}: <span className="text-amber-400">{formatCurrency(Number(g.gradingCost))}</span></span>
+                        <span>{t('grading.qty')}: <span className="text-orange-400">{g.quantity}</span></span>
+                        <span>{t('grading.target')}: <span className="text-orange-400">{g.grade || '-'}</span></span>
+                        <span>{t('grading.cost')}: <span className="text-orange-400">{formatCurrency(Number(g.gradingCost))}</span></span>
                         <span>{t('grading.sent')}: {formatDate(g.sentDate)}</span>
                       </div>
                     </div>
@@ -210,7 +210,7 @@ export default function GradingPage() {
         <Card className="border-zinc-800 bg-zinc-900/80">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2 font-mono text-sm">
-              <CheckCircle className="h-4 w-4 text-emerald-400" />
+              <CheckCircle className="h-4 w-4 text-green-400" />
               {t('grading.completedGradingsWithCount', { count: completed.length })}
             </CardTitle>
             <Button
@@ -246,7 +246,7 @@ export default function GradingPage() {
                         <Badge variant="default">{g.grade}</Badge>
                       </td>
                       <td className="py-3 pr-4 text-zinc-400">{formatCurrency(Number(g.gradingCost))}</td>
-                      <td className="py-3 pr-4 text-emerald-400">{formatCurrency(Number(g.currentValue))}</td>
+                      <td className="py-3 pr-4 text-green-400">{formatCurrency(Number(g.currentValue))}</td>
                       <td className="py-3 text-zinc-500">
                         {g.completedDate ? formatDate(g.completedDate) : '-'}
                       </td>
@@ -269,7 +269,7 @@ export default function GradingPage() {
                     </div>
                     <div className="min-w-0">
                       <div className="text-zinc-500">{t('grading.table.currentValue')}</div>
-                      <div className="break-words text-emerald-400">{formatCurrency(Number(g.currentValue))}</div>
+                      <div className="break-words text-green-400">{formatCurrency(Number(g.currentValue))}</div>
                     </div>
                   </div>
                   <div className="mt-1 min-w-0 break-words font-mono text-xs text-zinc-500">

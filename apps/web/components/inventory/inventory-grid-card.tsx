@@ -71,7 +71,7 @@ function InventoryGridCardRaw({
       </div>
 
       <div className="min-w-0">
-        <p className={cn('truncate font-mono text-xs font-semibold', item.status === 'grading' ? 'text-amber-400' : 'text-zinc-200')}>
+        <p className={cn('truncate font-mono text-xs font-semibold', item.status === 'grading' ? 'text-orange-400' : 'text-zinc-200')}>
           {item.cardName}
         </p>
         <p className="truncate font-mono text-[10px] text-zinc-500">
@@ -137,7 +137,7 @@ function InventoryGridCardRaw({
         <div className="col-span-2 rounded-md bg-zinc-950/50 p-2">
           <div className="flex items-center justify-between">
             <span className="text-zinc-500">{t('inventoryGridCard.profit')}</span>
-            <span className={item.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+            <span className={item.profit >= 0 ? 'text-green-400' : 'text-red-400'}>
               {formatCurrency(item.profit)}
             </span>
           </div>

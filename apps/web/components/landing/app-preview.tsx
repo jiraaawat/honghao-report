@@ -12,22 +12,22 @@ export function AppPreview() {
       transition={{ duration: 0.7, delay: 0.2, ease: 'easeOut' }}
       className="group relative mx-auto mt-14 w-full max-w-4xl"
     >
-      <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-emerald-400/30 via-cyan-400/20 to-emerald-400/30 blur-lg" />
-      <div className="relative overflow-hidden rounded-xl border-2 border-emerald-500/40 bg-zinc-900/90 shadow-2xl backdrop-blur">
+      <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-green-400/30 via-yellow-400/20 to-orange-400/30 blur-lg" />
+      <div className="relative overflow-hidden rounded-xl border-2 border-green-500/40 bg-zinc-900/90 shadow-2xl backdrop-blur">
         {/* Holographic sheen */}
         <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-0 transition-all duration-1000 group-hover:translate-x-full group-hover:opacity-100" />
 
         {/* Card title bar */}
-        <div className="relative flex items-center justify-between border-b-2 border-emerald-500/30 bg-gradient-to-r from-emerald-950/60 via-zinc-950/80 to-zinc-950/80 px-4 py-3">
-          <div className="flex items-center gap-2 font-mono text-sm font-bold text-emerald-200">
-            <TcgIcon symbol="cards" className="h-4 w-4 text-emerald-400" />
+        <div className="relative flex items-center justify-between border-b-2 border-green-500/30 bg-gradient-to-r from-green-950/60 via-zinc-950/80 to-zinc-950/80 px-4 py-3">
+          <div className="flex items-center gap-2 font-mono text-sm font-bold text-green-200">
+            <TcgIcon symbol="cards" className="h-4 w-4 text-green-400" />
             <span>Portfolio Dashboard</span>
           </div>
           <div className="flex items-center gap-1">
             {(['leaf', 'flame', 'drop'] as const).map((symbol) => (
               <span
                 key={symbol}
-                className="flex h-5 w-5 items-center justify-center rounded-full border border-white/20 bg-zinc-950/50 text-emerald-400 shadow-sm"
+                className="flex h-5 w-5 items-center justify-center rounded-full border border-white/20 bg-zinc-950/50 text-green-400 shadow-sm"
               >
                 <TcgIcon symbol={symbol} className="h-3 w-3" />
               </span>
@@ -38,7 +38,7 @@ export function AppPreview() {
         <div className="space-y-4 p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div className="h-5 w-40 rounded bg-zinc-800" />
-            <div className="h-8 w-24 rounded-md bg-emerald-500/20" />
+            <div className="h-8 w-24 rounded-md bg-green-500/20" />
           </div>
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -60,7 +60,7 @@ export function AppPreview() {
                 {[40, 65, 35, 80, 55, 90, 45].map((h, idx) => (
                   <div
                     key={idx}
-                    className="flex-1 rounded-sm bg-emerald-500/30"
+                    className="flex-1 rounded-sm bg-green-500/30"
                     style={{ height: `${h * 0.7}px` }}
                   />
                 ))}
@@ -95,7 +95,7 @@ export function AppPreview() {
           <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-500">
             Legendary Tracker
           </span>
-          <div className="flex items-center gap-1 text-emerald-400">
+          <div className="flex items-center gap-1 text-green-400">
             <Sparkles className="h-3 w-3" />
             <span className="font-mono text-[10px] font-black">MYTHIC</span>
           </div>

@@ -47,6 +47,7 @@ export const dictionary = {
   'common.sold': { en: 'sold', th: 'ขายแล้ว' },
   'common.show': { en: 'show', th: 'แสดง' },
   'common.hide': { en: 'hide', th: 'ซ่อน' },
+  'common.sort': { en: 'sort', th: 'เรียง' },
   'common.processing': { en: 'processing...', th: 'กำลังดำเนินการ...' },
   'common.optional': { en: 'optional', th: 'ไม่บังคับ' },
   'common.unspecified': { en: 'unspecified', th: 'ไม่ระบุ' },
@@ -145,6 +146,10 @@ export const dictionary = {
   'inventory.allStatus': { en: 'all status', th: 'ทุกสถานะ' },
   'inventory.allTypes': { en: 'all types', th: 'ทุกประเภท' },
   'inventory.allGames': { en: 'all games', th: 'ทุกเกม' },
+  'inventory.search': { en: 'search', th: 'ค้นหา' },
+  'inventory.format.label': { en: 'format', th: 'รูปแบบ' },
+  'inventory.year': { en: 'year', th: 'ปี' },
+  'inventory.month': { en: 'month', th: 'เดือน' },
   'inventory.allYears': { en: 'all years', th: 'ทุกปี' },
   'inventory.allMonths': { en: 'all months', th: 'ทุกเดือน' },
   'inventory.format.raw': { en: 'raw', th: 'raw' },
@@ -235,6 +240,10 @@ export const dictionary = {
   'inventory.dialog.add.totalCost': { en: 'total cost', th: 'ต้นทุนรวม' },
   'inventory.dialog.add.browseCardList': { en: 'browse card list', th: 'เลือกจากรายการการ์ด' },
   'inventory.dialog.add.browseCardListDescription': { en: 'Pick an existing card from the catalog list.', th: 'เลือกการ์ดจากรายการ catalog' },
+  'inventory.toast.cardAdded': { en: 'card added to inventory', th: 'เพิ่มการ์ดลง inventory แล้ว' },
+  'inventory.toast.addFailed': { en: 'failed to add card', th: 'เพิ่มการ์ดไม่สำเร็จ' },
+  'inventory.toast.sold': { en: 'card sold', th: 'ขายการ์ดแล้ว' },
+  'inventory.toast.sellFailed': { en: 'failed to sell card', th: 'ขายการ์ดไม่สำเร็จ' },
 
   // language
   'language.EN': { en: 'English', th: 'อังกฤษ' },
@@ -256,6 +265,7 @@ export const dictionary = {
   // cards
   'cards.title': { en: 'card list', th: 'รายการการ์ด' },
   'cards.subtitle': { en: 'Browse the One Piece TCG catalog', th: 'เรียกดูแคตตาล็อก One Piece TCG' },
+  'cards.testDataNote': { en: '(data for testing)', th: '(data สำหรับใช้ทดสอบ)' },
   'cards.searchPlaceholder': { en: 'Search card name or number...', th: 'ค้นหาชื่อหรือหมายเลขการ์ด...' },
   'cards.allSets': { en: 'All sets', th: 'ทุกชุด' },
   'cards.add': { en: 'Add', th: 'เพิ่ม' },
@@ -270,6 +280,29 @@ export const dictionary = {
   'cards.noCards': { en: 'No cards found.', th: 'ไม่พบการ์ด' },
   'cards.pageOf': { en: 'Page {page} of {total}', th: 'หน้า {page} จาก {total}' },
   'cards.marketPrice': { en: 'market {price}', th: 'ราคาตลาด {price}' },
+  'cards.set': { en: 'set', th: 'ชุด' },
+  'cards.type': { en: 'type', th: 'ประเภท' },
+  'cards.allTypes': { en: 'all types', th: 'ทุกประเภท' },
+  'cards.rarity': { en: 'rarity', th: 'ความหายาก' },
+  'cards.allRarities': { en: 'all rarities', th: 'ทุกความหายาก' },
+  'cards.color': { en: 'color', th: 'สี' },
+  'cards.allColors': { en: 'all colors', th: 'ทุกสี' },
+  'cards.source': { en: 'source', th: 'แหล่งที่มา' },
+  'cards.allSources': { en: 'all sources', th: 'ทุกแหล่งที่มา' },
+  'cards.cost': { en: 'cost', th: 'ค่าใช้จ่าย' },
+  'cards.power': { en: 'power', th: 'พลัง' },
+  'cards.life': { en: 'life', th: 'พลังชีวิต' },
+  'cards.subTypes': { en: 'sub types', th: 'ประเภทย่อย' },
+  'cards.effect': { en: 'effect', th: 'เอฟเฟกต์' },
+  'cards.min': { en: 'min', th: 'ต่ำสุด' },
+  'cards.max': { en: 'max', th: 'สูงสุด' },
+  'cards.search': { en: 'search', th: 'ค้นหา' },
+  'cards.minCost': { en: 'min cost', th: 'ค่าใช้จ่ายต่ำสุด' },
+  'cards.maxCost': { en: 'max cost', th: 'ค่าใช้จ่ายสูงสุด' },
+  'cards.minPower': { en: 'min power', th: 'พลังต่ำสุด' },
+  'cards.maxPower': { en: 'max power', th: 'พลังสูงสุด' },
+  'cards.minLife': { en: 'min life', th: 'พลังชีวิตต่ำสุด' },
+  'cards.maxLife': { en: 'max life', th: 'พลังชีวิตสูงสุด' },
 
   // grading
   'grading.title': { en: 'grading', th: 'การเกรด' },
@@ -387,7 +420,7 @@ export const dictionary = {
   'reports.resetDialog.resetting': { en: 'resetting...', th: 'กำลังรีเซ็ต...' },
 
   // auth
-  'auth.signin.title': { en: 'honghao-report', th: 'honghao-report' },
+  'auth.signin.title': { en: 'honghao', th: 'honghao' },
   'auth.signin.subtitle': { en: 'sign in to your trading card terminal', th: 'เข้าสู่ระบบเทอร์มินอลการ์ดของคุณ' },
   'auth.signin.email': { en: 'email', th: 'อีเมล' },
   'auth.signin.password': { en: 'password', th: 'รหัสผ่าน' },
@@ -403,6 +436,7 @@ export const dictionary = {
 
   // landing
   'landing.subtitle': { en: 'Trading card inventory & profit tracking for collectors.', th: 'ระบบติดตามคลังการ์ด ต้นทุน กำไร และ ROI สำหรับนักสะสมการ์ด' },
+  'landing.tagline': { en: 'built for collectors', th: 'สร้างมาเพื่อนักสะสม' },
   'landing.featuresTitle': { en: 'features', th: 'ฟีเจอร์' },
   'landing.featureInventory': { en: 'inventory', th: 'คลังการ์ด' },
   'landing.featureInventoryDesc': { en: 'Track every card, bundle, slab and sealed product in one place.', th: 'ติดตามการ์ดทุกใบ bundle slab และ sealed product ในที่เดียว' },
@@ -431,7 +465,7 @@ export const dictionary = {
   // theme
   'theme.toggle': { en: 'toggle theme', th: 'สลับธีม' },
 
-  'auth.register.title': { en: 'register', th: 'สมัครสมาชิก' },
+  'auth.register.title': { en: 'honghao', th: 'honghao' },
   'auth.register.subtitle': { en: 'create a new account', th: 'สร้างบัญชีใหม่' },
   'auth.register.name': { en: 'name', th: 'ชื่อ' },
   'auth.register.email': { en: 'email', th: 'อีเมล' },
@@ -472,7 +506,7 @@ export const dictionary = {
   'flexCard.previewTitle': { en: 'FLEX preview', th: 'ดูตัวอย่าง FLEX' },
   'flexCard.download': { en: 'download image', th: 'ดาวน์โหลดรูป' },
   'flexCard.share': { en: 'share', th: 'แชร์' },
-  'flexCard.honghaoReport': { en: 'honghao report', th: 'honghao report' },
+  'flexCard.honghaoReport': { en: 'honghao', th: 'honghao' },
   'flexCard.totalProfit': { en: 'total profit', th: 'กำไรรวม' },
   'flexCard.profitPerCard': { en: 'profit / card', th: 'กำไร / ใบ' },
   'flexCard.roi': { en: 'ROI', th: 'ROI' },
@@ -481,7 +515,7 @@ export const dictionary = {
   'flexCard.qty': { en: 'qty', th: 'จำนวน' },
   'flexCard.toTheMoon': { en: 'TO THE MOON', th: 'พุ่งไปดวงจันทร์' },
   'flexCard.ngmi': { en: 'NGMI', th: 'ไม่รอด' },
-  'flexCard.shareTitle': { en: 'FLEX by honghao report', th: 'FLEX by honghao report' },
+  'flexCard.shareTitle': { en: 'FLEX by honghao', th: 'FLEX by honghao' },
   'flexCard.shareText': { en: 'Sold {name} for {amount}', th: 'ขาย {name} ในราคา {amount}' },
 
   'socialBar.followUs': { en: 'follow us', th: 'ติดตามเรา' },

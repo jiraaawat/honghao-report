@@ -72,13 +72,17 @@ export function Navbar() {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 h-14 transform-gpu border-b border-zinc-800 bg-zinc-950/80 backdrop-blur">
-        <div className="flex h-full items-center justify-between px-4 md:px-6">
-          <Link
-            href="/dashboard"
-            className="hidden items-center gap-2 font-mono text-sm font-bold text-emerald-400 md:flex"
-          >
-            <span className="text-emerald-500">$</span> honghao-report
-          </Link>
+        <div className="flex h-full items-center px-4 md:px-6">
+          <div className="hidden flex-1 items-center md:flex">
+            <Link
+              href="/dashboard"
+              className="font-mono text-sm font-bold"
+            >
+              <span className="bg-gradient-to-r from-yellow-300 via-orange-300 to-green-300 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]">
+                $ honghao
+              </span>
+            </Link>
+          </div>
 
           <div className="relative z-10 flex items-center gap-3 md:hidden">
             <ThemeToggle />
@@ -91,7 +95,7 @@ export function Navbar() {
             ) : null}
           </div>
 
-          <nav className="hidden items-center gap-1 md:flex">
+          <nav className="hidden flex-1 items-center justify-center gap-1 md:flex">
             {navItems.map((item) => {
               const Icon = item.icon
               const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
@@ -102,7 +106,7 @@ export function Navbar() {
                   className={cn(
                     'flex items-center gap-2 rounded-md border px-3 py-1.5 font-mono text-xs transition-colors',
                     isActive
-                      ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400'
+                      ? 'border-green-500/50 bg-green-500/10 text-green-400'
                       : 'border-transparent text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100'
                   )}
                 >
@@ -113,7 +117,7 @@ export function Navbar() {
             })}
           </nav>
 
-          <div className="relative z-10 ml-auto flex items-center gap-3">
+          <div className="relative z-10 flex flex-1 items-center justify-end gap-3">
             <div className="hidden items-center gap-3 md:flex">
               <ThemeToggle />
               <LanguageToggle />
@@ -150,13 +154,13 @@ export function Navbar() {
                   href={item.href}
                   className={cn(
                     'flex flex-col items-center gap-1 rounded-xl py-2 text-[10px] font-mono font-bold transition-colors',
-                    active ? 'text-emerald-400' : 'text-zinc-500 hover:text-zinc-300'
+                    active ? 'text-green-400' : 'text-zinc-500 hover:text-zinc-300'
                   )}
                 >
                   <span
                     className={cn(
                       'rounded-lg p-1.5 transition-colors',
-                      active && 'bg-emerald-500/15'
+                      active && 'bg-green-500/15'
                     )}
                   >
                     <Icon className="h-5 w-5" />

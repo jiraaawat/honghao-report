@@ -100,10 +100,10 @@ export async function GET(req: NextRequest) {
   const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' })
 
   const filename = startDate && endDate
-    ? `honghao-report-${startDate}-to-${endDate}.xlsx`
+    ? `honghao-${startDate}-to-${endDate}.xlsx`
     : year && month
-      ? `honghao-report-${year}-${month.padStart(2, '0')}.xlsx`
-      : 'honghao-report-all.xlsx'
+      ? `honghao-${year}-${month.padStart(2, '0')}.xlsx`
+      : 'honghao-all.xlsx'
 
   return new NextResponse(buffer, {
     headers: {

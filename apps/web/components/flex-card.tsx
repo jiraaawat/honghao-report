@@ -93,7 +93,7 @@ const FlexCardWide = forwardRef<HTMLDivElement, FlexCardProps>(function FlexCard
       <div className="relative z-10 flex flex-1 flex-col justify-between p-10">
         <div className="flex items-start justify-between">
           <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
-            honghao.report
+            <span className="text-green-400">honghao</span>
           </span>
           <ProfitIcon isProfit={isProfit} glowColor={glowColor} size="h-14 w-14" iconSize="h-7 w-7" />
         </div>
@@ -104,7 +104,7 @@ const FlexCardWide = forwardRef<HTMLDivElement, FlexCardProps>(function FlexCard
           </div>
           <div
             className={`mt-3 font-sans ${profitSizeClass} font-black tabular-nums leading-none tracking-tighter whitespace-nowrap overflow-hidden text-ellipsis ${
-              isProfit ? 'text-emerald-400' : 'text-red-400'
+              isProfit ? 'text-green-400' : 'text-red-400'
             }`}
             style={{ textShadow: `0 0 32px ${glowColor}` }}
           >
@@ -173,7 +173,7 @@ const FlexCardPortrait = forwardRef<HTMLDivElement, FlexCardProps>(function Flex
         <div className="flex items-center justify-between">
           <FlexHeader />
           <span className="max-w-[200px] truncate text-[11px] font-bold uppercase tracking-[0.15em] text-zinc-500">
-            {userName || 'DEGEN'} · honghao.report
+            {userName || 'DEGEN'} · <span className="text-green-400">honghao</span>
           </span>
         </div>
 
@@ -213,7 +213,7 @@ const FlexCardPortrait = forwardRef<HTMLDivElement, FlexCardProps>(function Flex
           <div className="min-w-0 flex-1">
             <div
               className={`font-sans ${profitSizeClass} font-black tabular-nums leading-none tracking-tighter whitespace-nowrap overflow-hidden text-ellipsis ${
-                isProfit ? 'text-emerald-400' : 'text-red-400'
+                isProfit ? 'text-green-400' : 'text-red-400'
               }`}
               style={{ textShadow: `0 0 24px ${glowColor}` }}
             >
@@ -333,7 +333,7 @@ function ProfitIcon({
   return (
     <div
       className={`flex ${size} items-center justify-center rounded-2xl ${
-        isProfit ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+        isProfit ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
       }`}
       style={{ boxShadow: `0 0 28px ${glowColor} inset` }}
     >

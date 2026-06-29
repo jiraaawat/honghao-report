@@ -14,6 +14,15 @@ export async function GET(req: NextRequest) {
   const search = searchParams.get('search') || ''
   const setId = searchParams.get('setId')
   const source = searchParams.get('source')
+  const type = searchParams.get('type')
+  const rarity = searchParams.get('rarity')
+  const color = searchParams.get('color')
+  const minCost = searchParams.get('minCost')
+  const maxCost = searchParams.get('maxCost')
+  const minPower = searchParams.get('minPower')
+  const maxPower = searchParams.get('maxPower')
+  const minLife = searchParams.get('minLife')
+  const maxLife = searchParams.get('maxLife')
   const page = Math.max(1, Number(searchParams.get('page') || '1'))
   const limit = Math.min(100, Math.max(1, Number(searchParams.get('limit') || '24')))
   const offset = (page - 1) * limit
@@ -34,6 +43,33 @@ export async function GET(req: NextRequest) {
   }
   if (source) {
     conditions.push(Prisma.sql`c.source = ${source}`)
+  }
+  if (type) {
+    conditions.push(Prisma.sql`c.type = ${type}`)
+  }
+  if (rarity) {
+    conditions.push(Prisma.sql`c.rarity = ${rarity}`)
+  }
+  if (color) {
+    conditions.push(Prisma.sql`c.color = ${color}`)
+  }
+  if (minCost) {
+    conditions.push(Prisma.sql`c.cost >= ${Number(minCost)}`)
+  }
+  if (maxCost) {
+    conditions.push(Prisma.sql`c.cost <= ${Number(maxCost)}`)
+  }
+  if (minPower) {
+    conditions.push(Prisma.sql`c.card_power >= ${Number(minPower)}`)
+  }
+  if (maxPower) {
+    conditions.push(Prisma.sql`c.card_power <= ${Number(maxPower)}`)
+  }
+  if (minLife) {
+    conditions.push(Prisma.sql`c.life >= ${Number(minLife)}`)
+  }
+  if (maxLife) {
+    conditions.push(Prisma.sql`c.life <= ${Number(maxLife)}`)
   }
 
   const whereClause = Prisma.join(conditions, ' AND ')

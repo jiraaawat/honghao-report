@@ -1,15 +1,15 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
-import useSWR from 'swr'
+import useSWR, { useSWRConfig } from 'swr'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Search, Package, Plus, Heart } from 'lucide-react'
+import { Search, Package, Plus, Heart, X, Eye, Library, Layers, Gem, Palette, Database, Coins, Zap } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Dialog,
   DialogHeader,
@@ -19,12 +19,18 @@ import {
 } from '@/components/ui/dialog'
 import { CatalogCardDto, CatalogSetDto, CARD_TYPES, CARD_CONDITIONS, GAMES, LANGUAGES, WishlistItemDto } from '@/types'
 import { useLanguage } from '@/lib/i18n/provider'
+import { useToast } from '@/components/providers/toast-provider'
 import { fetcher, swrOptions } from '@/lib/swr'
 import { formatUsdToThb, usdToThb } from '@/lib/utils'
 
 const PAGE_SIZE = 24
 
-const CARD_TYPE_OPTIONS = ['All', 'Leader', 'Character', 'Event', 'Stage', 'DON!!']
+type FilterOptions = {
+  colors: string[]
+  types: string[]
+  rarities: string[]
+  sources: string[]
+}
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -43,17 +49,42 @@ const itemVariants = {
   },
 }
 
+function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-zinc-700 bg-zinc-950 px-2 py-1 font-mono text-xs text-zinc-300">
+      {label}
+      <button type="button" onClick={onRemove} className="text-zinc-500 hover:text-zinc-200" aria-label="Remove filter">
+        <X className="h-3 w-3" />
+      </button>
+    </span>
+  )
+}
+
 export default function CardsPage() {
-  const router = useRouter()
   const { t } = useLanguage()
+  const { toast } = useToast()
+  const { mutate } = useSWRConfig()
 
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [setId, setSetId] = useState('')
-  const [typeFilter, setTypeFilter] = useState('All')
+  const [typeFilter, setTypeFilter] = useState('')
+  const [rarityFilter, setRarityFilter] = useState('')
+  const [colorFilter, setColorFilter] = useState('')
+  const [sourceFilter, setSourceFilter] = useState('')
+  const [minCost, setMinCost] = useState('')
+  const [maxCost, setMaxCost] = useState('')
+  const [minPower, setMinPower] = useState('')
+  const [maxPower, setMaxPower] = useState('')
+  const [minLife, setMinLife] = useState('')
+  const [maxLife, setMaxLife] = useState('')
   const [page, setPage] = useState(1)
 
   const [addDialog, setAddDialog] = useState<{ open: boolean; card: CatalogCardDto | null }>({
+    open: false,
+    card: null,
+  })
+  const [detailDialog, setDetailDialog] = useState<{ open: boolean; card: CatalogCardDto | null }>({
     open: false,
     card: null,
   })
@@ -73,10 +104,20 @@ export default function CardsPage() {
     const params = new URLSearchParams()
     if (debouncedSearch) params.set('search', debouncedSearch)
     if (setId) params.set('setId', setId)
+    if (typeFilter) params.set('type', typeFilter)
+    if (rarityFilter) params.set('rarity', rarityFilter)
+    if (colorFilter) params.set('color', colorFilter)
+    if (sourceFilter) params.set('source', sourceFilter)
+    if (minCost) params.set('minCost', minCost)
+    if (maxCost) params.set('maxCost', maxCost)
+    if (minPower) params.set('minPower', minPower)
+    if (maxPower) params.set('maxPower', maxPower)
+    if (minLife) params.set('minLife', minLife)
+    if (maxLife) params.set('maxLife', maxLife)
     params.set('page', page.toString())
     params.set('limit', PAGE_SIZE.toString())
     return params
-  }, [debouncedSearch, setId, page])
+  }, [debouncedSearch, setId, typeFilter, rarityFilter, colorFilter, sourceFilter, minCost, maxCost, minPower, maxPower, minLife, maxLife, page])
 
   const catalogKey = `/api/catalog/cards?${catalogParams.toString()}`
   const { data: catalogData, isLoading: catalogLoading } = useSWR<{
@@ -84,11 +125,13 @@ export default function CardsPage() {
     pagination: { pages: number }
   }>(catalogKey, fetcher, swrOptions)
   const { data: setsData } = useSWR<CatalogSetDto[]>('/api/catalog/sets', fetcher, swrOptions)
+  const { data: filterOptionsData } = useSWR<FilterOptions>('/api/catalog/filters', fetcher, swrOptions)
   const { data: wishlistData, mutate: mutateWishlist } = useSWR<WishlistItemDto[]>('/api/wishlist', fetcher, swrOptions)
 
   const items = catalogData?.items ?? []
   const totalPages = catalogData?.pagination?.pages ?? 1
   const sets = setsData ?? []
+  const filterOptions = filterOptionsData ?? { colors: [], types: [], rarities: [], sources: [] }
   const wishlistItems = wishlistData ?? []
 
   useEffect(() => {
@@ -149,6 +192,19 @@ export default function CardsPage() {
     setAddDialog({ open: false, card: null })
   }
 
+  const openDetail = (card: CatalogCardDto) => {
+    setDetailDialog({ open: true, card })
+  }
+
+  const closeDetail = () => {
+    setDetailDialog({ open: false, card: null })
+  }
+
+  const handleAddFromDetail = (card: CatalogCardDto) => {
+    closeDetail()
+    openAdd(card)
+  }
+
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
     const card = addDialog.card
@@ -180,13 +236,26 @@ export default function CardsPage() {
 
       if (res.ok) {
         closeAdd()
-        router.push('/inventory')
+        toast({
+          variant: 'success',
+          title: t('inventory.toast.cardAdded'),
+          description: card.name,
+        })
+        mutate((key) => typeof key === 'string' && key.startsWith('/api/inventory'), undefined, { revalidate: true })
       } else {
         const err = await res.json().catch(() => ({}))
-        alert(err.error || 'Failed to add card')
+        toast({
+          variant: 'error',
+          title: t('inventory.toast.addFailed'),
+          description: err.error || 'Failed to add card',
+        })
       }
     } catch {
-      alert('Failed to add card')
+      toast({
+        variant: 'error',
+        title: t('inventory.toast.addFailed'),
+        description: 'Failed to add card',
+      })
     } finally {
       setAdding(false)
     }
@@ -213,10 +282,35 @@ export default function CardsPage() {
     )
   }
 
-  const visibleItems =
-    typeFilter === 'All'
-      ? items
-      : items.filter((c) => c.type?.toLowerCase() === typeFilter.toLowerCase())
+  const hasFilters =
+    search ||
+    setId ||
+    typeFilter ||
+    rarityFilter ||
+    colorFilter ||
+    sourceFilter ||
+    minCost ||
+    maxCost ||
+    minPower ||
+    maxPower ||
+    minLife ||
+    maxLife
+
+  const clearFilters = () => {
+    setSearch('')
+    setSetId('')
+    setTypeFilter('')
+    setRarityFilter('')
+    setColorFilter('')
+    setSourceFilter('')
+    setMinCost('')
+    setMaxCost('')
+    setMinPower('')
+    setMaxPower('')
+    setMinLife('')
+    setMaxLife('')
+    setPage(1)
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
@@ -228,45 +322,183 @@ export default function CardsPage() {
       >
         <h1 className="font-mono text-xl font-bold text-zinc-100">{t('cards.title')}</h1>
         <p className="font-mono text-xs text-zinc-500">{t('cards.subtitle')}</p>
+        <p className="mt-1 font-mono text-[10px] text-orange-400">{t('cards.testDataNote')}</p>
       </motion.div>
 
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.05 }}
-        className="mb-6 flex flex-col gap-3 sm:flex-row"
       >
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
-          <Input
-            placeholder={t('cards.searchPlaceholder')}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Select
-          value={setId}
-          onChange={(e) => {
-            setSetId(e.target.value)
-            setPage(1)
-          }}
-          className="sm:w-56"
-        >
-          <option value="">{t('cards.allSets')}</option>
-          {sets.map((s) => (
-            <option key={s.setId} value={s.setId}>
-              {s.setId} {s.setName ? `- ${s.setName}` : ''}
-            </option>
-          ))}
-        </Select>
-        <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="sm:w-44">
-          {CARD_TYPE_OPTIONS.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </Select>
+        <Card className="mb-6 border-zinc-800 bg-zinc-900/50">
+          <CardContent className="space-y-4 p-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+              <Input
+                placeholder={t('cards.searchPlaceholder')}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-9"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="space-y-1">
+                <label className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-500"><Library className="h-3 w-3" /> {t('cards.set')}</label>
+                <Select
+                  value={setId}
+                  onChange={(e) => {
+                    setSetId(e.target.value)
+                    setPage(1)
+                  }}
+                  className="w-full"
+                >
+                  <option value="">{t('cards.allSets')}</option>
+                  {sets.map((s) => (
+                    <option key={s.setId} value={s.setId}>
+                      {s.setId} {s.setName ? `- ${s.setName}` : ''}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-500"><Layers className="h-3 w-3" /> {t('cards.type')}</label>
+                <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="w-full">
+                  <option value="">{t('cards.allTypes')}</option>
+                  {filterOptions.types.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-500"><Gem className="h-3 w-3" /> {t('cards.rarity')}</label>
+                <Select value={rarityFilter} onChange={(e) => setRarityFilter(e.target.value)} className="w-full">
+                  <option value="">{t('cards.allRarities')}</option>
+                  {filterOptions.rarities.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-500"><Palette className="h-3 w-3" /> {t('cards.color')}</label>
+                <Select value={colorFilter} onChange={(e) => setColorFilter(e.target.value)} className="w-full">
+                  <option value="">{t('cards.allColors')}</option>
+                  {filterOptions.colors.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-500"><Database className="h-3 w-3" /> {t('cards.source')}</label>
+                <Select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)} className="w-full">
+                  <option value="">{t('cards.allSources')}</option>
+                  {filterOptions.sources.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-500"><Coins className="h-3 w-3" /> {t('cards.cost')}</label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder={t('cards.min')}
+                    value={minCost}
+                    onChange={(e) => setMinCost(e.target.value)}
+                    className="w-full"
+                  />
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder={t('cards.max')}
+                    value={maxCost}
+                    onChange={(e) => setMaxCost(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-500"><Zap className="h-3 w-3" /> {t('cards.power')}</label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder={t('cards.min')}
+                    value={minPower}
+                    onChange={(e) => setMinPower(e.target.value)}
+                    className="w-full"
+                  />
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder={t('cards.max')}
+                    value={maxPower}
+                    onChange={(e) => setMaxPower(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-500"><Heart className="h-3 w-3" /> {t('cards.life')}</label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder={t('cards.min')}
+                    value={minLife}
+                    onChange={(e) => setMinLife(e.target.value)}
+                    className="w-full"
+                  />
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder={t('cards.max')}
+                    value={maxLife}
+                    onChange={(e) => setMaxLife(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {hasFilters && (
+              <div className="flex flex-wrap items-center gap-2">
+                {search && <FilterChip label={`${t('cards.search')}: ${search}`} onRemove={() => setSearch('')} />}
+                {setId && <FilterChip label={`${t('cards.set')}: ${setId}`} onRemove={() => setSetId('')} />}
+                {typeFilter && <FilterChip label={`${t('cards.type')}: ${typeFilter}`} onRemove={() => setTypeFilter('')} />}
+                {rarityFilter && <FilterChip label={`${t('cards.rarity')}: ${rarityFilter}`} onRemove={() => setRarityFilter('')} />}
+                {colorFilter && <FilterChip label={`${t('cards.color')}: ${colorFilter}`} onRemove={() => setColorFilter('')} />}
+                {sourceFilter && <FilterChip label={`${t('cards.source')}: ${sourceFilter}`} onRemove={() => setSourceFilter('')} />}
+                {minCost && <FilterChip label={`${t('cards.minCost')}: ${minCost}`} onRemove={() => setMinCost('')} />}
+                {maxCost && <FilterChip label={`${t('cards.maxCost')}: ${maxCost}`} onRemove={() => setMaxCost('')} />}
+                {minPower && <FilterChip label={`${t('cards.minPower')}: ${minPower}`} onRemove={() => setMinPower('')} />}
+                {maxPower && <FilterChip label={`${t('cards.maxPower')}: ${maxPower}`} onRemove={() => setMaxPower('')} />}
+                {minLife && <FilterChip label={`${t('cards.minLife')}: ${minLife}`} onRemove={() => setMinLife('')} />}
+                {maxLife && <FilterChip label={`${t('cards.maxLife')}: ${maxLife}`} onRemove={() => setMaxLife('')} />}
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="font-mono text-xs">
+                  {t('common.clearFilters')}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </motion.div>
 
       {catalogLoading ? (
@@ -275,7 +507,7 @@ export default function CardsPage() {
             <div key={i} className="aspect-[488/680] w-full animate-pulse rounded-xl bg-zinc-800" />
           ))}
         </div>
-      ) : visibleItems.length === 0 ? (
+      ) : items.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -292,11 +524,12 @@ export default function CardsPage() {
             animate="visible"
             className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
           >
-            {visibleItems.map((card) => (
+            {items.map((card) => (
               <motion.div
                 key={card.id}
                 variants={itemVariants}
-                className="group flex flex-col gap-2 rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 transition-colors hover:border-zinc-700 hover:bg-zinc-900"
+                onClick={() => openDetail(card)}
+                className="group flex cursor-pointer flex-col gap-2 rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 transition-colors hover:border-zinc-700 hover:bg-zinc-900"
               >
                 <div className="relative aspect-[488/680] overflow-hidden rounded-lg bg-zinc-950">
                   {card.imagePath ? (
@@ -327,7 +560,7 @@ export default function CardsPage() {
                       <span />
                     )}
                     {card.marketPrice ? (
-                      <p className="font-mono text-xs font-medium text-emerald-400">
+                      <p className="font-mono text-xs font-medium text-green-400">
                         {formatUsdToThb(Number(card.marketPrice))}
                       </p>
                     ) : null}
@@ -339,7 +572,10 @@ export default function CardsPage() {
                     size="sm"
                     variant="ghost"
                     className="h-8 w-8 shrink-0 p-0"
-                    onClick={() => toggleWishlist(card)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleWishlist(card)
+                    }}
                     title={t('wishlist.add')}
                   >
                     <Heart
@@ -352,8 +588,11 @@ export default function CardsPage() {
                   </Button>
                   <Button
                     size="sm"
-                    className="h-8 flex-1 gap-1 text-xs bg-emerald-600 text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-[0_0_12px_rgba(16,185,129,0.25)]"
-                    onClick={() => openAdd(card)}
+                    className="h-8 flex-1 gap-1 text-xs bg-green-600 text-white shadow-sm transition-all hover:bg-green-700 hover:shadow-[0_0_12px_rgba(16,185,129,0.25)]"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      openAdd(card)
+                    }}
                   >
                     <Plus className="h-3.5 w-3.5" /> {t('cards.add')}
                   </Button>
@@ -398,7 +637,7 @@ export default function CardsPage() {
               <DialogDescription>
                 {addDialog.card?.name} ({addDialog.card?.cardNo})
                 {addDialog.card?.marketPrice ? (
-                  <span className="ml-1 text-emerald-400">
+                  <span className="ml-1 text-green-400">
                     {t('cards.marketPrice', { price: formatUsdToThb(Number(addDialog.card.marketPrice)) })}
                   </span>
                 ) : null}
@@ -521,6 +760,126 @@ export default function CardsPage() {
               </Button>
             </DialogFooter>
           </form>
+      </Dialog>
+
+      <Dialog open={detailDialog.open} onOpenChange={closeDetail}>
+        {detailDialog.card && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="font-mono text-base">{detailDialog.card.name}</DialogTitle>
+              <DialogDescription>
+                {[detailDialog.card.cardNo, detailDialog.card.setName, detailDialog.card.rarity].filter(Boolean).join(' · ')}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="relative mx-auto aspect-[488/680] w-full max-w-[14rem] overflow-hidden rounded-lg bg-zinc-950">
+                {detailDialog.card.imagePath ? (
+                  <Image
+                    src={detailDialog.card.imagePath}
+                    alt={detailDialog.card.name}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center font-mono text-xs text-zinc-600">
+                    {t('inventoryGridCard.noImage')}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-1.5">
+                {detailDialog.card.type && (
+                  <Badge variant="outline" className="text-[10px]">
+                    {detailDialog.card.type}
+                  </Badge>
+                )}
+                {detailDialog.card.color && (
+                  <Badge variant="outline" className="text-[10px]">
+                    {detailDialog.card.color}
+                  </Badge>
+                )}
+                {detailDialog.card.rarity && (
+                  <Badge variant="outline" className="text-[10px]">
+                    {detailDialog.card.rarity}
+                  </Badge>
+                )}
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 font-mono text-[10px]">
+                {detailDialog.card.cost !== null && detailDialog.card.cost !== undefined && (
+                  <div className="rounded-md bg-zinc-950/50 p-2 text-center">
+                    <div className="text-zinc-500">{t('cards.cost')}</div>
+                    <div className="text-zinc-200">{detailDialog.card.cost}</div>
+                  </div>
+                )}
+                {detailDialog.card.cardPower !== null && detailDialog.card.cardPower !== undefined && (
+                  <div className="rounded-md bg-zinc-950/50 p-2 text-center">
+                    <div className="text-zinc-500">{t('cards.power')}</div>
+                    <div className="text-zinc-200">{detailDialog.card.cardPower}</div>
+                  </div>
+                )}
+                {detailDialog.card.life !== null && detailDialog.card.life !== undefined && (
+                  <div className="rounded-md bg-zinc-950/50 p-2 text-center">
+                    <div className="text-zinc-500">{t('cards.life')}</div>
+                    <div className="text-zinc-200">{detailDialog.card.life}</div>
+                  </div>
+                )}
+              </div>
+
+              {detailDialog.card.subTypes && (
+                <div className="text-center font-mono text-xs text-zinc-400">
+                  {t('cards.subTypes')}: {detailDialog.card.subTypes}
+                </div>
+              )}
+
+              {detailDialog.card.effectText && (
+                <div className="max-h-40 overflow-auto rounded-md border border-zinc-800 bg-zinc-950/50 p-3 font-mono text-xs leading-relaxed text-zinc-300">
+                  {detailDialog.card.effectText}
+                </div>
+              )}
+
+              <div className="flex items-center justify-between gap-2 rounded-md border border-zinc-800 bg-zinc-950/50 p-3 font-mono text-xs">
+                <span className="text-zinc-500">{t('cards.marketPrice')}</span>
+                <span className="text-green-400">
+                  {detailDialog.card.marketPrice
+                    ? formatUsdToThb(Number(detailDialog.card.marketPrice))
+                    : '-'}
+                </span>
+              </div>
+            </div>
+
+            <DialogFooter className="flex-col gap-2 sm:flex-row">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1"
+                onClick={() => {
+                  closeDetail()
+                  toggleWishlist(detailDialog.card!)
+                }}
+              >
+                <Heart
+                  className={`h-3.5 w-3.5 ${
+                    wishlistItems.some((w) => w.catalogCardId === detailDialog.card!.id)
+                      ? 'fill-red-500 text-red-500'
+                      : ''
+                  }`}
+                />
+                {t('wishlist.add')}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                className="gap-1 bg-green-600 text-white hover:bg-green-700"
+                onClick={() => detailDialog.card && handleAddFromDetail(detailDialog.card)}
+              >
+                <Plus className="h-3.5 w-3.5" /> {t('cards.addToInventory')}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
       </Dialog>
     </div>
   )

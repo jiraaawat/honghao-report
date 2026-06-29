@@ -115,10 +115,10 @@ export default function SendToGradeContent() {
 
       <Card className="border-zinc-800 bg-zinc-900/80">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-1 flex h-10 w-10 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 md:mb-2 md:h-12 md:w-12">
-            <Gem className="h-5 w-5 text-amber-400 md:h-6 md:w-6" />
+          <div className="mx-auto mb-1 flex h-10 w-10 items-center justify-center rounded-lg border border-orange-500/30 bg-orange-500/10 md:mb-2 md:h-12 md:w-12">
+            <Gem className="h-5 w-5 text-orange-400 md:h-6 md:w-6" />
           </div>
-          <CardTitle className="font-mono text-xl text-amber-400">$ {t('gradingSend.title')}</CardTitle>
+          <CardTitle className="font-mono text-xl text-orange-400">$ {t('gradingSend.title')}</CardTitle>
           <p className="font-mono text-sm text-zinc-500">{t('gradingSend.note')}</p>
         </CardHeader>
         <CardContent>

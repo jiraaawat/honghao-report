@@ -44,14 +44,14 @@ export function EntryBooster({ onComplete, duration = 3000 }: EntryBoosterProps)
           }}
           className="relative"
         >
-          <div className="relative flex h-80 w-56 flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-emerald-500/40 bg-gradient-to-b from-emerald-950 to-zinc-900 shadow-[0_0_60px_-10px_rgba(16,185,129,0.4)]">
+          <div className="relative flex h-80 w-56 flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-green-500/40 bg-gradient-to-b from-green-950 to-zinc-900 shadow-[0_0_60px_-10px_rgba(34,197,94,0.4)]">
             <div className="absolute inset-0 opacity-50" style={{ backgroundImage: 'url(\'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEgMWgxdjFIMUMxeiIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjAzKSIvPjwvc3ZnPg==\')' }} />
-            <div className="z-10 flex h-16 w-16 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10 shadow-[0_0_30px_-5px_rgba(16,185,129,0.4)]">
-              <Sparkles className="h-8 w-8 text-emerald-400" />
+            <div className="z-10 flex h-16 w-16 items-center justify-center rounded-full border border-orange-500/30 bg-orange-500/10 shadow-[0_0_30px_-5px_rgba(249,115,22,0.4)]">
+              <Sparkles className="h-8 w-8 text-yellow-400" />
             </div>
-            <div className="z-10 mt-4 font-mono text-lg font-bold text-emerald-300">honghao</div>
-            <div className="z-10 font-mono text-xs uppercase tracking-widest text-emerald-500/80">booster pack</div>
-            <div className="absolute bottom-0 left-0 right-0 h-2 bg-emerald-500/40" />
+            <div className="z-10 mt-4 font-mono text-lg font-bold text-green-300">honghao</div>
+            <div className="z-10 font-mono text-xs uppercase tracking-widest text-orange-500/80">booster pack</div>
+            <div className="absolute bottom-0 left-0 right-0 h-2 bg-green-500/40" />
           </div>
         </motion.div>
 
@@ -60,7 +60,7 @@ export function EntryBooster({ onComplete, duration = 3000 }: EntryBoosterProps)
           initial={{ opacity: 0, scale: 0 }}
           animate={{ opacity: [0, 1, 0], scale: [0, 2.5, 3] }}
           transition={{ duration: 0.8, delay: 1.7, ease: 'easeOut' }}
-          className="pointer-events-none absolute inset-0 bg-emerald-400/30"
+          className="pointer-events-none absolute inset-0 bg-green-400/30"
         />
 
         {/* Fan of cards */}
@@ -79,7 +79,7 @@ export function EntryBooster({ onComplete, duration = 3000 }: EntryBoosterProps)
               delay: 1.6 + i * 0.05,
               ease: 'easeOut',
             }}
-            className="pointer-events-none absolute h-48 w-32 rounded-lg border border-emerald-500/30 bg-gradient-to-b from-emerald-900/80 to-zinc-900 shadow-xl"
+            className="pointer-events-none absolute h-48 w-32 rounded-lg border border-green-500/30 bg-gradient-to-b from-green-900/80 to-zinc-900 shadow-xl"
             style={{ originY: 1 }}
           />
         ))}

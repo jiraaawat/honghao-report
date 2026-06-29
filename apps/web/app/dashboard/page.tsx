@@ -1,5 +1,6 @@
 'use client'
 
+import { ReactNode } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useSession } from 'next-auth/react'
@@ -10,10 +11,27 @@ import { Badge } from '@/components/ui/badge'
 import { AnimatedCurrency, AnimatedNumber } from '@/components/ui/animated-value'
 import { DashboardStats } from '@/types'
 import { TransactionDto, InventoryItem, CARD_TYPES, GAMES } from '@/types'
-import { formatCurrency, formatNumber, formatDate } from '@/lib/utils'
+import { formatCurrency, formatNumber, formatDate, cn } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n/provider'
 import { fetcher, swrOptions } from '@/lib/swr'
 import { DashboardSkeleton } from '@/components/dashboard/dashboard-skeleton'
+
+function SnapshotRow({
+  label,
+  value,
+  valueClassName,
+}: {
+  label: string
+  value: ReactNode
+  valueClassName?: string
+}) {
+  return (
+    <div className="flex flex-col gap-0.5 rounded-md border border-zinc-800/60 bg-zinc-950/40 px-2.5 py-2">
+      <span className="font-mono text-xs text-zinc-400">{label}</span>
+      <span className={cn('font-mono text-sm font-semibold tabular-nums', valueClassName)}>{value}</span>
+    </div>
+  )
+}
 import {
   ArrowRight,
   Package,
@@ -129,39 +147,46 @@ export default function DashboardPage() {
               {t('dashboard.periodStats')}
             </div>
 
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 lg:gap-x-6 lg:gap-y-3 lg:border-l lg:border-zinc-800 lg:pl-6">
-              <div className="space-y-2">
-                <div className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:border-l lg:border-zinc-800 lg:pl-6">
+              <div className="min-w-0 space-y-3">
+                <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-green-500/70" />
                   {t('dashboard.profitLoss')}
                 </div>
                 <div
-                  className={`font-mono text-3xl font-bold ${
-                    stats && stats.periodProfit >= 0 ? 'text-emerald-400' : 'text-red-400'
+                  className={`inline-flex min-w-0 max-w-full items-center overflow-x-auto rounded-lg border bg-zinc-950/60 px-2 py-1 font-mono text-base font-bold drop-shadow-[0_1px_10px_rgba(0,0,0,0.5)] sm:px-3 sm:text-xl ${
+                    stats && stats.periodProfit >= 0
+                      ? 'border-green-500/30 text-green-400 shadow-[inset_0_0_20px_rgba(34,197,94,0.06)]'
+                      : 'border-rose-500/30 text-rose-400 shadow-[inset_0_0_20px_rgba(244,63,94,0.06)]'
                   }`}
                 >
                   <AnimatedCurrency value={stats?.periodProfit ?? 0} />
                 </div>
-                <div className="font-mono text-[10px] text-zinc-500">
-                  <AnimatedNumber value={stats?.totalTransactions ?? 0} /> {t('dashboard.transactions')} · {t('dashboard.totalSpend')} <AnimatedCurrency value={stats?.totalSpend ?? 0} />
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px] leading-relaxed text-zinc-500">
+                  <AnimatedNumber value={stats?.totalTransactions ?? 0} /> {t('dashboard.transactions')} <span>·</span> {t('dashboard.totalSpend')} <AnimatedCurrency value={stats?.totalSpend ?? 0} />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">
+              <div className="min-w-0 space-y-3">
+                <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-orange-500/70" />
                   {t('dashboard.totalSell')}
                 </div>
-                <div className="font-mono text-2xl font-bold text-emerald-400">
+                <div className="inline-flex min-w-0 max-w-full items-center overflow-x-auto rounded-lg border border-orange-500/30 bg-zinc-950/60 px-2 py-1 font-mono text-sm font-bold text-orange-400 drop-shadow-[0_1px_10px_rgba(0,0,0,0.5)] shadow-[inset_0_0_20px_rgba(249,115,22,0.06)] sm:px-3 sm:text-lg">
                   <AnimatedCurrency value={stats?.totalSell ?? 0} />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">
+              <div className="min-w-0 space-y-3">
+                <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-orange-500/70" />
                   {t('dashboard.periodRoi')}
                 </div>
                 <div
-                  className={`font-mono text-2xl font-bold ${
-                    periodROI >= 0 ? 'text-emerald-400' : 'text-red-400'
+                  className={`inline-flex min-w-0 max-w-full items-center overflow-x-auto rounded-lg border bg-zinc-950/60 px-2 py-1 font-mono text-sm font-bold drop-shadow-[0_1px_10px_rgba(0,0,0,0.5)] sm:px-3 sm:text-lg ${
+                    periodROI >= 0
+                      ? 'border-orange-500/30 text-orange-400 shadow-[inset_0_0_20px_rgba(249,115,22,0.06)]'
+                      : 'border-rose-500/30 text-rose-400 shadow-[inset_0_0_20px_rgba(244,63,94,0.06)]'
                   }`}
                 >
                   <AnimatedNumber value={periodROI} suffix="%" decimals={1} />
@@ -178,53 +203,23 @@ export default function DashboardPage() {
             <CardTitle className="font-mono text-sm">{t('dashboard.inventorySnapshot')}</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col justify-between gap-4">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                <span className="font-mono text-xs text-zinc-400">{t('inventory.totalCards')}</span>
-                <span className="font-mono text-zinc-200">{inventorySummary.totalCards}</span>
-              </div>
-              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                <span className="font-mono text-xs text-zinc-400">{t('inventory.inStock')}</span>
-                <span className="font-mono text-emerald-400">{inventorySummary.inStock}</span>
-              </div>
-              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                <span className="font-mono text-xs text-zinc-400">{t('inventory.grading')}</span>
-                <span className="font-mono text-amber-400">{inventorySummary.grading}</span>
-              </div>
-              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                <span className="font-mono text-xs text-zinc-400">{t('dashboard.soldCards')}</span>
-                <span className="font-mono text-amber-400">{inventorySummary.soldOut}</span>
-              </div>
-              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                <span className="font-mono text-xs text-zinc-400">{t('dashboard.totalInvested')}</span>
-                <span className="font-mono text-zinc-200">
-                  {formatCurrency(inventorySummary.totalInvested)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                <span className="font-mono text-xs text-zinc-400">{t('dashboard.totalValue')}</span>
-                <span className="font-mono text-zinc-200">{formatCurrency(inventorySummary.totalValue)}</span>
-              </div>
-              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                <span className="font-mono text-xs text-zinc-400">{t('dashboard.totalProfit')}</span>
-                <span
-                  className={`font-mono ${
-                    inventorySummary.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400'
-                  }`}
-                >
-                  {formatCurrency(inventorySummary.totalProfit)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                <span className="font-mono text-xs text-zinc-400">{t('dashboard.overallRoi')}</span>
-                <span
-                  className={`font-mono ${
-                    inventorySummary.totalROI >= 0 ? 'text-emerald-400' : 'text-red-400'
-                  }`}
-                >
-                  {formatNumber(inventorySummary.totalROI)}%
-                </span>
-              </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <SnapshotRow label={t('inventory.totalCards')} value={inventorySummary.totalCards} valueClassName="text-green-400" />
+              <SnapshotRow label={t('inventory.inStock')} value={inventorySummary.inStock} valueClassName="text-green-400" />
+              <SnapshotRow label={t('inventory.grading')} value={inventorySummary.grading} valueClassName="text-orange-400" />
+              <SnapshotRow label={t('dashboard.soldCards')} value={inventorySummary.soldOut} valueClassName="text-rose-400" />
+              <SnapshotRow label={t('dashboard.totalInvested')} value={formatCurrency(inventorySummary.totalInvested)} />
+              <SnapshotRow label={t('dashboard.totalValue')} value={formatCurrency(inventorySummary.totalValue)} valueClassName="text-green-400" />
+              <SnapshotRow
+                label={t('dashboard.totalProfit')}
+                value={formatCurrency(inventorySummary.totalProfit)}
+                valueClassName={inventorySummary.totalProfit >= 0 ? 'text-green-400' : 'text-rose-400'}
+              />
+              <SnapshotRow
+                label={t('dashboard.overallRoi')}
+                value={`${formatNumber(inventorySummary.totalROI)}%`}
+                valueClassName={inventorySummary.totalROI >= 0 ? 'text-green-400' : 'text-rose-400'}
+              />
             </div>
             <Link href="/inventory">
               <Button variant="ghost" size="sm" className="w-full gap-1 font-mono text-xs">
@@ -280,7 +275,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="pt-1">
                     <div className="font-mono text-[10px] text-zinc-500">{t('inventoryGridCard.marketValue')}</div>
-                    <div className="font-mono text-lg font-bold text-emerald-400">
+                    <div className="font-mono text-lg font-bold text-green-400">
                       {formatCurrency(topCard.marketValuePerUnit)}
                     </div>
                   </div>
@@ -335,7 +330,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="pt-1">
                     <div className="font-mono text-[10px] text-zinc-500">{t('inventoryGridCard.profit')}</div>
-                    <div className="font-mono text-lg font-bold text-emerald-400">
+                    <div className="font-mono text-lg font-bold text-green-400">
                       {formatCurrency(topProfitCard.profit)}
                     </div>
                   </div>
@@ -414,11 +409,10 @@ export default function DashboardPage() {
             ) : (
               <div className="grid grid-cols-2 gap-2">
                 {gameBreakdown.map((g) => (
-                  <div key={g.game} className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-950 p-2">
+                  <div key={g.game} className="flex flex-col gap-0.5 rounded-md border border-zinc-800 bg-zinc-950 p-2">
                     <span className="font-mono text-xs text-zinc-400">{g.game}</span>
-                    <div className="text-right">
-                      <div className="font-mono text-xs text-zinc-200">{g.count} {t('common.cards')}</div>
-                      <div className="font-mono text-[10px] text-zinc-500">{formatCurrency(g.value)}</div>
+                    <div className="font-mono text-xs text-zinc-200">
+                      {g.count} {t('common.cards')} · <span className="text-[10px] text-zinc-500">{formatCurrency(g.value)}</span>
                     </div>
                   </div>
                 ))}
@@ -437,11 +431,10 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-1.5">
                 {typeBreakdown.map((typeItem) => (
-                  <div key={typeItem.type} className="flex items-center justify-between">
+                  <div key={typeItem.type} className="flex flex-col gap-0.5">
                     <span className="font-mono text-xs text-zinc-400">{typeItem.type}</span>
-                    <div className="text-right">
-                      <div className="font-mono text-xs text-zinc-200">{typeItem.count} {t('common.cards')}</div>
-                      <div className="font-mono text-[10px] text-zinc-500">{formatCurrency(typeItem.value)}</div>
+                    <div className="font-mono text-xs text-zinc-200">
+                      {typeItem.count} {t('common.cards')} · <span className="text-[10px] text-zinc-500">{formatCurrency(typeItem.value)}</span>
                     </div>
                   </div>
                 ))}

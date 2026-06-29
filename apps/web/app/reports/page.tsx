@@ -128,12 +128,12 @@ export default function ReportsPage() {
           <div className="grid h-full grid-rows-[auto_1fr_auto] gap-1">
             <div className="flex items-start justify-between gap-2">
               <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">{t('common.totalProfit')}</span>
-              <TrendingUp className="h-4 w-4 shrink-0 text-emerald-400/60" />
+              <TrendingUp className="h-4 w-4 shrink-0 text-green-400/60" />
             </div>
             <div className="flex min-w-0 items-center">
               <AnimatedCurrency
                 value={totalProfit}
-                className={cn('block truncate font-mono text-xl font-bold sm:text-2xl', totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400')}
+                className={cn('block truncate font-mono text-xl font-bold sm:text-2xl', totalProfit >= 0 ? 'text-green-400' : 'text-red-400')}
               />
             </div>
             <div className="invisible font-mono text-[10px]">–</div>
@@ -176,14 +176,14 @@ export default function ReportsPage() {
           <div className="grid h-full grid-rows-[auto_1fr_auto] gap-1">
             <div className="flex items-start justify-between gap-2">
               <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">{t('common.overallRoi')}</span>
-              <TrendingUp className="h-4 w-4 shrink-0 text-emerald-400/60" />
+              <TrendingUp className="h-4 w-4 shrink-0 text-green-400/60" />
             </div>
             <div className="flex min-w-0 items-center">
               <AnimatedNumber
                 value={totalROI}
                 suffix="%"
                 decimals={1}
-                className={cn('block truncate font-mono text-xl font-bold sm:text-2xl', totalROI >= 0 ? 'text-emerald-400' : 'text-red-400')}
+                className={cn('block truncate font-mono text-xl font-bold sm:text-2xl', totalROI >= 0 ? 'text-green-400' : 'text-red-400')}
               />
             </div>
             <div className="invisible font-mono text-[10px]">–</div>
@@ -231,7 +231,7 @@ export default function ReportsPage() {
                         <td className="py-3 pr-4 text-right text-zinc-400">{r.sellQty}</td>
                         <td className="py-3 pr-4 text-right text-zinc-500">{formatCurrency(r.costBasisSold)}</td>
                         <td className="py-3 pr-4 text-right">
-                          <span className={r.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                          <span className={r.totalProfit >= 0 ? 'text-green-400' : 'text-red-400'}>
                             {formatCurrency(r.totalProfit)}
                           </span>
                         </td>
@@ -272,7 +272,7 @@ export default function ReportsPage() {
                       </div>
                       <div className="min-w-0">
                         <div className="text-zinc-500">{t('reports.table.profit')}</div>
-                        <div className={r.totalProfit >= 0 ? 'break-words text-emerald-400' : 'break-words text-red-400'}>
+                        <div className={r.totalProfit >= 0 ? 'break-words text-green-400' : 'break-words text-red-400'}>
                           {formatCurrency(r.totalProfit)}
                         </div>
                       </div>

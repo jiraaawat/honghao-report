@@ -143,7 +143,7 @@ export function InventoryDetailsDialog({
           <div className="col-span-2 rounded-md bg-zinc-950/50 p-2">
             <div className="flex items-center justify-between">
               <span className="text-zinc-500">{t('inventoryGridCard.profit')}</span>
-              <span className={cn(item.profit >= 0 ? 'text-emerald-400' : 'text-red-400')}>
+              <span className={cn(item.profit >= 0 ? 'text-green-400' : 'text-red-400')}>
                 {formatCurrency(item.profit)}
               </span>
             </div>
@@ -187,7 +187,7 @@ export function InventoryDetailsDialog({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-9 w-full gap-1 text-xs text-amber-400 hover:bg-amber-500/10 hover:text-amber-400"
+                className="h-9 w-full gap-1 text-xs text-orange-400 hover:bg-orange-500/10 hover:text-orange-400"
               >
                 <Gem className="h-3.5 w-3.5" /> {t('common.sendToGrade')}
               </Button>

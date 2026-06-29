@@ -33,6 +33,7 @@ import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { LanguageBadge } from '@/components/language/language-badge'
 import { AnimatedCurrency, AnimatedNumber } from '@/components/ui/animated-value'
 import { useLanguage } from '@/lib/i18n/provider'
+import { useToast } from '@/components/providers/toast-provider'
 import { fetcher, swrOptions } from '@/lib/swr'
 import { InventorySkeleton } from '@/components/inventory/inventory-skeleton'
 import {
@@ -58,6 +59,22 @@ import {
   X,
   GripVertical,
 } from 'lucide-react'
+
+function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-zinc-700 bg-zinc-950 px-2 py-1 font-mono text-xs text-zinc-300">
+      {label}
+      <button
+        type="button"
+        onClick={onRemove}
+        className="text-zinc-500 hover:text-zinc-200"
+        aria-label="Remove filter"
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </span>
+  )
+}
 
 export default function InventoryPage() {
   const emptySummary = useMemo(
@@ -161,6 +178,7 @@ export default function InventoryPage() {
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { t } = useLanguage()
+  const { toast } = useToast()
 
   const [sellConfirm, setSellConfirm] = useState<{ open: boolean; item: InventoryItem | null; qty: number; price: number; shipping: number; date: string; note: string }>({
     open: false,
@@ -296,7 +314,7 @@ export default function InventoryPage() {
     const qty = Number(sellQty)
     const price = Number(sellPrice)
     const shipping = Number(sellShipping || 0)
-    if (!qty || qty <= 0 || qty > item.quantity || price < 0 || shipping < 0) return
+    if (!qty || qty <= 0 || qty > item.quantity || price <= 0 || shipping < 0) return
 
     setSellConfirm({
       open: true,
@@ -337,6 +355,20 @@ export default function InventoryPage() {
         false
       )
       mutateInventory()
+      toast({
+        variant: 'success',
+        title: t('inventory.toast.sold'),
+        description: item.cardName,
+      })
+    } else {
+      const err = await res.json().catch(() => ({}))
+      setSellConfirm({ open: false, item: null, qty: 0, price: 0, shipping: 0, date: '', note: '' })
+      closeSell()
+      toast({
+        variant: 'error',
+        title: t('inventory.toast.sellFailed'),
+        description: err.error || 'Please check the quantity and try again.',
+      })
     }
     setIsSubmitting(false)
   }
@@ -608,15 +640,6 @@ export default function InventoryPage() {
 
   const summary = useMemo(() => data.summary, [data.summary])
 
-  const formatCounts = useMemo(() => {
-    return {
-      all: items.length,
-      raw: items.filter((i) => formatGroups.raw.includes(i.cardType)).length,
-      slab: items.filter((i) => formatGroups.slab.includes(i.cardType)).length,
-      sealed: items.filter((i) => formatGroups.sealed.includes(i.cardType)).length,
-    }
-  }, [items, formatGroups])
-
   const changeSortBy = useCallback((value: SortBy) => {
     if (value !== 'userOrder') setReorderDraft(null)
     setSortBy(value)
@@ -679,14 +702,14 @@ export default function InventoryPage() {
       label: t('inventory.inStock'),
       value: summary.inStock,
       icon: PackageCheck,
-      color: 'text-emerald-400',
+      color: 'text-green-400',
       note: t('common.quantity'),
     },
     {
       label: t('inventory.grading'),
       value: summary.grading,
       icon: Gem,
-      color: 'text-amber-400',
+      color: 'text-orange-400',
       note: t('common.quantity'),
     },
     {
@@ -706,7 +729,7 @@ export default function InventoryPage() {
       label: t('inventory.totalProfit'),
       value: summary.totalProfit,
       icon: TrendingUp,
-      color: (summary?.totalProfit ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400',
+      color: (summary?.totalProfit ?? 0) >= 0 ? 'text-green-400' : 'text-red-400',
       isCurrency: true,
     },
   ]
@@ -763,25 +786,6 @@ export default function InventoryPage() {
         })}
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {(['all', 'raw', 'slab', 'sealed'] as const).map((key) => {
-          const active = formatFilter === key
-          return (
-            <Button
-              key={key}
-              type="button"
-              variant={active ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFormatFilter(key)}
-              className="gap-2 font-mono text-xs"
-            >
-              <span className="uppercase">{formatLabel(key)}</span>
-              <span className={active ? 'text-zinc-300' : 'text-zinc-500'}>({formatCounts[key]})</span>
-            </Button>
-          )
-        })}
-      </div>
-
       <Card className="border-zinc-800 bg-zinc-900/50">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="font-mono text-sm">{t('common.filters')}</CardTitle>
@@ -796,62 +800,90 @@ export default function InventoryPage() {
             {t('common.filters')}
           </Button>
         </CardHeader>
-        <CardContent className={!showFilters ? 'hidden md:block' : ''}>
-          <div className="flex flex-wrap items-end gap-2">
-            <div className="relative w-44">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
-              <Input
-                placeholder={t('inventory.searchPlaceholder')}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onFocus={() => setShowSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                className="pl-9"
-              />
-              {showSuggestions && searchSuggestions.length > 0 && (
-                <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-48 overflow-auto rounded-md border border-zinc-700 bg-zinc-900 py-1 shadow-lg">
-                  {searchSuggestions.map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => {
-                        setSearch(s)
-                        setShowSuggestions(false)
-                      }}
-                      className="block w-full truncate px-3 py-1.5 text-left font-mono text-xs text-zinc-300 hover:bg-zinc-800"
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              )}
+        <CardContent className={cn('space-y-4', !showFilters ? 'hidden md:block' : '')}>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+            <Input
+              placeholder={t('inventory.searchPlaceholder')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+              className="w-full pl-9 pr-9"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {showSuggestions && searchSuggestions.length > 0 && (
+              <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-48 overflow-auto rounded-md border border-zinc-700 bg-zinc-900 py-1 shadow-lg">
+                {searchSuggestions.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      setSearch(s)
+                      setShowSuggestions(false)
+                    }}
+                    className="block w-full truncate px-3 py-1.5 text-left font-mono text-xs text-zinc-300 hover:bg-zinc-800"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-1">
+              <label className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">{t('common.status')}</label>
+              <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full">
+                <option value="">{t('inventory.allStatus')}</option>
+                <option value="in_stock">{t('common.inStock')}</option>
+                <option value="grading">{t('common.grading')}</option>
+                <option value="sold_out">{t('common.soldOut')}</option>
+              </Select>
             </div>
 
-            <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-44">
-              <option value="">{t('inventory.allStatus')}</option>
-              <option value="in_stock">{t('common.inStock')}</option>
-              <option value="grading">{t('common.grading')}</option>
-              <option value="sold_out">{t('common.soldOut')}</option>
-            </Select>
+            <div className="space-y-1">
+              <label className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">{t('common.type')}</label>
+              <Select value={cardType} onChange={(e) => setCardType(e.target.value)} className="w-full">
+                <option value="">{t('inventory.allTypes')}</option>
+                {CARD_TYPES.map((type) => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </Select>
+            </div>
 
-            <Select value={cardType} onChange={(e) => setCardType(e.target.value)} className="w-44">
-              <option value="">{t('inventory.allTypes')}</option>
-              {CARD_TYPES.map((type) => (
-                <option key={type} value={type}>{type}</option>
-              ))}
-            </Select>
+            <div className="space-y-1">
+              <label className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">{t('common.game')}</label>
+              <Select value={game} onChange={(e) => setGame(e.target.value)} className="w-full">
+                <option value="">{t('inventory.allGames')}</option>
+                {GAMES.map((g) => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </Select>
+            </div>
 
-            <Select value={game} onChange={(e) => setGame(e.target.value)} className="w-44">
-              <option value="">{t('inventory.allGames')}</option>
-              {GAMES.map((g) => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </Select>
+            <div className="space-y-1">
+              <label className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">{t('inventory.format.label')}</label>
+              <Select value={formatFilter} onChange={(e) => setFormatFilter(e.target.value as typeof formatFilter)} className="w-full">
+                <option value="all">{t('common.all')}</option>
+                <option value="raw">{t('inventory.format.raw')}</option>
+                <option value="slab">{t('inventory.format.slab')}</option>
+                <option value="sealed">{t('inventory.format.sealed')}</option>
+              </Select>
+            </div>
 
-            <div className="flex w-44 items-center gap-2">
-              <Calendar className="h-4 w-4 text-zinc-500" />
-              <Select value={year} onChange={(e) => setYear(e.target.value)} className="flex-1">
+            <div className="space-y-1">
+              <label className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">{t('inventory.year')}</label>
+              <Select value={year} onChange={(e) => setYear(e.target.value)} className="w-full">
                 <option value="">{t('inventory.allYears')}</option>
                 {years.map((y) => (
                   <option key={y} value={y}>{y}</option>
@@ -859,16 +891,19 @@ export default function InventoryPage() {
               </Select>
             </div>
 
-            <Select value={month} onChange={(e) => setMonth(e.target.value)} className="w-44">
-              <option value="">{t('inventory.allMonths')}</option>
-              {months.map((m) => (
-                <option key={m} value={m}>{m.padStart(2, '0')}</option>
-              ))}
-            </Select>
+            <div className="space-y-1">
+              <label className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">{t('inventory.month')}</label>
+              <Select value={month} onChange={(e) => setMonth(e.target.value)} className="w-full">
+                <option value="">{t('inventory.allMonths')}</option>
+                {months.map((m) => (
+                  <option key={m} value={m}>{m.padStart(2, '0')}</option>
+                ))}
+              </Select>
+            </div>
 
-            <div className="flex w-44 items-center gap-2">
-              <Calendar className="h-4 w-4 text-zinc-500" />
-              <Select value={sortBy} onChange={(e) => changeSortBy(e.target.value as SortBy)} className="flex-1">
+            <div className="space-y-1 sm:col-span-2">
+              <label className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">{t('common.sort')}</label>
+              <Select value={sortBy} onChange={(e) => changeSortBy(e.target.value as SortBy)} className="w-full">
                 <option value="userOrder">{t('inventory.sortLabel.userOrder')}</option>
                 <option value="value_desc">{t('inventory.sortLabel.value_desc')}</option>
                 <option value="value_asc">{t('inventory.sortLabel.value_asc')}</option>
@@ -881,8 +916,22 @@ export default function InventoryPage() {
                 <option value="quantity_asc">{t('inventory.sortLabel.quantity_asc')}</option>
               </Select>
             </div>
+          </div>
 
-            {[search, statusFilter, cardType, game, year, month].some(Boolean) && (
+          {[search, statusFilter, cardType, game, year, month, formatFilter !== 'all' ? 'x' : ''].some(Boolean) && (
+            <div className="flex flex-wrap items-center gap-2">
+              {search && <FilterChip label={`${t('inventory.search')}: ${search}`} onRemove={() => setSearch('')} />}
+              {statusFilter && (
+                <FilterChip
+                  label={`${t('common.status')}: ${statusFilter === 'in_stock' ? t('common.inStock') : statusFilter === 'grading' ? t('common.grading') : t('common.soldOut')}`}
+                  onRemove={() => setStatusFilter('')}
+                />
+              )}
+              {cardType && <FilterChip label={`${t('common.type')}: ${cardType}`} onRemove={() => setCardType('')} />}
+              {game && <FilterChip label={`${t('common.game')}: ${game}`} onRemove={() => setGame('')} />}
+              {formatFilter !== 'all' && <FilterChip label={`${t('inventory.format.label')}: ${formatLabel(formatFilter)}`} onRemove={() => setFormatFilter('all')} />}
+              {year && <FilterChip label={`${t('inventory.year')}: ${year}`} onRemove={() => setYear('')} />}
+              {month && <FilterChip label={`${t('inventory.month')}: ${month.padStart(2, '0')}`} onRemove={() => setMonth('')} />}
               <Button
                 variant="ghost"
                 size="sm"
@@ -896,12 +945,12 @@ export default function InventoryPage() {
                   setSearch('')
                   changeSortBy('userOrder')
                 }}
-                className="ml-auto font-mono text-xs"
+                className="font-mono text-xs"
               >
                 {t('common.clearFilters')}
               </Button>
-            )}
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -921,7 +970,7 @@ export default function InventoryPage() {
                     className={cn(
                       'flex h-7 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 font-mono text-[10px] font-medium transition-all',
                       active
-                        ? 'bg-emerald-500 text-zinc-950 shadow'
+                        ? 'bg-green-500 text-zinc-950 shadow'
                         : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
                     )}
                   >
@@ -937,7 +986,7 @@ export default function InventoryPage() {
                 className={cn(
                   'flex h-8 items-center gap-2 rounded-md px-3 font-mono text-xs font-medium transition-all',
                   viewMode === 'list'
-                    ? 'bg-emerald-500 text-zinc-950 shadow'
+                    ? 'bg-green-500 text-zinc-950 shadow'
                     : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
                 )}
                 title={t('inventory.listView')}
@@ -950,7 +999,7 @@ export default function InventoryPage() {
                 className={cn(
                   'flex h-8 items-center gap-2 rounded-md px-3 font-mono text-xs font-medium transition-all',
                   viewMode === 'grid'
-                    ? 'bg-emerald-500 text-zinc-950 shadow'
+                    ? 'bg-green-500 text-zinc-950 shadow'
                     : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
                 )}
                 title={t('inventory.gridView')}
@@ -999,7 +1048,7 @@ export default function InventoryPage() {
                       >
                         <td className="py-3 pr-4">
                           <div className="flex flex-col">
-                            <span className={cn('font-medium', item.status === 'grading' ? 'text-amber-400' : 'text-zinc-200')}>
+                            <span className={cn('font-medium', item.status === 'grading' ? 'text-orange-400' : 'text-zinc-200')}>
                               {item.cardName}
                             </span>
                             <span className="text-xs text-zinc-500">
@@ -1040,7 +1089,7 @@ export default function InventoryPage() {
                           <div className="flex flex-col text-xs">
                             <span className="text-zinc-500">{t('inventory.createdOn', { date: formatDate(item.createdAt) })}</span>
                             {item.status === 'sold_out' && item.soldAt && (
-                              <span className="text-amber-400">{t('inventory.soldOn', { date: formatDate(item.soldAt) })}</span>
+                              <span className="text-orange-400">{t('inventory.soldOn', { date: formatDate(item.soldAt) })}</span>
                             )}
                           </div>
                         </td>
@@ -1085,7 +1134,7 @@ export default function InventoryPage() {
                         </td>
                         <td className="py-3 pr-4 text-right">
                           <div className="flex flex-col items-end">
-                            <span className={item.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                            <span className={item.profit >= 0 ? 'text-green-400' : 'text-red-400'}>
                               {formatCurrency(item.profit)}
                             </span>
                             {item.unrealizedProfit !== 0 && (
@@ -1107,7 +1156,7 @@ export default function InventoryPage() {
                                     e.stopPropagation()
                                     openAdd(item)
                                   }}
-                                  className="h-7 w-7 shrink-0 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-400"
+                                  className="h-7 w-7 shrink-0 border-green-500/30 text-green-400 hover:bg-green-500/10 hover:text-green-400"
                                 >
                                   <Plus className="h-3.5 w-3.5" />
                                 </Button>
@@ -1129,7 +1178,7 @@ export default function InventoryPage() {
                                     size="icon"
                                     title={t('common.sendToGrade')}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="h-7 w-7 shrink-0 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:text-amber-400"
+                                    className="h-7 w-7 shrink-0 border-orange-500/30 text-orange-400 hover:bg-orange-500/10 hover:text-orange-400"
                                   >
                                     <Gem className="h-3.5 w-3.5" />
                                   </Button>
@@ -1167,7 +1216,7 @@ export default function InventoryPage() {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
-                          <div className={cn('truncate font-mono font-medium text-sm', item.status === 'grading' ? 'text-amber-400' : 'text-zinc-200')}>
+                          <div className={cn('truncate font-mono font-medium text-sm', item.status === 'grading' ? 'text-orange-400' : 'text-zinc-200')}>
                             {item.cardName}
                           </div>
                           <div className="truncate font-mono text-[10px] text-zinc-500">
@@ -1209,7 +1258,7 @@ export default function InventoryPage() {
 
                       <div className="mt-1 flex items-center justify-between gap-2 font-mono text-xs">
                         <span className="text-zinc-500">{t('inventoryGridCard.profit')}</span>
-                        <span className={item.profit >= 0 ? 'min-w-0 break-words text-right text-emerald-400' : 'min-w-0 break-words text-right text-red-400'}>
+                        <span className={item.profit >= 0 ? 'min-w-0 break-words text-right text-green-400' : 'min-w-0 break-words text-right text-red-400'}>
                           {formatCurrency(item.profit)}
                         </span>
                       </div>
@@ -1218,7 +1267,7 @@ export default function InventoryPage() {
                         <div className="mt-2 flex flex-wrap gap-2">
                           <Button
                             size="sm"
-                            className="h-7 flex-1 gap-1 bg-emerald-600 text-[10px] text-white hover:bg-emerald-700"
+                            className="h-7 flex-1 gap-1 bg-green-600 text-[10px] text-white hover:bg-green-700"
                             onClick={() => openSell(item)}
                           >
                             <Tag className="h-3.5 w-3.5" /> {t('inventoryGridCard.sell')}
@@ -1240,7 +1289,7 @@ export default function InventoryPage() {
                             <Minus className="h-3.5 w-3.5" /> {t('inventoryGridCard.remove')}
                           </Button>
                           <Link href={`/grading/send?cardId=${item.cardId}`}>
-                            <Button size="sm" variant="outline" className="h-7 px-2 text-amber-400 hover:bg-amber-500/10 hover:text-amber-400">
+                            <Button size="sm" variant="outline" className="h-7 px-2 text-orange-400 hover:bg-orange-500/10 hover:text-orange-400">
                               <Gem className="h-3.5 w-3.5" />
                             </Button>
                           </Link>
@@ -1385,7 +1434,7 @@ export default function InventoryPage() {
         <form onSubmit={handleSell}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Tag className="h-4 w-4 text-emerald-400" />
+              <Tag className="h-4 w-4 text-green-400" />
               {t('inventory.dialog.sell.title')} {sellDialog.item?.cardName}
             </DialogTitle>
             <DialogDescription>
@@ -1535,7 +1584,7 @@ export default function InventoryPage() {
         <form onSubmit={handleAdd}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Plus className="h-4 w-4 text-emerald-400" />
+              <Plus className="h-4 w-4 text-green-400" />
               {t('inventory.dialog.add.title')}
             </DialogTitle>
             <DialogDescription>
@@ -1743,7 +1792,7 @@ export default function InventoryPage() {
       }}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Tag className="h-4 w-4 text-emerald-400" />
+            <Tag className="h-4 w-4 text-green-400" />
             {t('inventory.dialog.sell.confirmSell')}
           </DialogTitle>
           <DialogDescription>{t('inventory.dialog.sell.reviewDescription')}</DialogDescription>
@@ -1810,7 +1859,7 @@ export default function InventoryPage() {
       }}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Plus className="h-4 w-4 text-emerald-400" />
+            <Plus className="h-4 w-4 text-green-400" />
             {t('inventory.dialog.add.confirmTitle')}
           </DialogTitle>
           <DialogDescription>{t('inventory.dialog.add.reviewDescription')}</DialogDescription>
