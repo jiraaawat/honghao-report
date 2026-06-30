@@ -22,6 +22,9 @@ export function AppPreview() {
           <div className="flex items-center gap-2 font-mono text-sm font-bold text-green-200">
             <TcgIcon symbol="cards" className="h-4 w-4 text-lime-500" />
             <span>Portfolio Dashboard</span>
+            <span className="rounded bg-lime-600/15 px-1.5 py-0.5 font-mono text-[9px] font-black uppercase tracking-wider text-lime-400">
+              preview
+            </span>
           </div>
           <div className="flex items-center gap-1">
             {(['leaf', 'flame', 'drop'] as const).map((symbol) => (

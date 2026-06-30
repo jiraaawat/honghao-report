@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { Suspense, useEffect, useRef, useState, useMemo } from 'react'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import useSWR, { useSWRConfig } from 'swr'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
@@ -62,9 +63,20 @@ function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }
 }
 
 export default function CardsPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center font-mono text-sm text-zinc-500">loading catalog...</div>}>
+      <CardsPageContent />
+    </Suspense>
+  )
+}
+
+function CardsPageContent() {
   const { t } = useLanguage()
   const { toast } = useToast()
   const { mutate } = useSWRConfig()
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
 
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -80,6 +92,59 @@ export default function CardsPage() {
   const [minLife, setMinLife] = useState('')
   const [maxLife, setMaxLife] = useState('')
   const [page, setPage] = useState(1)
+
+  const didPushRef = useRef(false)
+
+  useEffect(() => {
+    const game = searchParams.get('game')
+    if (game && GAMES.includes(game as (typeof GAMES)[number])) {
+      setSelectedGame(game)
+    }
+    const q = searchParams.get('search') ?? ''
+    if (q) setSearch(q)
+    const s = searchParams.get('setId') ?? ''
+    if (s) setSetId(s)
+    const p = searchParams.get('page')
+    if (p) setPage(Number(p))
+  }, [searchParams])
+
+  useEffect(() => {
+    if (!didPushRef.current) {
+      didPushRef.current = true
+      return
+    }
+    const params = new URLSearchParams()
+    params.set('game', selectedGame)
+    if (debouncedSearch) params.set('search', debouncedSearch)
+    if (setId) params.set('setId', setId)
+    if (typeFilter) params.set('type', typeFilter)
+    if (rarityFilter) params.set('rarity', rarityFilter)
+    if (colorFilter) params.set('color', colorFilter)
+    if (minCost) params.set('minCost', minCost)
+    if (maxCost) params.set('maxCost', maxCost)
+    if (minPower) params.set('minPower', minPower)
+    if (maxPower) params.set('maxPower', maxPower)
+    if (minLife) params.set('minLife', minLife)
+    if (maxLife) params.set('maxLife', maxLife)
+    if (page > 1) params.set('page', page.toString())
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [
+    selectedGame,
+    debouncedSearch,
+    setId,
+    typeFilter,
+    rarityFilter,
+    colorFilter,
+    minCost,
+    maxCost,
+    minPower,
+    maxPower,
+    minLife,
+    maxLife,
+    page,
+    router,
+    pathname,
+  ])
 
   const [addDialog, setAddDialog] = useState<{ open: boolean; card: CatalogCardDto | null }>({
     open: false,

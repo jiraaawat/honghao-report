@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { AnimatedCurrency, AnimatedNumber } from '@/components/ui/animated-value'
+import { FitText } from '@/components/ui/fit-text'
 import { DashboardStats } from '@/types'
 import { TransactionDto, InventoryItem, CARD_TYPES, GAMES } from '@/types'
 import { formatCurrency, formatNumber, formatDate, cn } from '@/lib/utils'
@@ -154,13 +155,15 @@ export default function DashboardPage() {
                   {t('dashboard.profitLoss')}
                 </div>
                 <div
-                  className={`inline-flex min-w-0 max-w-full items-center overflow-x-auto rounded-lg border bg-zinc-950/60 px-2 py-1 font-mono text-base font-bold drop-shadow-[0_1px_10px_rgba(0,0,0,0.5)] sm:px-3 sm:text-xl ${
+                  className={`inline-flex min-w-0 max-w-full items-center overflow-hidden rounded-lg border bg-zinc-950/60 px-2 py-1 font-mono text-base font-bold drop-shadow-[0_1px_10px_rgba(0,0,0,0.5)] sm:px-3 sm:text-xl ${
                     stats && stats.periodProfit >= 0
                       ? 'border-lime-600/30 text-lime-500 shadow-[inset_0_0_20px_rgba(34,197,94,0.06)]'
                       : 'border-rose-500/30 text-rose-400 shadow-[inset_0_0_20px_rgba(244,63,94,0.06)]'
                   }`}
                 >
-                  <AnimatedCurrency value={stats?.periodProfit ?? 0} />
+                  <FitText minScale={0.6}>
+                    <AnimatedCurrency value={stats?.periodProfit ?? 0} />
+                  </FitText>
                 </div>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px] leading-relaxed text-zinc-500">
                   <AnimatedNumber value={stats?.totalTransactions ?? 0} /> {t('dashboard.transactions')} <span>·</span> {t('dashboard.totalSpend')} <AnimatedCurrency value={stats?.totalSpend ?? 0} />
@@ -172,8 +175,10 @@ export default function DashboardPage() {
                   <span className="h-1.5 w-1.5 rounded-full bg-orange-700/70" />
                   {t('dashboard.totalSell')}
                 </div>
-                <div className="inline-flex min-w-0 max-w-full items-center overflow-x-auto rounded-lg border border-orange-700/30 bg-zinc-950/60 px-2 py-1 font-mono text-sm font-bold text-orange-600 drop-shadow-[0_1px_10px_rgba(0,0,0,0.5)] shadow-[inset_0_0_20px_rgba(249,115,22,0.06)] sm:px-3 sm:text-lg">
-                  <AnimatedCurrency value={stats?.totalSell ?? 0} />
+                <div className="inline-flex min-w-0 max-w-full items-center overflow-hidden rounded-lg border border-orange-700/30 bg-zinc-950/60 px-2 py-1 font-mono text-sm font-bold text-orange-600 drop-shadow-[0_1px_10px_rgba(0,0,0,0.5)] shadow-[inset_0_0_20px_rgba(249,115,22,0.06)] sm:px-3 sm:text-lg">
+                  <FitText minScale={0.6}>
+                    <AnimatedCurrency value={stats?.totalSell ?? 0} />
+                  </FitText>
                 </div>
               </div>
 
@@ -183,13 +188,15 @@ export default function DashboardPage() {
                   {t('dashboard.periodRoi')}
                 </div>
                 <div
-                  className={`inline-flex min-w-0 max-w-full items-center overflow-x-auto rounded-lg border bg-zinc-950/60 px-2 py-1 font-mono text-sm font-bold drop-shadow-[0_1px_10px_rgba(0,0,0,0.5)] sm:px-3 sm:text-lg ${
+                  className={`inline-flex min-w-0 max-w-full items-center overflow-hidden rounded-lg border bg-zinc-950/60 px-2 py-1 font-mono text-sm font-bold drop-shadow-[0_1px_10px_rgba(0,0,0,0.5)] sm:px-3 sm:text-lg ${
                     periodROI >= 0
                       ? 'border-orange-700/30 text-orange-600 shadow-[inset_0_0_20px_rgba(249,115,22,0.06)]'
                       : 'border-rose-500/30 text-rose-400 shadow-[inset_0_0_20px_rgba(244,63,94,0.06)]'
                   }`}
                 >
-                  <AnimatedNumber value={periodROI} suffix="%" decimals={1} />
+                  <FitText minScale={0.6}>
+                    <AnimatedNumber value={periodROI} suffix="%" decimals={1} />
+                  </FitText>
                 </div>
               </div>
             </div>

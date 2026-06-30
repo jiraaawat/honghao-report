@@ -62,7 +62,7 @@ function MarketTicker() {
   const track = [...repeated, ...repeated]
 
   return (
-    <div className="ticker-box flex min-w-0 max-w-md flex-1 items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-2 py-1">
+    <div className="ticker-box hidden min-w-0 max-w-sm flex-1 items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-2 py-1 xl:flex">
       <div className="flex shrink-0 items-center gap-1.5">
         <LiveDot />
         <span className="font-mono text-[9px] font-black uppercase tracking-wider text-zinc-500">live</span>

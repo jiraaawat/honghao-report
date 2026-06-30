@@ -10,7 +10,7 @@ import { AdSlot } from '@/components/ads/ad-slot'
 import { AppPreview } from './app-preview'
 import { BoosterLoader } from './booster-loader'
 import { TcgIcon } from './tcg-icon'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, ChevronDown } from 'lucide-react'
 
 export function LandingPage() {
   const { t } = useLanguage()
@@ -171,7 +171,7 @@ export function LandingPage() {
                 built for collectors
               </p>
               <div className="mb-8">
-                <h1 className="bg-gradient-to-r from-lime-300 via-orange-300 to-lime-300 bg-clip-text font-mono text-6xl font-bold tracking-tighter text-transparent drop-shadow-[0_0_30px_rgba(34,197,94,0.4)] md:text-8xl">
+                <h1 className="bg-gradient-to-r from-lime-300 via-orange-300 to-lime-300 bg-clip-text font-mono text-5xl font-bold tracking-tighter text-transparent drop-shadow-[0_0_30px_rgba(34,197,94,0.4)] md:text-7xl">
                   $ honghao
                 </h1>
               </div>
@@ -199,6 +199,20 @@ export function LandingPage() {
                   </Button>
                 </Link>
               </div>
+
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1, y: [0, 6, 0] }}
+                transition={{
+                  opacity: { delay: 0.6, duration: 0.4 },
+                  y: { repeat: Infinity, duration: 1.6, ease: 'easeInOut' },
+                }}
+                className="mt-10"
+              >
+                <Link href="#features" className="text-zinc-500 transition-colors hover:text-zinc-300">
+                  <ChevronDown className="h-6 w-6" />
+                </Link>
+              </motion.div>
             </motion.div>
 
             <AppPreview />
@@ -211,7 +225,7 @@ export function LandingPage() {
           </section>
 
           {/* Features */}
-          <section className="border-t border-zinc-800/60 px-4 py-24 md:px-6">
+          <section id="features" className="border-t border-zinc-800/60 px-4 py-24 md:px-6">
             <div className="mx-auto max-w-5xl">
               <motion.div
                 initial={{ opacity: 0, y: 12 }}

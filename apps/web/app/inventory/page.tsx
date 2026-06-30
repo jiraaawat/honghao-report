@@ -1936,7 +1936,12 @@ export default function InventoryPage() {
           <Button type="button" variant="outline" size="sm" onClick={closeSellSuccess}>
             {t('common.close')}
           </Button>
-          <Button type="button" size="sm" className="gap-2" onClick={openFlexFromSuccess}>
+          <Button
+            type="button"
+            size="sm"
+            className="gap-2 bg-lime-700 text-white shadow-[0_0_12px_rgba(101,163,13,0.25)] transition-all hover:bg-lime-800 hover:shadow-[0_0_18px_rgba(101,163,13,0.4)]"
+            onClick={openFlexFromSuccess}
+          >
             <Zap className="h-4 w-4" />
             {t('inventory.dialog.sell.createFlex')}
           </Button>
