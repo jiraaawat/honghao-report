@@ -16,6 +16,7 @@ import { formatCurrency, formatNumber, formatDate, cn } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n/provider'
 import { fetcher, swrOptions } from '@/lib/swr'
 import { DashboardSkeleton } from '@/components/dashboard/dashboard-skeleton'
+import { BannerCarousel } from '@/components/ads/banner-carousel'
 
 function SnapshotRow({
   label,
@@ -133,14 +134,45 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="min-h-[9rem] border border-dashed border-zinc-800 bg-zinc-900/80 lg:col-span-2 lg:h-44">
-          <CardContent className="flex h-full flex-col items-center justify-center gap-1 p-4">
-            <span className="font-mono text-xs text-zinc-500">ads / banner</span>
-            <span className="text-center font-mono text-[10px] text-zinc-600">
-              placeholder for promotional content
-            </span>
-          </CardContent>
-        </Card>
+        <BannerCarousel
+          className="lg:col-span-2 lg:h-44"
+          banners={[
+            {
+              id: 'opcg',
+              href: 'https://www.facebook.com/groups/1329363959139210',
+              image: '/images/sponsor.jpg',
+              alt: 'Sponsor - OPCG Thailand',
+              label: 'Sponsor',
+              title: 'OPCG Thailand',
+              subtitle: 'Facebook group',
+            },
+            {
+              id: 'honghao-labs',
+              href: 'https://www.facebook.com/honghao.labs',
+              image: 'https://scontent.fbkk13-2.fna.fbcdn.net/v/t39.30808-6/732337875_1007437352036796_8474410687784789239_n.jpg?stp=dst-jpg_tt6&cstp=mx2048x1374&ctp=s2048x1374&_nc_cat=111&ccb=1-7&_nc_sid=cc71e4&_nc_ohc=2N-IRgTQl6EQ7kNvwH5ZUrp&_nc_oc=AdoDY6pV3CWn5hMKqiu5FRo6ZbclT7zcXVIpsxHgNWpnGxztjvf3rJKRv52mIMj5A0O58ggUBPSMgscpc4suK-Er&_nc_zt=23&_nc_ht=scontent.fbkk13-2.fna&_nc_gid=YoybU8mmpkSojuDvW5djZQ&_nc_ss=7b2a8&oh=00_AQAgq5Kl_8gW4EiTl1rEc5pzzQSedZvZ5bujsRoPwToTow&oe=6A4983DE',
+              alt: 'HONGHAO.Labs',
+              label: 'Community',
+              title: 'honghao labs',
+              subtitle: 'Facebook page',
+            },
+            {
+              id: 'promo-lime',
+              href: '#',
+              label: 'Promo',
+              title: 'Special Drop',
+              subtitle: 'Coming soon',
+              bgClass: 'bg-gradient-to-br from-lime-900/30 via-zinc-900 to-zinc-950',
+            },
+            {
+              id: 'promo-orange',
+              href: '#',
+              label: 'Event',
+              title: 'Trading Event',
+              subtitle: 'Stay tuned',
+              bgClass: 'bg-gradient-to-br from-orange-900/30 via-zinc-900 to-zinc-950',
+            },
+          ]}
+        />
 
         <Card className="min-h-[9rem] border-zinc-800 bg-zinc-900/80 lg:h-44">
           <CardContent className="flex h-full flex-col gap-3 px-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:px-6 lg:py-6">

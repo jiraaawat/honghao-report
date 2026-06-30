@@ -8,7 +8,6 @@ import { Card, CardContent } from '@/components/ui/card'
 import { useLanguage } from '@/lib/i18n/provider'
 import { LanguageToggle } from '@/components/i18n/language-toggle'
 import { cn } from '@/lib/utils'
-import { AdSlot } from '@/components/ads/ad-slot'
 import { AppPreview } from './app-preview'
 import { BoosterLoader } from './booster-loader'
 import { TcgIcon } from './tcg-icon'
@@ -237,12 +236,6 @@ export function LandingPage() {
             <AppPreview />
           </section>
 
-          <section className="border-t border-zinc-800/60 px-4 py-12 md:px-6">
-            <div className="mx-auto max-w-5xl">
-              <AdSlot format="leaderboard" label="sponsor" />
-            </div>
-          </section>
-
           {/* Features */}
           <section id="features" className="border-t border-zinc-800/60 px-4 py-24 md:px-6">
             <div className="mx-auto max-w-5xl">
@@ -300,66 +293,51 @@ export function LandingPage() {
           {/* Steps */}
           <section className="border-t border-zinc-800/60 px-4 py-24 md:px-6">
             <div className="mx-auto max-w-5xl">
-              <div className="grid gap-8 lg:grid-cols-3">
-                <div className="lg:col-span-2">
-                  <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    className="mb-4 font-mono text-xs font-bold uppercase tracking-widest text-lime-600"
-                  >
-                    {t('landing.manualTitle')}
-                  </motion.div>
-                  <motion.h2
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    viewport={{ once: true }}
-                    className="mb-10 font-mono text-3xl font-bold text-zinc-100"
-                  >
-                    {t('landing.ctaSubtitle')}
-                  </motion.h2>
-                  <div className="relative space-y-6 pl-8 before:absolute before:left-3 before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-zinc-800">
-                    {steps.map((step, index) => {
-                      return (
-                        <motion.div
-                          key={step.title}
-                          initial={{ opacity: 0, x: -16 }}
-                          whileInView={{ opacity: 1, x: 0 }}
-                          viewport={{ once: true }}
-                          transition={{ delay: index * 0.08 }}
-                          className="relative"
-                        >
-                          <span className="absolute -left-[1.85rem] top-1 flex h-6 w-6 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 font-mono text-[10px] text-lime-500">
-                            {index + 1}
-                          </span>
-                          <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-5 backdrop-blur transition-colors hover:border-zinc-700 hover:bg-zinc-900/60">
-                            <div className="flex items-center gap-2 font-mono text-sm font-bold text-zinc-200">
-                              <TcgIcon symbol={step.symbol} className="h-4 w-4 text-lime-500" />
-                              {step.title}
-                            </div>
-                            <p className="mt-1 font-mono text-xs leading-relaxed text-zinc-500">
-                              {step.description}
-                            </p>
+              <div>
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="mb-4 font-mono text-xs font-bold uppercase tracking-widest text-lime-600"
+                >
+                  {t('landing.manualTitle')}
+                </motion.div>
+                <motion.h2
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  viewport={{ once: true }}
+                  className="mb-10 font-mono text-3xl font-bold text-zinc-100"
+                >
+                  {t('landing.ctaSubtitle')}
+                </motion.h2>
+                <div className="relative space-y-6 pl-8 before:absolute before:left-3 before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-zinc-800">
+                  {steps.map((step, index) => {
+                    return (
+                      <motion.div
+                        key={step.title}
+                        initial={{ opacity: 0, x: -16 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: index * 0.08 }}
+                        className="relative"
+                      >
+                        <span className="absolute -left-[1.85rem] top-1 flex h-6 w-6 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 font-mono text-[10px] text-lime-500">
+                          {index + 1}
+                        </span>
+                        <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-5 backdrop-blur transition-colors hover:border-zinc-700 hover:bg-zinc-900/60">
+                          <div className="flex items-center gap-2 font-mono text-sm font-bold text-zinc-200">
+                            <TcgIcon symbol={step.symbol} className="h-4 w-4 text-lime-500" />
+                            {step.title}
                           </div>
-                        </motion.div>
-                      )
-                    })}
-                  </div>
-                </div>
-                <div className="lg:col-span-1">
-                  <AdSlot
-                    format="sidebar"
-                    label="sponsor"
-                    className="sticky top-20"
-                  />
+                          <p className="mt-1 font-mono text-xs leading-relaxed text-zinc-500">
+                            {step.description}
+                          </p>
+                        </div>
+                      </motion.div>
+                    )
+                  })}
                 </div>
               </div>
-            </div>
-          </section>
-
-          <section className="border-t border-zinc-800/60 px-4 py-12 md:px-6">
-            <div className="mx-auto max-w-5xl">
-              <AdSlot format="banner" label="sponsor" />
             </div>
           </section>
 
