@@ -21,52 +21,52 @@ export function LandingPage() {
       title: t('landing.featureInventory'),
       description: t('landing.featureInventoryDesc'),
       rarity: 'RARE',
-      cardBorder: 'border-green-500/30',
-      shimmer: 'via-green-300/20',
-      glow: 'bg-green-500/5',
-      rarityBorder: 'border-green-500/30',
-      rarityText: 'text-green-400',
-      iconBox: 'from-green-500/10 to-yellow-500/10',
-      iconColor: 'text-green-400',
+      cardBorder: 'border-lime-600/30',
+      shimmer: 'via-lime-300/20',
+      glow: 'bg-lime-600/5',
+      rarityBorder: 'border-lime-600/30',
+      rarityText: 'text-lime-500',
+      iconBox: 'from-lime-600/10 to-lime-500/10',
+      iconColor: 'text-lime-500',
     },
     {
       symbol: 'sword' as const,
       title: t('landing.featureProfit'),
       description: t('landing.featureProfitDesc'),
       rarity: 'UNCOMMON',
-      cardBorder: 'border-orange-500/30',
+      cardBorder: 'border-orange-700/30',
       shimmer: 'via-orange-300/20',
-      glow: 'bg-orange-500/5',
-      rarityBorder: 'border-orange-500/30',
-      rarityText: 'text-orange-400',
-      iconBox: 'from-orange-500/10 to-green-500/10',
-      iconColor: 'text-orange-400',
+      glow: 'bg-orange-700/5',
+      rarityBorder: 'border-orange-700/30',
+      rarityText: 'text-orange-600',
+      iconBox: 'from-orange-700/10 to-lime-600/10',
+      iconColor: 'text-orange-600',
     },
     {
       symbol: 'gem' as const,
       title: t('landing.featureGrading'),
       description: t('landing.featureGradingDesc'),
       rarity: 'EPIC',
-      cardBorder: 'border-yellow-500/30',
-      shimmer: 'via-yellow-300/20',
-      glow: 'bg-yellow-500/5',
-      rarityBorder: 'border-yellow-500/30',
-      rarityText: 'text-yellow-400',
-      iconBox: 'from-yellow-500/10 to-orange-500/10',
-      iconColor: 'text-yellow-400',
+      cardBorder: 'border-lime-500/30',
+      shimmer: 'via-lime-300/20',
+      glow: 'bg-lime-500/5',
+      rarityBorder: 'border-lime-500/30',
+      rarityText: 'text-lime-400',
+      iconBox: 'from-lime-500/10 to-orange-700/10',
+      iconColor: 'text-lime-400',
     },
     {
       symbol: 'scroll' as const,
       title: t('landing.featureReports'),
       description: t('landing.featureReportsDesc'),
       rarity: 'MYTHIC',
-      cardBorder: 'border-green-500/30',
-      shimmer: 'via-green-300/20',
-      glow: 'bg-green-500/5',
-      rarityBorder: 'border-green-500/30',
-      rarityText: 'text-green-400',
-      iconBox: 'from-green-500/10 to-orange-500/10',
-      iconColor: 'text-green-400',
+      cardBorder: 'border-lime-600/30',
+      shimmer: 'via-lime-300/20',
+      glow: 'bg-lime-600/5',
+      rarityBorder: 'border-lime-600/30',
+      rarityText: 'text-lime-500',
+      iconBox: 'from-lime-600/10 to-orange-700/10',
+      iconColor: 'text-lime-500',
     },
   ]
 
@@ -109,10 +109,10 @@ export function LandingPage() {
       <div className="relative min-h-screen overflow-hidden bg-zinc-950 text-zinc-100">
         {/* Ambient glow layer */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -left-1/4 top-0 h-[600px] w-[600px] rounded-full bg-green-500/10 blur-[120px]" />
-          <div className="absolute -right-1/4 top-1/3 h-[500px] w-[500px] rounded-full bg-orange-500/10 blur-[120px]" />
-          <div className="absolute bottom-0 left-1/3 h-[600px] w-[600px] rounded-full bg-yellow-500/5 blur-[120px]" />
-          <div className="absolute right-0 top-1/2 h-[400px] w-[400px] rounded-full bg-yellow-500/10 blur-[120px]" />
+          <div className="absolute -left-1/4 top-0 h-[600px] w-[600px] rounded-full bg-lime-600/10 blur-[120px]" />
+          <div className="absolute -right-1/4 top-1/3 h-[500px] w-[500px] rounded-full bg-orange-700/10 blur-[120px]" />
+          <div className="absolute bottom-0 left-1/3 h-[600px] w-[600px] rounded-full bg-lime-500/5 blur-[120px]" />
+          <div className="absolute right-0 top-1/2 h-[400px] w-[400px] rounded-full bg-lime-500/10 blur-[120px]" />
         </div>
 
         <header className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-zinc-800/60 bg-zinc-950/70 backdrop-blur-md">
@@ -121,7 +121,7 @@ export function LandingPage() {
               href="/"
               className="font-mono text-sm font-bold"
             >
-              <span className="bg-gradient-to-r from-yellow-300 via-orange-300 to-green-300 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]">
+              <span className="bg-gradient-to-r from-lime-300 via-orange-300 to-lime-300 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]">
                 $ honghao
               </span>
             </Link>
@@ -155,10 +155,10 @@ export function LandingPage() {
 
             {/* Decorative floral glow */}
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
-              <div className="absolute -left-24 top-24 h-[28rem] w-[28rem] rounded-full bg-yellow-500/15 blur-[120px]" />
-              <div className="absolute -right-24 bottom-24 h-[28rem] w-[28rem] rounded-full bg-green-500/15 blur-[120px]" />
-              <div className="absolute bottom-0 left-1/4 h-80 w-80 rounded-full bg-orange-600/10 blur-[100px]" />
-              <div className="absolute right-1/4 top-24 h-80 w-80 rounded-full bg-yellow-600/10 blur-[100px]" />
+              <div className="absolute -left-24 top-24 h-[28rem] w-[28rem] rounded-full bg-lime-500/15 blur-[120px]" />
+              <div className="absolute -right-24 bottom-24 h-[28rem] w-[28rem] rounded-full bg-lime-600/15 blur-[120px]" />
+              <div className="absolute bottom-0 left-1/4 h-80 w-80 rounded-full bg-orange-800/10 blur-[100px]" />
+              <div className="absolute right-1/4 top-24 h-80 w-80 rounded-full bg-lime-600/10 blur-[100px]" />
             </div>
 
             <motion.div
@@ -167,11 +167,11 @@ export function LandingPage() {
               transition={{ duration: 0.6, ease: 'easeOut' }}
               className="relative z-10 max-w-4xl"
             >
-              <p className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.35em] text-orange-400 drop-shadow-[0_1px_8px_rgba(0,0,0,0.5)] md:text-xs">
+              <p className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.35em] text-orange-600 drop-shadow-[0_1px_8px_rgba(0,0,0,0.5)] md:text-xs">
                 built for collectors
               </p>
               <div className="mb-8">
-                <h1 className="bg-gradient-to-r from-yellow-300 via-orange-300 to-green-300 bg-clip-text font-mono text-6xl font-bold tracking-tighter text-transparent drop-shadow-[0_0_30px_rgba(34,197,94,0.4)] md:text-8xl">
+                <h1 className="bg-gradient-to-r from-lime-300 via-orange-300 to-lime-300 bg-clip-text font-mono text-6xl font-bold tracking-tighter text-transparent drop-shadow-[0_0_30px_rgba(34,197,94,0.4)] md:text-8xl">
                   $ honghao
                 </h1>
               </div>
@@ -184,7 +184,7 @@ export function LandingPage() {
                 <Link href="/auth/register">
                   <Button
                     size="lg"
-                    className="gap-2 border border-green-500/30 bg-green-600 font-mono text-white shadow-[0_0_24px_-6px_rgba(34,197,94,0.35)] transition-all hover:bg-green-500 hover:shadow-[0_0_32px_-4px_rgba(34,197,94,0.5)]"
+                    className="gap-2 border border-lime-600/30 bg-lime-700 font-mono text-white shadow-[0_0_24px_-6px_rgba(34,197,94,0.35)] transition-all hover:bg-lime-600 hover:shadow-[0_0_32px_-4px_rgba(34,197,94,0.5)]"
                   >
                     {t('auth.register.createAccount')} <ArrowRight className="h-4 w-4" />
                   </Button>
@@ -217,7 +217,7 @@ export function LandingPage() {
                 initial={{ opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="mb-4 text-center font-mono text-xs font-bold uppercase tracking-widest text-green-500"
+                className="mb-4 text-center font-mono text-xs font-bold uppercase tracking-widest text-lime-600"
               >
                 {t('landing.featuresTitle')}
               </motion.div>
@@ -273,7 +273,7 @@ export function LandingPage() {
                     initial={{ opacity: 0, y: 12 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    className="mb-4 font-mono text-xs font-bold uppercase tracking-widest text-green-500"
+                    className="mb-4 font-mono text-xs font-bold uppercase tracking-widest text-lime-600"
                   >
                     {t('landing.manualTitle')}
                   </motion.div>
@@ -296,12 +296,12 @@ export function LandingPage() {
                           transition={{ delay: index * 0.08 }}
                           className="relative"
                         >
-                          <span className="absolute -left-[1.85rem] top-1 flex h-6 w-6 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 font-mono text-[10px] text-green-400">
+                          <span className="absolute -left-[1.85rem] top-1 flex h-6 w-6 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 font-mono text-[10px] text-lime-500">
                             {index + 1}
                           </span>
                           <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-5 backdrop-blur transition-colors hover:border-zinc-700 hover:bg-zinc-900/60">
                             <div className="flex items-center gap-2 font-mono text-sm font-bold text-zinc-200">
-                              <TcgIcon symbol={step.symbol} className="h-4 w-4 text-green-400" />
+                              <TcgIcon symbol={step.symbol} className="h-4 w-4 text-lime-500" />
                               {step.title}
                             </div>
                             <p className="mt-1 font-mono text-xs leading-relaxed text-zinc-500">
@@ -332,7 +332,7 @@ export function LandingPage() {
 
           {/* Final CTA */}
           <section className="border-t border-zinc-800/60 px-4 py-24 md:px-6">
-            <div className="mx-auto max-w-3xl rounded-2xl border-2 border-green-500/30 bg-gradient-to-b from-zinc-900/60 to-zinc-950/80 p-8 text-center shadow-[0_0_60px_-20px_rgba(34,197,94,0.25)] backdrop-blur md:p-12">
+            <div className="mx-auto max-w-3xl rounded-2xl border-2 border-lime-600/30 bg-gradient-to-b from-zinc-900/60 to-zinc-950/80 p-8 text-center shadow-[0_0_60px_-20px_rgba(34,197,94,0.25)] backdrop-blur md:p-12">
               <h2 className="font-mono text-2xl font-bold text-zinc-100 md:text-3xl">
                 {t('landing.ctaTitle')}
               </h2>
@@ -343,7 +343,7 @@ export function LandingPage() {
                 <Link href="/auth/register">
                   <Button
                     size="lg"
-                    className="gap-2 border border-green-500/30 bg-green-600 font-mono text-white shadow-[0_0_24px_-6px_rgba(34,197,94,0.35)] transition-all hover:bg-green-500 hover:shadow-[0_0_32px_-4px_rgba(34,197,94,0.5)]"
+                    className="gap-2 border border-lime-600/30 bg-lime-700 font-mono text-white shadow-[0_0_24px_-6px_rgba(34,197,94,0.35)] transition-all hover:bg-lime-600 hover:shadow-[0_0_32px_-4px_rgba(34,197,94,0.5)]"
                   >
                     {t('auth.register.createAccount')} <ArrowRight className="h-4 w-4" />
                   </Button>

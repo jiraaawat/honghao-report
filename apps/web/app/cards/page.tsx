@@ -4,10 +4,11 @@ import { useEffect, useState, useMemo } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Search, Package, Plus, Heart, X, Eye, Library, Layers, Gem, Palette, Database, Coins, Zap } from 'lucide-react'
+import { Search, Package, Plus, Heart, X, Eye, Library, Layers, Gem, Palette, Coins, Zap } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
+import { Tooltip } from '@/components/ui/tooltip'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import {
@@ -21,7 +22,7 @@ import { CatalogCardDto, CatalogSetDto, CARD_TYPES, CARD_CONDITIONS, GAMES, LANG
 import { useLanguage } from '@/lib/i18n/provider'
 import { useToast } from '@/components/providers/toast-provider'
 import { fetcher, swrOptions } from '@/lib/swr'
-import { formatUsdToThb, usdToThb } from '@/lib/utils'
+import { formatUsdToThb, usdToThb, cn } from '@/lib/utils'
 
 const PAGE_SIZE = 24
 
@@ -67,11 +68,11 @@ export default function CardsPage() {
 
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [selectedGame, setSelectedGame] = useState('OnePiece')
   const [setId, setSetId] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [rarityFilter, setRarityFilter] = useState('')
   const [colorFilter, setColorFilter] = useState('')
-  const [sourceFilter, setSourceFilter] = useState('')
   const [minCost, setMinCost] = useState('')
   const [maxCost, setMaxCost] = useState('')
   const [minPower, setMinPower] = useState('')
@@ -107,7 +108,7 @@ export default function CardsPage() {
     if (typeFilter) params.set('type', typeFilter)
     if (rarityFilter) params.set('rarity', rarityFilter)
     if (colorFilter) params.set('color', colorFilter)
-    if (sourceFilter) params.set('source', sourceFilter)
+    params.set('game', selectedGame)
     if (minCost) params.set('minCost', minCost)
     if (maxCost) params.set('maxCost', maxCost)
     if (minPower) params.set('minPower', minPower)
@@ -117,15 +118,15 @@ export default function CardsPage() {
     params.set('page', page.toString())
     params.set('limit', PAGE_SIZE.toString())
     return params
-  }, [debouncedSearch, setId, typeFilter, rarityFilter, colorFilter, sourceFilter, minCost, maxCost, minPower, maxPower, minLife, maxLife, page])
+  }, [debouncedSearch, selectedGame, setId, typeFilter, rarityFilter, colorFilter, minCost, maxCost, minPower, maxPower, minLife, maxLife, page])
 
   const catalogKey = `/api/catalog/cards?${catalogParams.toString()}`
   const { data: catalogData, isLoading: catalogLoading } = useSWR<{
     items: CatalogCardDto[]
     pagination: { pages: number }
   }>(catalogKey, fetcher, swrOptions)
-  const { data: setsData } = useSWR<CatalogSetDto[]>('/api/catalog/sets', fetcher, swrOptions)
-  const { data: filterOptionsData } = useSWR<FilterOptions>('/api/catalog/filters', fetcher, swrOptions)
+  const { data: setsData } = useSWR<CatalogSetDto[]>(`/api/catalog/sets?game=${selectedGame}`, fetcher, swrOptions)
+  const { data: filterOptionsData } = useSWR<FilterOptions>(`/api/catalog/filters?game=${selectedGame}`, fetcher, swrOptions)
   const { data: wishlistData, mutate: mutateWishlist } = useSWR<WishlistItemDto[]>('/api/wishlist', fetcher, swrOptions)
 
   const items = catalogData?.items ?? []
@@ -179,7 +180,7 @@ export default function CardsPage() {
     setAddForm({
       cardType: 'Single',
       condition: 'NM',
-      game: 'OnePiece',
+      game: selectedGame,
       language: 'EN',
       quantity: '1',
       pricePerUnit: card.marketPrice ? String(usdToThb(Number(card.marketPrice))) : '',
@@ -288,7 +289,6 @@ export default function CardsPage() {
     typeFilter ||
     rarityFilter ||
     colorFilter ||
-    sourceFilter ||
     minCost ||
     maxCost ||
     minPower ||
@@ -302,7 +302,6 @@ export default function CardsPage() {
     setTypeFilter('')
     setRarityFilter('')
     setColorFilter('')
-    setSourceFilter('')
     setMinCost('')
     setMaxCost('')
     setMinPower('')
@@ -322,7 +321,28 @@ export default function CardsPage() {
       >
         <h1 className="font-mono text-xl font-bold text-zinc-100">{t('cards.title')}</h1>
         <p className="font-mono text-xs text-zinc-500">{t('cards.subtitle')}</p>
-        <p className="mt-1 font-mono text-[10px] text-orange-400">{t('cards.testDataNote')}</p>
+        <p className="mt-1 font-mono text-[10px] text-orange-600">{t('cards.testDataNote')}</p>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {GAMES.map((game) => (
+            <button
+              key={game}
+              type="button"
+              onClick={() => {
+                clearFilters()
+                setSelectedGame(game)
+              }}
+              className={cn(
+                'rounded-md border px-3 py-1 font-mono text-xs transition-colors',
+                selectedGame === game
+                  ? 'border-lime-600/50 bg-lime-600/10 text-lime-500'
+                  : 'border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100'
+              )}
+            >
+              {game}
+            </button>
+          ))}
+        </div>
       </motion.div>
 
       <motion.div
@@ -402,16 +422,6 @@ export default function CardsPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-500"><Database className="h-3 w-3" /> {t('cards.source')}</label>
-                <Select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)} className="w-full">
-                  <option value="">{t('cards.allSources')}</option>
-                  {filterOptions.sources.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </Select>
-              </div>
-
-              <div className="space-y-1">
                 <label className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-500"><Coins className="h-3 w-3" /> {t('cards.cost')}</label>
                 <div className="flex gap-2">
                   <Input
@@ -485,7 +495,6 @@ export default function CardsPage() {
                 {typeFilter && <FilterChip label={`${t('cards.type')}: ${typeFilter}`} onRemove={() => setTypeFilter('')} />}
                 {rarityFilter && <FilterChip label={`${t('cards.rarity')}: ${rarityFilter}`} onRemove={() => setRarityFilter('')} />}
                 {colorFilter && <FilterChip label={`${t('cards.color')}: ${colorFilter}`} onRemove={() => setColorFilter('')} />}
-                {sourceFilter && <FilterChip label={`${t('cards.source')}: ${sourceFilter}`} onRemove={() => setSourceFilter('')} />}
                 {minCost && <FilterChip label={`${t('cards.minCost')}: ${minCost}`} onRemove={() => setMinCost('')} />}
                 {maxCost && <FilterChip label={`${t('cards.maxCost')}: ${maxCost}`} onRemove={() => setMaxCost('')} />}
                 {minPower && <FilterChip label={`${t('cards.minPower')}: ${minPower}`} onRemove={() => setMinPower('')} />}
@@ -501,7 +510,16 @@ export default function CardsPage() {
         </Card>
       </motion.div>
 
-      {catalogLoading ? (
+      {selectedGame !== 'OnePiece' ? (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/50 py-16 text-center"
+        >
+          <Package className="mb-3 h-8 w-8 text-zinc-600" />
+          <p className="font-mono text-sm text-zinc-400">{t('cards.gameNotAvailable')}</p>
+        </motion.div>
+      ) : catalogLoading ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {Array.from({ length: PAGE_SIZE }).map((_, i) => (
             <div key={i} className="aspect-[488/680] w-full animate-pulse rounded-xl bg-zinc-800" />
@@ -560,35 +578,36 @@ export default function CardsPage() {
                       <span />
                     )}
                     {card.marketPrice ? (
-                      <p className="font-mono text-xs font-medium text-green-400">
+                      <p className="font-mono text-xs font-medium text-lime-500">
                         {formatUsdToThb(Number(card.marketPrice))}
                       </p>
                     ) : null}
                   </div>
                 </div>
                 <div className="mt-auto flex items-center gap-2">
+                  <Tooltip content={t('wishlist.add')} side="top">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 shrink-0 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleWishlist(card)
+                      }}
+                    >
+                      <Heart
+                        className={`h-4 w-4 ${
+                          wishlistItems.some((w) => w.catalogCardId === card.id)
+                            ? 'fill-red-500 text-red-500'
+                            : 'text-zinc-500'
+                        }`}
+                      />
+                    </Button>
+                  </Tooltip>
                   <Button
-                    type="button"
                     size="sm"
-                    variant="ghost"
-                    className="h-8 w-8 shrink-0 p-0"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      toggleWishlist(card)
-                    }}
-                    title={t('wishlist.add')}
-                  >
-                    <Heart
-                      className={`h-4 w-4 ${
-                        wishlistItems.some((w) => w.catalogCardId === card.id)
-                          ? 'fill-red-500 text-red-500'
-                          : 'text-zinc-500'
-                      }`}
-                    />
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="h-8 flex-1 gap-1 text-xs bg-green-600 text-white shadow-sm transition-all hover:bg-green-700 hover:shadow-[0_0_12px_rgba(16,185,129,0.25)]"
+                    className="h-8 flex-1 gap-1 text-xs bg-lime-700 text-white shadow-sm transition-all hover:bg-lime-800 hover:shadow-[0_0_12px_rgba(16,185,129,0.25)]"
                     onClick={(e) => {
                       e.stopPropagation()
                       openAdd(card)
@@ -637,7 +656,7 @@ export default function CardsPage() {
               <DialogDescription>
                 {addDialog.card?.name} ({addDialog.card?.cardNo})
                 {addDialog.card?.marketPrice ? (
-                  <span className="ml-1 text-green-400">
+                  <span className="ml-1 text-lime-500">
                     {t('cards.marketPrice', { price: formatUsdToThb(Number(addDialog.card.marketPrice)) })}
                   </span>
                 ) : null}
@@ -841,7 +860,7 @@ export default function CardsPage() {
 
               <div className="flex items-center justify-between gap-2 rounded-md border border-zinc-800 bg-zinc-950/50 p-3 font-mono text-xs">
                 <span className="text-zinc-500">{t('cards.marketPrice')}</span>
-                <span className="text-green-400">
+                <span className="text-lime-500">
                   {detailDialog.card.marketPrice
                     ? formatUsdToThb(Number(detailDialog.card.marketPrice))
                     : '-'}
@@ -872,7 +891,7 @@ export default function CardsPage() {
               <Button
                 type="button"
                 size="sm"
-                className="gap-1 bg-green-600 text-white hover:bg-green-700"
+                className="gap-1 bg-lime-700 text-white hover:bg-lime-800"
                 onClick={() => detailDialog.card && handleAddFromDetail(detailDialog.card)}
               >
                 <Plus className="h-3.5 w-3.5" /> {t('cards.addToInventory')}

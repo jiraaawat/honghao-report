@@ -78,7 +78,7 @@ export function Navbar() {
               href="/dashboard"
               className="font-mono text-sm font-bold"
             >
-              <span className="bg-gradient-to-r from-yellow-300 via-orange-300 to-green-300 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]">
+              <span className="bg-gradient-to-r from-lime-300 via-orange-300 to-lime-300 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]">
                 $ honghao
               </span>
             </Link>
@@ -106,7 +106,7 @@ export function Navbar() {
                   className={cn(
                     'flex items-center gap-2 rounded-md border px-3 py-1.5 font-mono text-xs transition-colors',
                     isActive
-                      ? 'border-green-500/50 bg-green-500/10 text-green-400'
+                      ? 'border-lime-600/50 bg-lime-600/10 text-lime-500'
                       : 'border-transparent text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100'
                   )}
                 >
@@ -154,13 +154,13 @@ export function Navbar() {
                   href={item.href}
                   className={cn(
                     'flex flex-col items-center gap-1 rounded-xl py-2 text-[10px] font-mono font-bold transition-colors',
-                    active ? 'text-green-400' : 'text-zinc-500 hover:text-zinc-300'
+                    active ? 'text-lime-500' : 'text-zinc-500 hover:text-zinc-300'
                   )}
                 >
                   <span
                     className={cn(
                       'rounded-lg p-1.5 transition-colors',
-                      active && 'bg-green-500/15'
+                      active && 'bg-lime-600/15'
                     )}
                   >
                     <Icon className="h-5 w-5" />

@@ -13,7 +13,6 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const search = searchParams.get('search') || ''
   const setId = searchParams.get('setId')
-  const source = searchParams.get('source')
   const type = searchParams.get('type')
   const rarity = searchParams.get('rarity')
   const color = searchParams.get('color')
@@ -40,9 +39,6 @@ export async function GET(req: NextRequest) {
   }
   if (setId) {
     conditions.push(Prisma.sql`c.set_id = ${setId}`)
-  }
-  if (source) {
-    conditions.push(Prisma.sql`c.source = ${source}`)
   }
   if (type) {
     conditions.push(Prisma.sql`c.type = ${type}`)

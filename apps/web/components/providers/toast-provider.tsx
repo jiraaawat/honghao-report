@@ -42,20 +42,20 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
 
   const icon =
     toast.variant === 'success' ? (
-      <CheckCircle className="h-4 w-4 text-green-400" />
+      <CheckCircle className="h-4 w-4 text-lime-500" />
     ) : toast.variant === 'error' ? (
       <AlertCircle className="h-4 w-4 text-rose-400" />
     ) : (
-      <Info className="h-4 w-4 text-green-400" />
+      <Info className="h-4 w-4 text-lime-500" />
     )
 
   return (
     <div
       className={cn(
         'pointer-events-auto flex w-80 max-w-[calc(100vw-2rem)] items-start gap-3 rounded-lg border bg-zinc-900/95 p-3 shadow-lg backdrop-blur',
-        toast.variant === 'success' && 'border-green-500/30',
+        toast.variant === 'success' && 'border-lime-600/30',
         toast.variant === 'error' && 'border-rose-500/30',
-        toast.variant === 'info' && 'border-green-500/30'
+        toast.variant === 'info' && 'border-lime-600/30'
       )}
       role="status"
     >

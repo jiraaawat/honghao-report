@@ -214,6 +214,9 @@ export const dictionary = {
   'inventory.dialog.sell.confirmSell': { en: 'confirm sell', th: 'ยืนยันการขาย' },
   'inventory.dialog.sell.description': { en: 'click a card row to sell. quantity cannot exceed current stock.', th: 'คลิกแถวการ์ดเพื่อขาย จำนวนต้องไม่เกินสต็อกปัจจุบัน' },
   'inventory.dialog.sell.reviewDescription': { en: 'please review the sell details before confirming.', th: 'ตรวจสอบรายละเอียดการขายก่อนยืนยัน' },
+  'inventory.dialog.sell.successTitle': { en: 'sale recorded', th: 'บันทึกการขายแล้ว' },
+  'inventory.dialog.sell.successDescription': { en: 'what would you like to do next?', th: 'ต้องการทำอะไรต่อ?' },
+  'inventory.dialog.sell.createFlex': { en: 'create FLEX card', th: 'สร้าง FLEX card' },
 
   'inventory.dialog.remove.title': { en: 'remove stock', th: 'ลดสต็อก' },
   'inventory.dialog.remove.description': { en: 'enter the quantity to remove from stock.', th: 'ใส่จำนวนที่ต้องการลดออกจากสต็อก' },
@@ -228,6 +231,7 @@ export const dictionary = {
   'inventory.dialog.add.existingCard': { en: 'existing card', th: 'การ์ดที่มีอยู่' },
   'inventory.dialog.add.newCard': { en: 'new card', th: 'การ์ดใหม่' },
   'inventory.dialog.add.cardName': { en: 'card name', th: 'ชื่อการ์ด' },
+  'inventory.dialog.add.image': { en: 'card image', th: 'รูปการ์ด' },
   'inventory.dialog.add.setCode': { en: 'set code', th: 'รหัสชุด' },
   'inventory.dialog.add.cardNumber': { en: 'card number', th: 'หมายเลขการ์ด' },
   'inventory.dialog.add.costPerUnit': { en: 'cost / unit', th: 'ต้นทุน / ใบ' },
@@ -264,8 +268,9 @@ export const dictionary = {
 
   // cards
   'cards.title': { en: 'card list', th: 'รายการการ์ด' },
-  'cards.subtitle': { en: 'Browse the One Piece TCG catalog', th: 'เรียกดูแคตตาล็อก One Piece TCG' },
+  'cards.subtitle': { en: 'select a game to start browsing', th: 'เลือกเกมเพื่อเริ่มค้นหา' },
   'cards.testDataNote': { en: '(data for testing)', th: '(data สำหรับใช้ทดสอบ)' },
+  'cards.gameNotAvailable': { en: 'Not available at the moment', th: 'ยังไม่มี ณ ตอนนี้' },
   'cards.searchPlaceholder': { en: 'Search card name or number...', th: 'ค้นหาชื่อหรือหมายเลขการ์ด...' },
   'cards.allSets': { en: 'All sets', th: 'ทุกชุด' },
   'cards.add': { en: 'Add', th: 'เพิ่ม' },

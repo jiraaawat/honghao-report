@@ -7,13 +7,13 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: 'border-green-500/50 bg-green-500/10 text-green-400',
+        default: 'border-lime-600/50 bg-lime-600/10 text-lime-500',
         secondary: 'border-zinc-600 bg-zinc-800 text-zinc-300',
         destructive: 'border-red-500/50 bg-red-500/10 text-red-400',
         outline: 'border-zinc-700 text-zinc-300',
-        buy: 'border-green-500/50 bg-green-500/10 text-green-400',
+        buy: 'border-lime-600/50 bg-lime-600/10 text-lime-500',
         sell: 'border-blue-500/50 bg-blue-500/10 text-blue-400',
-        grading: 'border-orange-500/50 bg-orange-500/10 text-orange-400',
+        grading: 'border-orange-700/50 bg-orange-700/10 text-orange-600',
       },
     },
     defaultVariants: {

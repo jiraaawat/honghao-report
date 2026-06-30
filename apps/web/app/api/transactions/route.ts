@@ -151,7 +151,12 @@ export async function POST(req: NextRequest) {
       await recalculateInventoryFromTransactions(tx, data.cardId, userId)
       await syncCardStatus(tx, data.cardId)
 
-      return transaction
+      const cardWithInventory = await tx.card.findFirst({
+        where: { id: data.cardId, userId },
+        include: { inventory: { select: { averageCost: true } } },
+      })
+
+      return { ...transaction, card: cardWithInventory }
     })
 
     return NextResponse.json(result, { status: 201 })

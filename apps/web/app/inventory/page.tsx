@@ -16,7 +16,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { InventoryItem, CardDto, CARD_TYPES, GAMES, CARD_CONDITIONS, LANGUAGES } from '@/types'
+import { InventoryItem, CardDto, TransactionDto, CARD_TYPES, GAMES, CARD_CONDITIONS, LANGUAGES } from '@/types'
 import {
   InventoryResponse,
   optimisticSell,
@@ -34,8 +34,11 @@ import { LanguageBadge } from '@/components/language/language-badge'
 import { AnimatedCurrency, AnimatedNumber } from '@/components/ui/animated-value'
 import { useLanguage } from '@/lib/i18n/provider'
 import { useToast } from '@/components/providers/toast-provider'
+import { useSession } from 'next-auth/react'
 import { fetcher, swrOptions } from '@/lib/swr'
 import { InventorySkeleton } from '@/components/inventory/inventory-skeleton'
+import { Tooltip } from '@/components/ui/tooltip'
+import { FlexCardDialog } from '@/components/flex-card-dialog'
 import {
   Search,
   Package,
@@ -58,6 +61,7 @@ import {
   Check,
   X,
   GripVertical,
+  Zap,
 } from 'lucide-react'
 
 function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
@@ -173,12 +177,15 @@ export default function InventoryPage() {
   const [addPrice, setAddPrice] = useState('')
   const [addDate, setAddDate] = useState(new Date().toISOString().split('T')[0])
   const [addNote, setAddNote] = useState('')
+  const [addImage, setAddImage] = useState<File | null>(null)
+  const [addImagePreview, setAddImagePreview] = useState<string | null>(null)
 
   const [editingValue, setEditingValue] = useState<{ cardId: string; value: string } | null>(null)
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { t } = useLanguage()
   const { toast } = useToast()
+  const { data: session } = useSession()
 
   const [sellConfirm, setSellConfirm] = useState<{ open: boolean; item: InventoryItem | null; qty: number; price: number; shipping: number; date: string; note: string }>({
     open: false,
@@ -189,6 +196,12 @@ export default function InventoryPage() {
     date: '',
     note: '',
   })
+  const [sellSuccess, setSellSuccess] = useState<{ open: boolean; tx: TransactionDto | null }>({
+    open: false,
+    tx: null,
+  })
+  const [flexTx, setFlexTx] = useState<TransactionDto | null>(null)
+  const [flexOpen, setFlexOpen] = useState(false)
   const [addConfirm, setAddConfirm] = useState<{ open: boolean; cardName: string; qty: number; price: number; date: string; note: string; cardId: string; isNewCard: boolean }>({
     open: false,
     cardName: '',
@@ -237,6 +250,22 @@ export default function InventoryPage() {
     setSellDialog({ open: false, item: null })
   }
 
+  const closeSellSuccess = () => {
+    setSellSuccess({ open: false, tx: null })
+  }
+
+  const openFlexFromSuccess = () => {
+    if (!sellSuccess.tx) return
+    setFlexTx(sellSuccess.tx)
+    setFlexOpen(true)
+    closeSellSuccess()
+  }
+
+  const closeFlex = () => {
+    setFlexOpen(false)
+    setFlexTx(null)
+  }
+
   const openRemove = useCallback((item: InventoryItem) => {
     setRemoveDialog({ open: true, item })
     setRemoveQty('1')
@@ -264,10 +293,20 @@ export default function InventoryPage() {
     setAddPrice('')
     setAddDate(new Date().toISOString().split('T')[0])
     setAddNote('stock in')
-  }, [])
+    if (addImagePreview) {
+      URL.revokeObjectURL(addImagePreview)
+    }
+    setAddImage(null)
+    setAddImagePreview(null)
+  }, [addImagePreview])
 
   const closeAdd = () => {
     setAddDialog({ open: false, item: null })
+    if (addImagePreview) {
+      URL.revokeObjectURL(addImagePreview)
+    }
+    setAddImage(null)
+    setAddImagePreview(null)
   }
 
   const openCost = useCallback((item: InventoryItem) => {
@@ -347,6 +386,7 @@ export default function InventoryPage() {
     })
 
     if (res.ok) {
+      const tx: TransactionDto = await res.json()
       setSellConfirm({ open: false, item: null, qty: 0, price: 0, shipping: 0, date: '', note: '' })
       closeSell()
       mutateInventory(
@@ -360,6 +400,7 @@ export default function InventoryPage() {
         title: t('inventory.toast.sold'),
         description: item.cardName,
       })
+      setSellSuccess({ open: true, tx })
     } else {
       const err = await res.json().catch(() => ({}))
       setSellConfirm({ open: false, item: null, qty: 0, price: 0, shipping: 0, date: '', note: '' })
@@ -438,19 +479,20 @@ export default function InventoryPage() {
     setIsSubmitting(true)
 
     if (isNewCard) {
+      const formData = new FormData()
+      formData.append('name', addCard.name)
+      if (addCard.setCode) formData.append('setCode', addCard.setCode)
+      if (addCard.cardNumber) formData.append('cardNumber', addCard.cardNumber)
+      if (addCard.rarity) formData.append('rarity', addCard.rarity)
+      formData.append('cardType', addCard.cardType)
+      formData.append('game', addCard.game)
+      formData.append('language', addCard.language)
+      if (addCard.condition) formData.append('condition', addCard.condition)
+      if (addImage) formData.append('image', addImage)
+
       const res = await fetch('/api/cards', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: addCard.name,
-          setCode: addCard.setCode || undefined,
-          cardNumber: addCard.cardNumber || undefined,
-          rarity: addCard.rarity || undefined,
-          cardType: addCard.cardType,
-          game: addCard.game,
-          language: addCard.language,
-          condition: addCard.condition || undefined,
-        }),
+        body: formData,
       })
       if (!res.ok) {
         setIsSubmitting(false)
@@ -702,14 +744,14 @@ export default function InventoryPage() {
       label: t('inventory.inStock'),
       value: summary.inStock,
       icon: PackageCheck,
-      color: 'text-green-400',
+      color: 'text-lime-500',
       note: t('common.quantity'),
     },
     {
       label: t('inventory.grading'),
       value: summary.grading,
       icon: Gem,
-      color: 'text-orange-400',
+      color: 'text-orange-600',
       note: t('common.quantity'),
     },
     {
@@ -729,7 +771,7 @@ export default function InventoryPage() {
       label: t('inventory.totalProfit'),
       value: summary.totalProfit,
       icon: TrendingUp,
-      color: (summary?.totalProfit ?? 0) >= 0 ? 'text-green-400' : 'text-red-400',
+      color: (summary?.totalProfit ?? 0) >= 0 ? 'text-lime-500' : 'text-red-400',
       isCurrency: true,
     },
   ]
@@ -970,7 +1012,7 @@ export default function InventoryPage() {
                     className={cn(
                       'flex h-7 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 font-mono text-[10px] font-medium transition-all',
                       active
-                        ? 'bg-green-500 text-zinc-950 shadow'
+                        ? 'bg-lime-600 text-zinc-950 shadow'
                         : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
                     )}
                   >
@@ -980,32 +1022,34 @@ export default function InventoryPage() {
               })}
             </div>
             <div className="flex shrink-0 items-center rounded-lg border border-zinc-700 bg-zinc-950 p-1 shadow-sm">
-              <button
-                type="button"
-                onClick={() => setViewMode('list')}
-                className={cn(
-                  'flex h-8 items-center gap-2 rounded-md px-3 font-mono text-xs font-medium transition-all',
-                  viewMode === 'list'
-                    ? 'bg-green-500 text-zinc-950 shadow'
-                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
-                )}
-                title={t('inventory.listView')}
-              >
-                <LayoutList className="h-4 w-4" /> <span className="hidden sm:inline">{t('common.list')}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('grid')}
-                className={cn(
-                  'flex h-8 items-center gap-2 rounded-md px-3 font-mono text-xs font-medium transition-all',
-                  viewMode === 'grid'
-                    ? 'bg-green-500 text-zinc-950 shadow'
-                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
-                )}
-                title={t('inventory.gridView')}
-              >
-                <LayoutGrid className="h-4 w-4" /> <span className="hidden sm:inline">{t('common.grid')}</span>
-              </button>
+              <Tooltip content={t('inventory.listView')} side="bottom">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('list')}
+                  className={cn(
+                    'flex h-8 items-center gap-2 rounded-md px-3 font-mono text-xs font-medium transition-all',
+                    viewMode === 'list'
+                      ? 'bg-lime-600 text-zinc-950 shadow'
+                      : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+                  )}
+                >
+                  <LayoutList className="h-4 w-4" /> <span className="hidden sm:inline">{t('common.list')}</span>
+                </button>
+              </Tooltip>
+              <Tooltip content={t('inventory.gridView')} side="bottom">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('grid')}
+                  className={cn(
+                    'flex h-8 items-center gap-2 rounded-md px-3 font-mono text-xs font-medium transition-all',
+                    viewMode === 'grid'
+                      ? 'bg-lime-600 text-zinc-950 shadow'
+                      : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+                  )}
+                >
+                  <LayoutGrid className="h-4 w-4" /> <span className="hidden sm:inline">{t('common.grid')}</span>
+                </button>
+              </Tooltip>
             </div>
           </div>
         </CardHeader>
@@ -1048,7 +1092,7 @@ export default function InventoryPage() {
                       >
                         <td className="py-3 pr-4">
                           <div className="flex flex-col">
-                            <span className={cn('font-medium', item.status === 'grading' ? 'text-orange-400' : 'text-zinc-200')}>
+                            <span className={cn('font-medium', item.status === 'grading' ? 'text-orange-600' : 'text-zinc-200')}>
                               {item.cardName}
                             </span>
                             <span className="text-xs text-zinc-500">
@@ -1089,7 +1133,7 @@ export default function InventoryPage() {
                           <div className="flex flex-col text-xs">
                             <span className="text-zinc-500">{t('inventory.createdOn', { date: formatDate(item.createdAt) })}</span>
                             {item.status === 'sold_out' && item.soldAt && (
-                              <span className="text-orange-400">{t('inventory.soldOn', { date: formatDate(item.soldAt) })}</span>
+                              <span className="text-orange-600">{t('inventory.soldOn', { date: formatDate(item.soldAt) })}</span>
                             )}
                           </div>
                         </td>
@@ -1134,7 +1178,7 @@ export default function InventoryPage() {
                         </td>
                         <td className="py-3 pr-4 text-right">
                           <div className="flex flex-col items-end">
-                            <span className={item.profit >= 0 ? 'text-green-400' : 'text-red-400'}>
+                            <span className={item.profit >= 0 ? 'text-lime-500' : 'text-red-400'}>
                               {formatCurrency(item.profit)}
                             </span>
                             {item.unrealizedProfit !== 0 && (
@@ -1148,53 +1192,57 @@ export default function InventoryPage() {
                           <div className="flex items-center gap-1">
                             {item.status === 'in_stock' && item.quantity > 0 ? (
                               <>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  title={t('common.add')}
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    openAdd(item)
-                                  }}
-                                  className="h-7 w-7 shrink-0 border-green-500/30 text-green-400 hover:bg-green-500/10 hover:text-green-400"
-                                >
-                                  <Plus className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  title={t('common.remove')}
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    openRemove(item)
-                                  }}
-                                  className="h-7 w-7 shrink-0 border-zinc-600 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
-                                >
-                                  <Minus className="h-3.5 w-3.5" />
-                                </Button>
-                                <Link href={`/grading/send?cardId=${item.cardId}`}>
+                                <Tooltip content={t('common.add')} side="left">
                                   <Button
                                     variant="outline"
                                     size="icon"
-                                    title={t('common.sendToGrade')}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="h-7 w-7 shrink-0 border-orange-500/30 text-orange-400 hover:bg-orange-500/10 hover:text-orange-400"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      openAdd(item)
+                                    }}
+                                    className="h-7 w-7 shrink-0 border-lime-600/30 text-lime-500 hover:bg-lime-600/10 hover:text-lime-500"
                                   >
-                                    <Gem className="h-3.5 w-3.5" />
+                                    <Plus className="h-3.5 w-3.5" />
                                   </Button>
-                                </Link>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  title={t('inventory.editCost')}
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    openCost(item)
-                                  }}
-                                  className="h-7 w-7 shrink-0 border-blue-500/30 text-blue-400 hover:bg-blue-500/10 hover:text-blue-400"
-                                >
-                                  <Pencil className="h-3.5 w-3.5" />
-                                </Button>
+                                </Tooltip>
+                                <Tooltip content={t('common.remove')} side="left">
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      openRemove(item)
+                                    }}
+                                    className="h-7 w-7 shrink-0 border-zinc-600 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                                  >
+                                    <Minus className="h-3.5 w-3.5" />
+                                  </Button>
+                                </Tooltip>
+                                <Tooltip content={t('common.sendToGrade')} side="left">
+                                  <Link href={`/grading/send?cardId=${item.cardId}`}>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="h-7 w-7 shrink-0 border-orange-700/30 text-orange-600 hover:bg-orange-700/10 hover:text-orange-600"
+                                    >
+                                      <Gem className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </Link>
+                                </Tooltip>
+                                <Tooltip content={t('inventory.editCost')} side="left">
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      openCost(item)
+                                    }}
+                                    className="h-7 w-7 shrink-0 border-blue-500/30 text-blue-400 hover:bg-blue-500/10 hover:text-blue-400"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
+                                </Tooltip>
                               </>
                             ) : (
                               <span className="inline-block h-7 w-7" />
@@ -1216,7 +1264,7 @@ export default function InventoryPage() {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
-                          <div className={cn('truncate font-mono font-medium text-sm', item.status === 'grading' ? 'text-orange-400' : 'text-zinc-200')}>
+                          <div className={cn('truncate font-mono font-medium text-sm', item.status === 'grading' ? 'text-orange-600' : 'text-zinc-200')}>
                             {item.cardName}
                           </div>
                           <div className="truncate font-mono text-[10px] text-zinc-500">
@@ -1258,7 +1306,7 @@ export default function InventoryPage() {
 
                       <div className="mt-1 flex items-center justify-between gap-2 font-mono text-xs">
                         <span className="text-zinc-500">{t('inventoryGridCard.profit')}</span>
-                        <span className={item.profit >= 0 ? 'min-w-0 break-words text-right text-green-400' : 'min-w-0 break-words text-right text-red-400'}>
+                        <span className={item.profit >= 0 ? 'min-w-0 break-words text-right text-lime-500' : 'min-w-0 break-words text-right text-red-400'}>
                           {formatCurrency(item.profit)}
                         </span>
                       </div>
@@ -1267,7 +1315,7 @@ export default function InventoryPage() {
                         <div className="mt-2 flex flex-wrap gap-2">
                           <Button
                             size="sm"
-                            className="h-7 flex-1 gap-1 bg-green-600 text-[10px] text-white hover:bg-green-700"
+                            className="h-7 flex-1 gap-1 bg-lime-700 text-[10px] text-white hover:bg-lime-800"
                             onClick={() => openSell(item)}
                           >
                             <Tag className="h-3.5 w-3.5" /> {t('inventoryGridCard.sell')}
@@ -1289,7 +1337,7 @@ export default function InventoryPage() {
                             <Minus className="h-3.5 w-3.5" /> {t('inventoryGridCard.remove')}
                           </Button>
                           <Link href={`/grading/send?cardId=${item.cardId}`}>
-                            <Button size="sm" variant="outline" className="h-7 px-2 text-orange-400 hover:bg-orange-500/10 hover:text-orange-400">
+                            <Button size="sm" variant="outline" className="h-7 px-2 text-orange-600 hover:bg-orange-700/10 hover:text-orange-600">
                               <Gem className="h-3.5 w-3.5" />
                             </Button>
                           </Link>
@@ -1434,7 +1482,7 @@ export default function InventoryPage() {
         <form onSubmit={handleSell}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Tag className="h-4 w-4 text-green-400" />
+              <Tag className="h-4 w-4 text-lime-500" />
               {t('inventory.dialog.sell.title')} {sellDialog.item?.cardName}
             </DialogTitle>
             <DialogDescription>
@@ -1584,7 +1632,7 @@ export default function InventoryPage() {
         <form onSubmit={handleAdd}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Plus className="h-4 w-4 text-green-400" />
+              <Plus className="h-4 w-4 text-lime-500" />
               {t('inventory.dialog.add.title')}
             </DialogTitle>
             <DialogDescription>
@@ -1727,6 +1775,29 @@ export default function InventoryPage() {
                         </Select>
                       </div>
                     </div>
+                    <div className="space-y-2">
+                      <label className="font-mono text-xs text-zinc-400">{t('inventory.dialog.add.image')}</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null
+                          setAddImage(file)
+                          if (file) {
+                            setAddImagePreview(URL.createObjectURL(file))
+                          } else if (addImagePreview) {
+                            URL.revokeObjectURL(addImagePreview)
+                            setAddImagePreview(null)
+                          }
+                        }}
+                        className="block w-full font-mono text-xs text-zinc-400 file:mr-3 file:rounded file:border-0 file:bg-lime-600 file:px-3 file:py-1.5 file:text-white"
+                      />
+                      {addImagePreview && (
+                        <div className="relative aspect-[488/680] w-24 overflow-hidden rounded-lg border border-zinc-800">
+                          <img src={addImagePreview} alt="preview" className="h-full w-full object-cover" />
+                        </div>
+                      )}
+                    </div>
                   </>
                 )}
 
@@ -1792,7 +1863,7 @@ export default function InventoryPage() {
       }}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Tag className="h-4 w-4 text-green-400" />
+            <Tag className="h-4 w-4 text-lime-500" />
             {t('inventory.dialog.sell.confirmSell')}
           </DialogTitle>
           <DialogDescription>{t('inventory.dialog.sell.reviewDescription')}</DialogDescription>
@@ -1853,13 +1924,39 @@ export default function InventoryPage() {
         </DialogFooter>
       </Dialog>
 
+      <Dialog open={sellSuccess.open} onOpenChange={(v) => !v && closeSellSuccess()}>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 font-mono text-lg">
+            <PackageCheck className="h-5 w-5 text-lime-500" />
+            {t('inventory.dialog.sell.successTitle')}
+          </DialogTitle>
+          <DialogDescription>{t('inventory.dialog.sell.successDescription')}</DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-3">
+          <Button type="button" variant="outline" size="sm" onClick={closeSellSuccess}>
+            {t('common.close')}
+          </Button>
+          <Button type="button" size="sm" className="gap-2" onClick={openFlexFromSuccess}>
+            <Zap className="h-4 w-4" />
+            {t('inventory.dialog.sell.createFlex')}
+          </Button>
+        </div>
+      </Dialog>
+
+      <FlexCardDialog
+        tx={flexTx}
+        open={flexOpen}
+        onOpenChange={(v) => !v && closeFlex()}
+        userName={session?.user?.name}
+      />
+
       <Dialog open={addConfirm.open} onOpenChange={() => {
         setIsSubmitting(false)
         setAddConfirm({ open: false, cardName: '', qty: 0, price: 0, date: '', note: '', cardId: '', isNewCard: false })
       }}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Plus className="h-4 w-4 text-green-400" />
+            <Plus className="h-4 w-4 text-lime-500" />
             {t('inventory.dialog.add.confirmTitle')}
           </DialogTitle>
           <DialogDescription>{t('inventory.dialog.add.reviewDescription')}</DialogDescription>

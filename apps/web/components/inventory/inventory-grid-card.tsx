@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { cn, formatCurrency } from '@/lib/utils'
 import { LanguageBadge } from '@/components/language/language-badge'
+import { Tooltip } from '@/components/ui/tooltip'
 import { Package, PackageCheck, PackageX, Gem } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/provider'
 import { memo } from 'react'
@@ -71,7 +72,7 @@ function InventoryGridCardRaw({
       </div>
 
       <div className="min-w-0">
-        <p className={cn('truncate font-mono text-xs font-semibold', item.status === 'grading' ? 'text-orange-400' : 'text-zinc-200')}>
+        <p className={cn('truncate font-mono text-xs font-semibold', item.status === 'grading' ? 'text-orange-600' : 'text-zinc-200')}>
           {item.cardName}
         </p>
         <p className="truncate font-mono text-[10px] text-zinc-500">
@@ -120,14 +121,15 @@ function InventoryGridCardRaw({
               className="h-5 w-full px-1 py-0 text-right text-[10px]"
             />
           ) : (
-            <button
-              type="button"
-              onClick={onEdit}
-              className="text-left text-zinc-300 hover:text-zinc-100"
-              title={t('inventoryGridCard.editValueTitle')}
-            >
-              {formatCurrency(item.marketValuePerUnit)}
-            </button>
+            <Tooltip content={t('inventoryGridCard.editValueTitle')} side="top">
+              <button
+                type="button"
+                onClick={onEdit}
+                className="text-left text-zinc-300 hover:text-zinc-100"
+              >
+                {formatCurrency(item.marketValuePerUnit)}
+              </button>
+            </Tooltip>
           )}
         </div>
         <div className="rounded-md bg-zinc-950/50 p-2">
@@ -137,7 +139,7 @@ function InventoryGridCardRaw({
         <div className="col-span-2 rounded-md bg-zinc-950/50 p-2">
           <div className="flex items-center justify-between">
             <span className="text-zinc-500">{t('inventoryGridCard.profit')}</span>
-            <span className={item.profit >= 0 ? 'text-green-400' : 'text-red-400'}>
+            <span className={item.profit >= 0 ? 'text-lime-500' : 'text-red-400'}>
               {formatCurrency(item.profit)}
             </span>
           </div>

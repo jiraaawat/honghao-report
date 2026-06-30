@@ -3,6 +3,8 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { z } from 'zod'
+import fs from 'node:fs'
+import path from 'node:path'
 
 const cardSchema = z.object({
   name: z.string().min(1),
@@ -15,6 +17,9 @@ const cardSchema = z.object({
   condition: z.string().optional(),
   imageUrl: z.string().url().optional().or(z.literal('')),
 })
+
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5MB
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -63,6 +68,54 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(result)
 }
 
+async function saveUploadedImage(file: File): Promise<string> {
+  const uploadsDir = path.join(process.cwd(), 'public', 'uploads')
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true })
+  }
+
+  const ext = file.name.split('.').pop() || 'png'
+  const filename = `card_${Date.now()}_${Math.random().toString(36).slice(2, 10)}.${ext}`
+  const filepath = path.join(uploadsDir, filename)
+  const buffer = Buffer.from(await file.arrayBuffer())
+  fs.writeFileSync(filepath, buffer)
+
+  return `/uploads/${filename}`
+}
+
+async function createCardFromData(
+  data: z.infer<typeof cardSchema>,
+  imageUrl: string | null,
+  userId: string
+) {
+  const card = await prisma.card.create({
+    data: {
+      name: data.name,
+      setCode: data.setCode || null,
+      cardNumber: data.cardNumber || null,
+      rarity: data.rarity || null,
+      cardType: data.cardType || 'Single',
+      game: data.game || 'OnePiece',
+      language: data.language || 'EN',
+      condition: data.condition || null,
+      imageUrl: imageUrl || data.imageUrl || null,
+      userId,
+    },
+  })
+
+  await prisma.cardInventory.create({
+    data: {
+      cardId: card.id,
+      userId,
+      quantity: 0,
+      averageCost: 0,
+      totalInvested: 0,
+    },
+  })
+
+  return card
+}
+
 export async function POST(req: NextRequest) {
   const session = await auth()
   const userId = session?.user?.id
@@ -71,34 +124,47 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const contentType = req.headers.get('content-type') || ''
+
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await req.formData()
+      const file = formData.get('image') as File | null
+
+      let imageUrl: string | null = null
+      if (file && file.size > 0) {
+        if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+          return NextResponse.json(
+            { error: 'Invalid image type. Allowed: jpeg, png, webp, gif' },
+            { status: 400 }
+          )
+        }
+        if (file.size > MAX_IMAGE_SIZE) {
+          return NextResponse.json(
+            { error: 'Image too large. Max 5MB.' },
+            { status: 400 }
+          )
+        }
+        imageUrl = await saveUploadedImage(file)
+      }
+
+      const data = cardSchema.parse({
+        name: formData.get('name'),
+        setCode: formData.get('setCode') ?? undefined,
+        cardNumber: formData.get('cardNumber') ?? undefined,
+        rarity: formData.get('rarity') ?? undefined,
+        cardType: formData.get('cardType') ?? undefined,
+        game: formData.get('game') ?? undefined,
+        language: formData.get('language') ?? undefined,
+        condition: formData.get('condition') ?? undefined,
+      })
+
+      const card = await createCardFromData(data, imageUrl, userId)
+      return NextResponse.json(card, { status: 201 })
+    }
+
     const body = await req.json()
     const data = cardSchema.parse(body)
-
-    const card = await prisma.card.create({
-      data: {
-        name: data.name,
-        setCode: data.setCode || null,
-        cardNumber: data.cardNumber || null,
-        rarity: data.rarity || null,
-        cardType: data.cardType || 'Single',
-        game: data.game || 'OnePiece',
-        language: data.language || 'EN',
-        condition: data.condition || null,
-        imageUrl: data.imageUrl || null,
-        userId,
-      },
-    })
-
-    await prisma.cardInventory.create({
-      data: {
-        cardId: card.id,
-        userId,
-        quantity: 0,
-        averageCost: 0,
-        totalInvested: 0,
-      },
-    })
-
+    const card = await createCardFromData(data, null, userId)
     return NextResponse.json(card, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {

@@ -150,13 +150,13 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:border-l lg:border-zinc-800 lg:pl-6">
               <div className="min-w-0 space-y-3">
                 <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-400">
-                  <span className="h-1.5 w-1.5 rounded-full bg-green-500/70" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-lime-600/70" />
                   {t('dashboard.profitLoss')}
                 </div>
                 <div
                   className={`inline-flex min-w-0 max-w-full items-center overflow-x-auto rounded-lg border bg-zinc-950/60 px-2 py-1 font-mono text-base font-bold drop-shadow-[0_1px_10px_rgba(0,0,0,0.5)] sm:px-3 sm:text-xl ${
                     stats && stats.periodProfit >= 0
-                      ? 'border-green-500/30 text-green-400 shadow-[inset_0_0_20px_rgba(34,197,94,0.06)]'
+                      ? 'border-lime-600/30 text-lime-500 shadow-[inset_0_0_20px_rgba(34,197,94,0.06)]'
                       : 'border-rose-500/30 text-rose-400 shadow-[inset_0_0_20px_rgba(244,63,94,0.06)]'
                   }`}
                 >
@@ -169,23 +169,23 @@ export default function DashboardPage() {
 
               <div className="min-w-0 space-y-3">
                 <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-400">
-                  <span className="h-1.5 w-1.5 rounded-full bg-orange-500/70" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-orange-700/70" />
                   {t('dashboard.totalSell')}
                 </div>
-                <div className="inline-flex min-w-0 max-w-full items-center overflow-x-auto rounded-lg border border-orange-500/30 bg-zinc-950/60 px-2 py-1 font-mono text-sm font-bold text-orange-400 drop-shadow-[0_1px_10px_rgba(0,0,0,0.5)] shadow-[inset_0_0_20px_rgba(249,115,22,0.06)] sm:px-3 sm:text-lg">
+                <div className="inline-flex min-w-0 max-w-full items-center overflow-x-auto rounded-lg border border-orange-700/30 bg-zinc-950/60 px-2 py-1 font-mono text-sm font-bold text-orange-600 drop-shadow-[0_1px_10px_rgba(0,0,0,0.5)] shadow-[inset_0_0_20px_rgba(249,115,22,0.06)] sm:px-3 sm:text-lg">
                   <AnimatedCurrency value={stats?.totalSell ?? 0} />
                 </div>
               </div>
 
               <div className="min-w-0 space-y-3">
                 <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-400">
-                  <span className="h-1.5 w-1.5 rounded-full bg-orange-500/70" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-orange-700/70" />
                   {t('dashboard.periodRoi')}
                 </div>
                 <div
                   className={`inline-flex min-w-0 max-w-full items-center overflow-x-auto rounded-lg border bg-zinc-950/60 px-2 py-1 font-mono text-sm font-bold drop-shadow-[0_1px_10px_rgba(0,0,0,0.5)] sm:px-3 sm:text-lg ${
                     periodROI >= 0
-                      ? 'border-orange-500/30 text-orange-400 shadow-[inset_0_0_20px_rgba(249,115,22,0.06)]'
+                      ? 'border-orange-700/30 text-orange-600 shadow-[inset_0_0_20px_rgba(249,115,22,0.06)]'
                       : 'border-rose-500/30 text-rose-400 shadow-[inset_0_0_20px_rgba(244,63,94,0.06)]'
                   }`}
                 >
@@ -204,21 +204,21 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="flex flex-1 flex-col justify-between gap-4">
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <SnapshotRow label={t('inventory.totalCards')} value={inventorySummary.totalCards} valueClassName="text-green-400" />
-              <SnapshotRow label={t('inventory.inStock')} value={inventorySummary.inStock} valueClassName="text-green-400" />
-              <SnapshotRow label={t('inventory.grading')} value={inventorySummary.grading} valueClassName="text-orange-400" />
+              <SnapshotRow label={t('inventory.totalCards')} value={inventorySummary.totalCards} valueClassName="text-lime-500" />
+              <SnapshotRow label={t('inventory.inStock')} value={inventorySummary.inStock} valueClassName="text-lime-500" />
+              <SnapshotRow label={t('inventory.grading')} value={inventorySummary.grading} valueClassName="text-orange-600" />
               <SnapshotRow label={t('dashboard.soldCards')} value={inventorySummary.soldOut} valueClassName="text-rose-400" />
               <SnapshotRow label={t('dashboard.totalInvested')} value={formatCurrency(inventorySummary.totalInvested)} />
-              <SnapshotRow label={t('dashboard.totalValue')} value={formatCurrency(inventorySummary.totalValue)} valueClassName="text-green-400" />
+              <SnapshotRow label={t('dashboard.totalValue')} value={formatCurrency(inventorySummary.totalValue)} valueClassName="text-lime-500" />
               <SnapshotRow
                 label={t('dashboard.totalProfit')}
                 value={formatCurrency(inventorySummary.totalProfit)}
-                valueClassName={inventorySummary.totalProfit >= 0 ? 'text-green-400' : 'text-rose-400'}
+                valueClassName={inventorySummary.totalProfit >= 0 ? 'text-lime-500' : 'text-rose-400'}
               />
               <SnapshotRow
                 label={t('dashboard.overallRoi')}
                 value={`${formatNumber(inventorySummary.totalROI)}%`}
-                valueClassName={inventorySummary.totalROI >= 0 ? 'text-green-400' : 'text-rose-400'}
+                valueClassName={inventorySummary.totalROI >= 0 ? 'text-lime-500' : 'text-rose-400'}
               />
             </div>
             <Link href="/inventory">
@@ -275,7 +275,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="pt-1">
                     <div className="font-mono text-[10px] text-zinc-500">{t('inventoryGridCard.marketValue')}</div>
-                    <div className="font-mono text-lg font-bold text-green-400">
+                    <div className="font-mono text-lg font-bold text-lime-500">
                       {formatCurrency(topCard.marketValuePerUnit)}
                     </div>
                   </div>
@@ -330,7 +330,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="pt-1">
                     <div className="font-mono text-[10px] text-zinc-500">{t('inventoryGridCard.profit')}</div>
-                    <div className="font-mono text-lg font-bold text-green-400">
+                    <div className="font-mono text-lg font-bold text-lime-500">
                       {formatCurrency(topProfitCard.profit)}
                     </div>
                   </div>

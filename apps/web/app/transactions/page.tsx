@@ -295,7 +295,7 @@ export default function TransactionsPage() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleFlex(tx)}
-                                className="h-8 w-8 text-orange-400 hover:text-orange-300"
+                                className="h-8 w-8 text-orange-600 hover:text-orange-300"
                                 title="FLEX"
                               >
                                 <Zap className="h-4 w-4" />
@@ -341,7 +341,7 @@ export default function TransactionsPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleFlex(tx)}
-                            className="h-8 w-8 text-orange-400 hover:text-orange-300"
+                            className="h-8 w-8 text-orange-600 hover:text-orange-300"
                             title="FLEX"
                           >
                             <Zap className="h-4 w-4" />
@@ -369,7 +369,7 @@ export default function TransactionsPage() {
         <DialogHeader>
           <div className="flex items-center justify-between gap-4">
             <DialogTitle className="flex items-center gap-2 font-mono text-base">
-              <Zap className="h-4 w-4 text-orange-400" />
+              <Zap className="h-4 w-4 text-orange-600" />
               {t('flexCard.previewTitle')}
             </DialogTitle>
             <div className="flex rounded-lg border border-zinc-700 bg-zinc-950 p-0.5">

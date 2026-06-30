@@ -68,8 +68,8 @@ export default function RegisterPage() {
     <div className="relative flex min-h-[calc(100vh-3.5rem)] items-center justify-center overflow-hidden p-4">
       {/* Background */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-1/4 top-0 h-[500px] w-[500px] rounded-full bg-green-500/10 blur-[120px]" />
-        <div className="absolute -right-1/4 bottom-0 h-[500px] w-[500px] rounded-full bg-orange-500/10 blur-[120px]" />
+        <div className="absolute -left-1/4 top-0 h-[500px] w-[500px] rounded-full bg-lime-600/10 blur-[120px]" />
+        <div className="absolute -right-1/4 bottom-0 h-[500px] w-[500px] rounded-full bg-orange-700/10 blur-[120px]" />
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
@@ -79,9 +79,9 @@ export default function RegisterPage() {
         />
       </div>
 
-      <Card className="group relative w-full max-w-md overflow-hidden border-green-500/30 bg-zinc-900/80 backdrop-blur">
+      <Card className="group relative w-full max-w-md overflow-hidden border-lime-600/30 bg-zinc-900/80 backdrop-blur">
         {/* Foil shimmer */}
-        <div className="pointer-events-none absolute inset-0 -translate-x-[150%] bg-gradient-to-r from-transparent via-green-300/10 via-white/5 to-transparent opacity-0 transition-all duration-1000 ease-in-out group-hover:translate-x-[150%] group-hover:opacity-100" />
+        <div className="pointer-events-none absolute inset-0 -translate-x-[150%] bg-gradient-to-r from-transparent via-lime-300/10 via-white/5 to-transparent opacity-0 transition-all duration-1000 ease-in-out group-hover:translate-x-[150%] group-hover:opacity-100" />
 
         <Link
           href="/"
@@ -92,7 +92,7 @@ export default function RegisterPage() {
         </Link>
 
         <CardHeader className="space-y-2 pt-12 text-center">
-          <div className="mx-auto mb-2 flex items-center justify-center gap-2 font-mono text-xl font-bold text-yellow-400 drop-shadow-[0_1px_8px_rgba(0,0,0,0.5)]">
+          <div className="mx-auto mb-2 flex items-center justify-center gap-2 font-mono text-xl font-bold text-lime-400 drop-shadow-[0_1px_8px_rgba(0,0,0,0.5)]">
             <TcgIcon symbol="cards" className="h-6 w-6" />
             <span>$ {t('auth.register.title')}</span>
           </div>
@@ -107,7 +107,7 @@ export default function RegisterPage() {
               </div>
             )}
             {success && (
-              <div className="flex items-center gap-2 rounded-md border border-green-500/30 bg-green-500/10 p-3 font-mono text-xs text-green-400">
+              <div className="flex items-center gap-2 rounded-md border border-lime-600/30 bg-lime-600/10 p-3 font-mono text-xs text-lime-500">
                 <CheckCircle className="h-4 w-4" />
                 {t('auth.register.accountCreated')}
               </div>
@@ -160,7 +160,7 @@ export default function RegisterPage() {
 
           <p className="mt-4 text-center font-mono text-xs text-zinc-500">
             {t('auth.register.alreadyHaveAccount')}{' '}
-            <Link href="/auth/signin" className="text-green-400 hover:underline">
+            <Link href="/auth/signin" className="text-lime-500 hover:underline">
               {t('auth.register.signIn')}
             </Link>
           </p>
