@@ -64,7 +64,7 @@ export function BannerCarousel({ banners, interval = 5000, className }: BannerCa
 
   return (
     <div
-      className={cn('group relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/80 transition-colors hover:border-lime-600/30', className)}
+      className={cn('group relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50 transition-colors hover:border-lime-600/30', className)}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       role="region"

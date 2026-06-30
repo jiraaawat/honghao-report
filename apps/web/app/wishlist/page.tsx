@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dialog'
 import { WishlistItemDto, CARD_TYPES, GAMES, CARD_CONDITIONS, LANGUAGES } from '@/types'
 import { LanguageBadge } from '@/components/language/language-badge'
+import { EmptyState } from '@/components/ui/empty-state'
 import { useLanguage } from '@/lib/i18n/provider'
 import { fetcher, swrOptions } from '@/lib/swr'
 
@@ -165,14 +166,12 @@ export default function WishlistPage() {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/50 py-16 text-center"
-        >
-          <Package className="mb-3 h-8 w-8 text-zinc-600" />
-          <p className="font-mono text-sm text-zinc-400">{t('wishlist.empty')}</p>
-        </motion.div>
+        <EmptyState
+          icon={<Package className="h-6 w-6" />}
+          title={t('wishlist.empty')}
+          description={t('wishlist.emptyDescription')}
+          action={{ label: t('wishlist.emptyAction'), href: '/cards', variant: 'outline' }}
+        />
       ) : (
         <motion.div
           variants={containerVariants}

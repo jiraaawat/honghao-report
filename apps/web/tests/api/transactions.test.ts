@@ -60,7 +60,7 @@ describe('POST /api/transactions', () => {
 
   it('returns 404 when the card does not belong to the user', async () => {
     const tx = mockTx()
-    ;(tx.card.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null)
+    ;(tx.card.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null)
     ;(prisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(async (cb: (tx: unknown) => Promise<unknown>) => cb(tx))
 
     const res = await POST(
@@ -79,8 +79,9 @@ describe('POST /api/transactions', () => {
 
   it('rejects SELL when the card is being graded', async () => {
     const tx = mockTx()
-    ;(tx.card.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+    ;(tx.card.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: CARD_ID,
+      userId: USER_ID,
       status: 'grading',
       inventory: { quantity: 5 },
     })
@@ -103,8 +104,9 @@ describe('POST /api/transactions', () => {
 
   it('rejects SELL when stock is insufficient', async () => {
     const tx = mockTx()
-    ;(tx.card.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+    ;(tx.card.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: CARD_ID,
+      userId: USER_ID,
       status: 'in_stock',
       inventory: { quantity: 2 },
     })
@@ -127,10 +129,12 @@ describe('POST /api/transactions', () => {
 
   it('creates a BUY transaction and recalculates inventory', async () => {
     const tx = mockTx()
-    ;(tx.card.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+    ;(tx.card.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: CARD_ID,
+      userId: USER_ID,
       status: 'in_stock',
       inventory: null,
+      transactions: [],
     })
     ;(tx.transaction.create as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'tx-1' })
     ;(tx.cardInventory.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ cardId: CARD_ID, quantity: 2 })
@@ -165,8 +169,9 @@ describe('PUT /api/transactions/[id]', () => {
       type: 'SELL',
       quantity: 1,
     })
-    ;(tx.card.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+    ;(tx.card.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: CARD_ID,
+      userId: USER_ID,
       status: 'in_stock',
       inventory: { quantity: 1 },
     })
@@ -198,10 +203,12 @@ describe('DELETE /api/transactions/[id]', () => {
       type: 'SELL',
       quantity: 1,
     })
-    ;(tx.card.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+    ;(tx.card.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: CARD_ID,
+      userId: USER_ID,
       status: 'sold_out',
       inventory: { quantity: 0 },
+      transactions: [],
     })
     ;(tx.cardInventory.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ cardId: CARD_ID, quantity: 1 })
     ;(prisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(async (cb: (tx: unknown) => Promise<unknown>) => cb(tx))

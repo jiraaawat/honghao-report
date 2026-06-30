@@ -113,7 +113,7 @@ export default function SendToGradeContent() {
         </Button>
       </Link>
 
-      <Card className="border-zinc-800 bg-zinc-900/80">
+      <Card className="border-zinc-800 bg-zinc-900/50">
         <CardHeader className="text-center">
           <div className="mx-auto mb-1 flex h-10 w-10 items-center justify-center rounded-lg border border-orange-700/30 bg-orange-700/10 md:mb-2 md:h-12 md:w-12">
             <Gem className="h-5 w-5 text-orange-600 md:h-6 md:w-6" />

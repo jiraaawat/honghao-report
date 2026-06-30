@@ -90,10 +90,45 @@ export default function ReportsPage() {
   const totalBuy = report.reduce((sum, r) => sum + r.totalBuy, 0)
   const totalROI = totalBuy > 0 ? (totalProfit / totalBuy) * 100 : 0
 
+  const formatDateInput = (d: Date) => d.toISOString().split('T')[0]
+  const presets = [
+    {
+      key: 'thisMonth',
+      label: t('reports.thisMonth'),
+      get: () => {
+        const now = new Date()
+        const start = new Date(now.getFullYear(), now.getMonth(), 1)
+        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+        return { startDate: formatDateInput(start), endDate: formatDateInput(end) }
+      },
+    },
+    {
+      key: 'last30Days',
+      label: t('reports.last30Days'),
+      get: () => {
+        const end = new Date()
+        const start = new Date()
+        start.setDate(end.getDate() - 30)
+        start.setHours(0, 0, 0, 0)
+        end.setHours(23, 59, 59, 999)
+        return { startDate: formatDateInput(start), endDate: formatDateInput(end) }
+      },
+    },
+    {
+      key: 'allTime',
+      label: t('reports.allTime'),
+      get: () => ({ startDate: '', endDate: '' }),
+    },
+  ]
+  const activePreset = presets.find((p) => {
+    const { startDate: s, endDate: e } = p.get()
+    return s === startDate && e === endDate
+  })
+
   return (
     <div className="space-y-4 p-3 md:space-y-6 md:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <h1 className="font-mono text-2xl font-bold text-zinc-100">$ {t('reports.title')}</h1>
+        <h1 className="truncate font-mono text-2xl font-bold text-zinc-100">$ {t('reports.title')}</h1>
         <div className="flex flex-wrap items-end gap-2">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-zinc-500" />
@@ -116,6 +151,27 @@ export default function ReportsPage() {
               />
             </div>
           </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {presets.map((preset) => {
+              const active = activePreset?.key === preset.key
+              return (
+                <Button
+                  key={preset.key}
+                  type="button"
+                  variant={active ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    const { startDate: s, endDate: e } = preset.get()
+                    setStartDate(s)
+                    setEndDate(e)
+                  }}
+                  className="h-8 font-mono text-[10px]"
+                >
+                  {preset.label}
+                </Button>
+              )
+            })}
+          </div>
           <Button onClick={handleExport} className="h-8 gap-2">
             <Download className="h-4 w-4" />
             <span className="hidden sm:inline">{t('reports.exportExcel')}</span>
@@ -124,7 +180,7 @@ export default function ReportsPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Card className="relative h-28 overflow-hidden border-zinc-800/60 bg-zinc-900/50 p-3 transition-colors hover:border-zinc-700/80 hover:bg-zinc-900/70">
+        <Card className="relative h-28 overflow-hidden border-zinc-800/60 bg-zinc-900/50 p-3 transition-colors hover:border-zinc-700/80">
           <div className="grid h-full grid-rows-[auto_1fr_auto] gap-1">
             <div className="flex items-start justify-between gap-2">
               <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">{t('common.totalProfit')}</span>
@@ -140,7 +196,7 @@ export default function ReportsPage() {
           </div>
         </Card>
 
-        <Card className="relative h-28 overflow-hidden border-zinc-800/60 bg-zinc-900/50 p-3 transition-colors hover:border-zinc-700/80 hover:bg-zinc-900/70">
+        <Card className="relative h-28 overflow-hidden border-zinc-800/60 bg-zinc-900/50 p-3 transition-colors hover:border-zinc-700/80">
           <div className="grid h-full grid-rows-[auto_1fr_auto] gap-1">
             <div className="flex items-start justify-between gap-2">
               <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">{t('reports.totalBuy')}</span>
@@ -156,7 +212,7 @@ export default function ReportsPage() {
           </div>
         </Card>
 
-        <Card className="relative h-28 overflow-hidden border-zinc-800/60 bg-zinc-900/50 p-3 transition-colors hover:border-zinc-700/80 hover:bg-zinc-900/70">
+        <Card className="relative h-28 overflow-hidden border-zinc-800/60 bg-zinc-900/50 p-3 transition-colors hover:border-zinc-700/80">
           <div className="grid h-full grid-rows-[auto_1fr_auto] gap-1">
             <div className="flex items-start justify-between gap-2">
               <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">{t('reports.totalSell')}</span>
@@ -172,7 +228,7 @@ export default function ReportsPage() {
           </div>
         </Card>
 
-        <Card className="relative h-28 overflow-hidden border-zinc-800/60 bg-zinc-900/50 p-3 transition-colors hover:border-zinc-700/80 hover:bg-zinc-900/70">
+        <Card className="relative h-28 overflow-hidden border-zinc-800/60 bg-zinc-900/50 p-3 transition-colors hover:border-zinc-700/80">
           <div className="grid h-full grid-rows-[auto_1fr_auto] gap-1">
             <div className="flex items-start justify-between gap-2">
               <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">{t('common.overallRoi')}</span>

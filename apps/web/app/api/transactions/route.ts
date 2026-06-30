@@ -114,11 +114,11 @@ export async function POST(req: NextRequest) {
     const data = transactionSchema.parse(body)
 
     const result = await prisma.$transaction(async (tx) => {
-      const card = await tx.card.findFirst({
-        where: { id: data.cardId, userId },
+      const card = await tx.card.findUnique({
+        where: { id: data.cardId },
         include: { inventory: true },
       })
-      if (!card) {
+      if (!card || card.userId !== userId) {
         throw new Error('Card not found')
       }
 
@@ -151,10 +151,13 @@ export async function POST(req: NextRequest) {
       await recalculateInventoryFromTransactions(tx, data.cardId, userId)
       await syncCardStatus(tx, data.cardId)
 
-      const cardWithInventory = await tx.card.findFirst({
-        where: { id: data.cardId, userId },
+      const cardWithInventory = await tx.card.findUnique({
+        where: { id: data.cardId },
         include: { inventory: { select: { averageCost: true } } },
       })
+      if (!cardWithInventory || cardWithInventory.userId !== userId) {
+        throw new Error('Card not found')
+      }
 
       return { ...transaction, card: cardWithInventory }
     })

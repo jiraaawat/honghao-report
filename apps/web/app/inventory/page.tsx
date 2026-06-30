@@ -1,9 +1,10 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import useSWR from 'swr'
 import Link from 'next/link'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
@@ -40,6 +41,7 @@ import { InventorySkeleton } from '@/components/inventory/inventory-skeleton'
 import { Tooltip } from '@/components/ui/tooltip'
 import { FlexCardDialog } from '@/components/flex-card-dialog'
 import { UnrealizedValue } from '@/components/inventory/unrealized-value'
+import { EmptyState } from '@/components/ui/empty-state'
 import { compressImage, validateImageFile } from '@/lib/image'
 import {
   Search,
@@ -49,7 +51,6 @@ import {
   TrendingUp,
   Wallet,
   Boxes,
-  Calendar,
   Gem,
   Plus,
   Minus,
@@ -82,7 +83,7 @@ function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }
   )
 }
 
-export default function InventoryPage() {
+function InventoryPageInner() {
   const emptySummary = useMemo(
     () => ({
       totalCards: 0,
@@ -99,15 +100,12 @@ export default function InventoryPage() {
     []
   )
 
-  const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('in_stock')
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [formatFilter, setFormatFilter] = useState<'all' | 'raw' | 'slab' | 'sealed'>('all')
-  const [cardType, setCardType] = useState('')
-  const [game, setGame] = useState('')
-  const [year, setYear] = useState('')
-  const [month, setMonth] = useState('')
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+
+  const validStatus = ['in_stock', 'sold_out', 'grading', '']
+  const validFormat = ['all', 'raw', 'slab', 'sealed']
   type SortBy =
     | 'userOrder'
     | 'value_desc'
@@ -119,10 +117,79 @@ export default function InventoryPage() {
     | 'name_desc'
     | 'quantity_desc'
     | 'quantity_asc'
-  const [sortBy, setSortBy] = useState<SortBy>('userOrder')
+  const validSort: SortBy[] = [
+    'userOrder',
+    'value_desc',
+    'value_asc',
+    'lastTransaction_desc',
+    'createdAt_desc',
+    'createdAt_asc',
+    'name_asc',
+    'name_desc',
+    'quantity_desc',
+    'quantity_asc',
+  ]
+  const validView = ['list', 'grid']
+
+  const [search, setSearch] = useState(searchParams.get('search') ?? '')
+  const [debouncedSearch, setDebouncedSearch] = useState(searchParams.get('search') ?? '')
+  const [statusFilter, setStatusFilter] = useState(
+    validStatus.includes(searchParams.get('status') || '') ? searchParams.get('status') || 'in_stock' : 'in_stock'
+  )
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [formatFilter, setFormatFilter] = useState<'all' | 'raw' | 'slab' | 'sealed'>(
+    validFormat.includes(searchParams.get('format') || '')
+      ? (searchParams.get('format') as 'all' | 'raw' | 'slab' | 'sealed') || 'all'
+      : 'all'
+  )
+  const [cardType, setCardType] = useState(searchParams.get('cardType') ?? '')
+  const [game, setGame] = useState(searchParams.get('game') ?? '')
+  const [year, setYear] = useState(searchParams.get('year') ?? '')
+  const [month, setMonth] = useState(searchParams.get('month') ?? '')
+  const [sortBy, setSortBy] = useState<SortBy>(
+    validSort.includes(searchParams.get('sortBy') as SortBy)
+      ? (searchParams.get('sortBy') as SortBy)
+      : 'userOrder'
+  )
   const [reorderDraft, setReorderDraft] = useState<InventoryItem[] | null>(null)
   const [showFilters, setShowFilters] = useState(false)
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>(
+    validView.includes(searchParams.get('view') || '')
+      ? (searchParams.get('view') as 'list' | 'grid') || 'grid'
+      : 'grid'
+  )
+
+  useEffect(() => {
+    const params = new URLSearchParams()
+    const defaults: Record<string, string> = {
+      status: 'in_stock',
+      format: 'all',
+      sortBy: 'userOrder',
+      view: 'grid',
+    }
+    const setOrDelete = (key: string, value: string) => {
+      if (value && value !== defaults[key]) {
+        params.set(key, value)
+      } else {
+        params.delete(key)
+      }
+    }
+    setOrDelete('search', search)
+    setOrDelete('status', statusFilter)
+    setOrDelete('format', formatFilter)
+    setOrDelete('cardType', cardType)
+    setOrDelete('game', game)
+    setOrDelete('year', year)
+    setOrDelete('month', month)
+    setOrDelete('sortBy', sortBy)
+    setOrDelete('view', viewMode)
+
+    const newQs = params.toString()
+    const currentQs = searchParams.toString()
+    if (newQs !== currentQs) {
+      router.replace(newQs ? `${pathname}?${newQs}` : pathname, { scroll: false })
+    }
+  }, [search, statusFilter, formatFilter, cardType, game, year, month, sortBy, viewMode, pathname, router, searchParams])
 
   const inventoryParams = useMemo(() => {
     const params = new URLSearchParams()
@@ -662,6 +729,11 @@ export default function InventoryPage() {
     })
   }, [items, year, month, statusFilter, formatFilter, formatGroups])
 
+  const hasFilters = useMemo(
+    () => Boolean(search || statusFilter || cardType || game || year || month || formatFilter !== 'all'),
+    [search, statusFilter, cardType, game, year, month, formatFilter]
+  )
+
   const sortedItems = useMemo(() => {
     const list = [...filteredItems]
     switch (sortBy) {
@@ -810,7 +882,7 @@ export default function InventoryPage() {
     <div className="space-y-4 p-3 md:space-y-6 md:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="font-mono text-2xl font-bold text-zinc-100">$ {t('inventory.title')}</h1>
+          <h1 className="truncate font-mono text-2xl font-bold text-zinc-100">$ {t('inventory.title')}</h1>
           <p className="font-mono text-sm text-zinc-500">{t('inventory.pageSubtitle')}</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -838,7 +910,7 @@ export default function InventoryPage() {
               transition={{ duration: 0.35, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
               className="min-w-[10rem] flex-1"
             >
-              <Card className="relative h-28 overflow-hidden border-zinc-800/60 bg-zinc-900/50 p-3 transition-colors hover:border-zinc-700/80 hover:bg-zinc-900/70">
+              <Card className="relative h-28 overflow-hidden border-zinc-800/60 bg-zinc-900/50 p-3 transition-colors hover:border-zinc-700/80">
                 <div className="grid h-full grid-rows-[auto_1fr_auto] gap-1">
                   <div className="flex items-start justify-between gap-2">
                     <span className="truncate whitespace-nowrap font-mono text-[10px] uppercase tracking-wider text-zinc-500">{s.label}</span>
@@ -1088,29 +1160,54 @@ export default function InventoryPage() {
         </CardHeader>
         <CardContent>
           {sortedItems.length === 0 ? (
-            <div className="py-12 text-center font-mono text-sm text-zinc-500">
-              {t('inventory.noItemsMatch')}
-            </div>
+            hasFilters ? (
+              <EmptyState
+                icon={<Search className="h-6 w-6" />}
+                title={t('inventory.emptyFilteredTitle')}
+                description={t('inventory.emptyFilteredDescription')}
+                action={{
+                  label: t('inventory.emptyFilteredAction'),
+                  onClick: () => {
+                    setSearch('')
+                    setStatusFilter('')
+                    setFormatFilter('all')
+                    setCardType('')
+                    setGame('')
+                    setYear('')
+                    setMonth('')
+                    changeSortBy('userOrder')
+                  },
+                }}
+              />
+            ) : (
+              <EmptyState
+                icon={<Package className="h-6 w-6" />}
+                title={t('inventory.emptyTitle')}
+                description={t('inventory.emptyDescription')}
+                action={{ label: t('inventory.emptyAction'), onClick: () => openAdd(null) }}
+                secondaryAction={{ label: t('inventory.emptySecondaryAction'), href: '/cards', variant: 'outline' }}
+              />
+            )
           ) : (
             <>
               <div className={cn('hidden overflow-x-auto md:block', viewMode !== 'list' && 'md:hidden')}>
                 <table className="w-full text-left font-mono text-sm">
                   <thead>
                     <tr className="border-b border-zinc-800 text-zinc-500">
-                      <th className="pb-2 pr-4">{t('inventory.table.card')}</th>
-                      <th className="pb-2 pr-4">{t('inventory.table.type')}</th>
-                      <th className="pb-2 pr-4">{t('inventory.table.game')}</th>
-                      <th className="pb-2 pr-4">{t('common.language')}</th>
-                      <th className="pb-2 pr-4">{t('inventory.table.condition')}</th>
-                      <th className="pb-2 pr-4">{t('inventory.table.status')}</th>
-                      <th className="pb-2 pr-4">{t('inventory.table.createdSold')}</th>
-                      <th className="pb-2 pr-4 text-right">{t('inventory.table.qty')}</th>
-                      <th className="pb-2 pr-4 text-right">{t('inventory.table.avgCost')}</th>
-                      <th className="pb-2 pr-4 text-right">{t('inventory.table.marketValue')}</th>
-                      <th className="pb-2 pr-4 text-right">{t('inventory.table.totalValue')}</th>
-                      <th className="pb-2 pr-4 text-right">{t('inventory.table.unrealized')}</th>
-                      <th className="pb-2 pr-4 text-right">{t('inventory.table.profit')}</th>
-                      <th className="w-28 pb-2">{t('inventory.table.actions')}</th>
+                      <th className="whitespace-nowrap pb-2 pr-4">{t('inventory.table.card')}</th>
+                      <th className="whitespace-nowrap pb-2 pr-4">{t('inventory.table.type')}</th>
+                      <th className="whitespace-nowrap pb-2 pr-4">{t('inventory.table.game')}</th>
+                      <th className="whitespace-nowrap pb-2 pr-4">{t('common.language')}</th>
+                      <th className="whitespace-nowrap pb-2 pr-4">{t('inventory.table.condition')}</th>
+                      <th className="whitespace-nowrap pb-2 pr-4">{t('inventory.table.status')}</th>
+                      <th className="whitespace-nowrap pb-2 pr-4">{t('inventory.table.createdSold')}</th>
+                      <th className="whitespace-nowrap pb-2 pr-4 text-right">{t('inventory.table.qty')}</th>
+                      <th className="whitespace-nowrap pb-2 pr-4 text-right">{t('inventory.table.avgCost')}</th>
+                      <th className="whitespace-nowrap pb-2 pr-4 text-right">{t('inventory.table.marketValue')}</th>
+                      <th className="whitespace-nowrap pb-2 pr-4 text-right">{t('inventory.table.totalValue')}</th>
+                      <th className="whitespace-nowrap pb-2 pr-4 text-right">{t('inventory.table.unrealized')}</th>
+                      <th className="whitespace-nowrap pb-2 pr-4 text-right">{t('inventory.table.profit')}</th>
+                      <th className="w-28 whitespace-nowrap pb-2">{t('inventory.table.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1231,7 +1328,7 @@ export default function InventoryPage() {
                                       e.stopPropagation()
                                       openAdd(item)
                                     }}
-                                    className="h-7 w-7 shrink-0 border-lime-600/30 text-lime-500 hover:bg-lime-600/10 hover:text-lime-500"
+                                    className="h-7 w-7 shrink-0 border-lime-600/30 bg-zinc-950 text-lime-500 shadow-sm transition-all hover:border-lime-500/50 hover:bg-lime-600/10 hover:text-lime-500 hover:shadow-[0_0_8px_rgba(132,204,22,0.15)]"
                                   >
                                     <Plus className="h-3.5 w-3.5" />
                                   </Button>
@@ -1245,7 +1342,7 @@ export default function InventoryPage() {
                                       e.stopPropagation()
                                       openRemove(item)
                                     }}
-                                    className="h-7 w-7 shrink-0 border-zinc-600 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                                    className="h-7 w-7 shrink-0 border-zinc-600 bg-zinc-950 text-zinc-400 shadow-sm transition-all hover:border-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
                                   >
                                     <Minus className="h-3.5 w-3.5" />
                                   </Button>
@@ -1257,7 +1354,7 @@ export default function InventoryPage() {
                                       size="icon"
                                       aria-label={t('common.sendToGrade')}
                                       onClick={(e) => e.stopPropagation()}
-                                      className="h-7 w-7 shrink-0 border-orange-700/30 text-orange-600 hover:bg-orange-700/10 hover:text-orange-600"
+                                      className="h-7 w-7 shrink-0 border-orange-700/30 bg-zinc-950 text-orange-600 shadow-sm transition-all hover:border-orange-500/50 hover:bg-orange-700/10 hover:text-orange-600 hover:shadow-[0_0_8px_rgba(249,115,22,0.15)]"
                                     >
                                       <Gem className="h-3.5 w-3.5" />
                                     </Button>
@@ -1272,7 +1369,7 @@ export default function InventoryPage() {
                                       e.stopPropagation()
                                       openCost(item)
                                     }}
-                                    className="h-7 w-7 shrink-0 border-blue-500/30 text-blue-400 hover:bg-blue-500/10 hover:text-blue-400"
+                                    className="h-7 w-7 shrink-0 border-blue-500/30 bg-zinc-950 text-blue-400 shadow-sm transition-all hover:border-blue-400/50 hover:bg-blue-500/10 hover:text-blue-400 hover:shadow-[0_0_8px_rgba(96,165,250,0.15)]"
                                   >
                                     <Pencil className="h-3.5 w-3.5" />
                                   </Button>
@@ -1380,7 +1477,7 @@ export default function InventoryPage() {
                               size="sm"
                               variant="outline"
                               aria-label={t('common.sendToGrade')}
-                              className="h-7 px-2 text-orange-600 hover:bg-orange-700/10 hover:text-orange-600"
+                              className="h-7 border-orange-700/30 bg-zinc-950 px-2 text-orange-600 shadow-sm transition-all hover:border-orange-500/50 hover:bg-orange-700/10 hover:text-orange-600 hover:shadow-[0_0_8px_rgba(249,115,22,0.15)]"
                             >
                               <Gem className="h-3.5 w-3.5" />
                             </Button>
@@ -1389,7 +1486,7 @@ export default function InventoryPage() {
                             size="sm"
                             variant="outline"
                             aria-label={t('inventory.editCost')}
-                            className="h-7 px-2 text-blue-400 hover:bg-blue-500/10 hover:text-blue-400"
+                            className="h-7 border-blue-500/30 bg-zinc-950 px-2 text-blue-400 shadow-sm transition-all hover:border-blue-400/50 hover:bg-blue-500/10 hover:text-blue-400 hover:shadow-[0_0_8px_rgba(96,165,250,0.15)]"
                             onClick={() => openCost(item)}
                           >
                             <Pencil className="h-3.5 w-3.5" />
@@ -1513,7 +1610,7 @@ export default function InventoryPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.2 }}
-              className="grid grid-cols-2 gap-4 auto-rows-[1fr] sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+              className="grid grid-cols-2 gap-3 auto-rows-[1fr] sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8"
             >
               {sortedItems.map((item) => (
                 <div key={item.cardId}>{renderInventoryCard(item)}</div>
@@ -2166,5 +2263,13 @@ export default function InventoryPage() {
         onUpdateValue={updateCurrentValue}
       />
     </div>
+  )
+}
+
+export default function InventoryPage() {
+  return (
+    <Suspense fallback={<InventorySkeleton />}>
+      <InventoryPageInner />
+    </Suspense>
   )
 }

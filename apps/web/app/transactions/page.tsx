@@ -21,9 +21,10 @@ import { useLanguage } from '@/lib/i18n/provider'
 import { useSession } from 'next-auth/react'
 import { fetcher, swrOptions } from '@/lib/swr'
 import { FlexCard } from '@/components/flex-card'
+import { EmptyState } from '@/components/ui/empty-state'
 import { InlineLoader } from '@/components/ui/loading'
 import { TransactionsSkeleton } from '@/components/transactions/transactions-skeleton'
-import { Search, Calendar, ChevronUp, ChevronDown, Zap, Download, Share2, Eye } from 'lucide-react'
+import { Search, Calendar, ChevronUp, ChevronDown, Zap, Download, Share2, Eye, Receipt } from 'lucide-react'
 
 export default function TransactionsPage() {
   const { t } = useLanguage()
@@ -35,6 +36,11 @@ export default function TransactionsPage() {
   const [filterCardType, setFilterCardType] = useState('')
   const [filterGame, setFilterGame] = useState('')
   const [showFilters, setShowFilters] = useState(false)
+
+  const hasFilters = useMemo(
+    () => Boolean(filterYear || filterMonth || search || filterType || filterCardType || filterGame),
+    [filterYear, filterMonth, search, filterType, filterCardType, filterGame]
+  )
 
   const txParams = useMemo(() => {
     const params = new URLSearchParams()
@@ -151,10 +157,10 @@ export default function TransactionsPage() {
   return (
     <div className="space-y-4 p-3 md:space-y-6 md:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <h1 className="font-mono text-2xl font-bold text-zinc-100">$ {t('transactions.title')}</h1>
+        <h1 className="truncate font-mono text-2xl font-bold text-zinc-100">$ {t('transactions.title')}</h1>
       </div>
 
-      <Card className="border-zinc-800 bg-zinc-900/80">
+      <Card className="border-zinc-800 bg-zinc-900/50">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="font-mono text-sm">{t('common.filters')}</CardTitle>
           <Button
@@ -228,7 +234,7 @@ export default function TransactionsPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-zinc-800 bg-zinc-900/80">
+      <Card className="border-zinc-800 bg-zinc-900/50">
           <CardHeader>
             <CardTitle className="font-mono text-sm">
               {t('transactions.transactionsWithCount', { count: transactions.length })}
@@ -238,9 +244,31 @@ export default function TransactionsPage() {
             {txLoading ? (
               <InlineLoader />
             ) : transactions.length === 0 ? (
-              <div className="py-12 text-center font-mono text-sm text-zinc-500">
-                {t('transactions.noTransactionsForPeriod', { month: filterMonth.padStart(2, '0'), year: filterYear })}
-              </div>
+              hasFilters ? (
+                <EmptyState
+                  icon={<Search className="h-6 w-6" />}
+                  title={t('transactions.emptyFilteredTitle')}
+                  description={t('transactions.emptyFilteredDescription')}
+                  action={{
+                    label: t('common.clearFilters'),
+                    onClick: () => {
+                      setFilterYear('')
+                      setFilterMonth('')
+                      setSearch('')
+                      setFilterType('')
+                      setFilterCardType('')
+                      setFilterGame('')
+                    },
+                  }}
+                />
+              ) : (
+                <EmptyState
+                  icon={<Receipt className="h-6 w-6" />}
+                  title={t('transactions.emptyTitle')}
+                  description={t('transactions.emptyDescription')}
+                  action={{ label: t('transactions.emptyAction'), href: '/inventory' }}
+                />
+              )
             ) : (
               <>
                 <div className="hidden overflow-x-auto md:block">

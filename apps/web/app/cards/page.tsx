@@ -388,7 +388,7 @@ function CardsPageContent() {
         transition={{ duration: 0.3 }}
         className="mb-6"
       >
-        <h1 className="font-mono text-xl font-bold text-zinc-100">{t('cards.title')}</h1>
+        <h1 className="truncate font-mono text-xl font-bold text-zinc-100">{t('cards.title')}</h1>
         <p className="font-mono text-xs text-zinc-500">{t('cards.subtitle')}</p>
         <p className="mt-1 font-mono text-[10px] text-orange-600">{t('cards.testDataNote')}</p>
 
@@ -657,10 +657,10 @@ function CardsPageContent() {
                   <Tooltip content={t('wishlist.add')} side="top">
                     <Button
                       type="button"
-                      size="sm"
-                      variant="ghost"
+                      size="icon"
+                      variant="outline"
                       aria-label={t('wishlist.add')}
-                      className="h-8 w-8 shrink-0 p-0"
+                      className="h-8 w-8 shrink-0 rounded-md border-zinc-700 bg-zinc-950 p-0 text-zinc-400 shadow-sm transition-all hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-500"
                       onClick={(e) => {
                         e.stopPropagation()
                         toggleWishlist(card)
@@ -670,7 +670,7 @@ function CardsPageContent() {
                         className={`h-4 w-4 ${
                           wishlistItems.some((w) => w.catalogCardId === card.id)
                             ? 'fill-red-500 text-red-500'
-                            : 'text-zinc-500'
+                            : ''
                         }`}
                       />
                     </Button>

@@ -115,7 +115,7 @@ export default function DashboardPage() {
     <div className="space-y-6 p-3 pt-4 md:space-y-8 md:p-6 md:pt-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="font-mono text-2xl font-bold text-zinc-100">$ {t('dashboard.title')}</h1>
+          <h1 className="truncate font-mono text-2xl font-bold text-zinc-100">$ {t('dashboard.title')}</h1>
           <p className="font-mono text-sm text-zinc-500">
             {t('dashboard.welcomeBack')}, {session?.user?.name || session?.user?.email}
           </p>
@@ -177,7 +177,7 @@ export default function DashboardPage() {
           ]}
         />
 
-        <Card className="min-h-[9rem] border-zinc-800 bg-zinc-900/80 lg:h-44">
+        <Card className="min-h-[9rem] border-zinc-800 bg-zinc-900/50 lg:h-44">
           <CardContent className="flex h-full flex-col gap-3 px-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:px-6 lg:py-6">
             <div className="font-mono text-sm text-zinc-400">
               {t('dashboard.periodStats')}
@@ -185,9 +185,9 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:border-l lg:border-zinc-800 lg:pl-6">
               <div className="min-w-0 space-y-3">
-                <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-400">
+                <div className="flex items-center gap-1.5 whitespace-nowrap font-mono text-[10px] uppercase tracking-wider text-zinc-400">
                   <span className="h-1.5 w-1.5 rounded-full bg-lime-600/70" />
-                  {t('dashboard.profitLoss')}
+                  <span className="truncate">{t('dashboard.profitLoss')}</span>
                 </div>
                 <div
                   className={`inline-flex min-w-0 max-w-full items-center overflow-hidden rounded-lg border bg-zinc-950/60 px-2 py-1 font-mono text-base font-bold drop-shadow-[0_1px_10px_rgba(0,0,0,0.5)] sm:px-3 sm:text-xl ${
@@ -206,9 +206,9 @@ export default function DashboardPage() {
               </div>
 
               <div className="min-w-0 space-y-3">
-                <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-400">
+                <div className="flex items-center gap-1.5 whitespace-nowrap font-mono text-[10px] uppercase tracking-wider text-zinc-400">
                   <span className="h-1.5 w-1.5 rounded-full bg-orange-700/70" />
-                  {t('dashboard.totalSell')}
+                  <span className="truncate">{t('dashboard.totalSell')}</span>
                 </div>
                 <div className="inline-flex min-w-0 max-w-full items-center overflow-hidden rounded-lg border border-orange-700/30 bg-zinc-950/60 px-2 py-1 font-mono text-sm font-bold text-orange-600 drop-shadow-[0_1px_10px_rgba(0,0,0,0.5)] shadow-[inset_0_0_20px_rgba(249,115,22,0.06)] sm:px-3 sm:text-lg">
                   <FitText minScale={0.6}>
@@ -218,9 +218,9 @@ export default function DashboardPage() {
               </div>
 
               <div className="min-w-0 space-y-3">
-                <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-400">
+                <div className="flex items-center gap-1.5 whitespace-nowrap font-mono text-[10px] uppercase tracking-wider text-zinc-400">
                   <span className="h-1.5 w-1.5 rounded-full bg-orange-700/70" />
-                  {t('dashboard.periodRoi')}
+                  <span className="truncate">{t('dashboard.periodRoi')}</span>
                 </div>
                 <div
                   className={`inline-flex min-w-0 max-w-full items-center overflow-hidden rounded-lg border bg-zinc-950/60 px-2 py-1 font-mono text-sm font-bold drop-shadow-[0_1px_10px_rgba(0,0,0,0.5)] sm:px-3 sm:text-lg ${
@@ -240,7 +240,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 lg:auto-rows-[minmax(220px,auto)]">
-        <Card className="flex h-full flex-col border-zinc-800 bg-zinc-900/80 md:row-span-2">
+        <Card className="flex h-full flex-col border-zinc-800 bg-zinc-900/50 md:row-span-2">
           <CardHeader className="pb-3">
             <CardTitle className="font-mono text-sm">{t('dashboard.inventorySnapshot')}</CardTitle>
           </CardHeader>
@@ -275,7 +275,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="h-full border-zinc-800 bg-zinc-900/80">
+        <Card className="h-full border-zinc-800 bg-zinc-900/50">
           <CardHeader className="pb-3">
             <CardTitle className="font-mono text-sm">{t('dashboard.topCard')}</CardTitle>
           </CardHeader>
@@ -335,7 +335,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="h-full border-zinc-800 bg-zinc-900/80">
+        <Card className="h-full border-zinc-800 bg-zinc-900/50">
           <CardHeader className="pb-3">
             <CardTitle className="font-mono text-sm">{t('dashboard.topProfit')}</CardTitle>
           </CardHeader>
@@ -395,7 +395,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="h-full border-zinc-800 bg-zinc-900/80">
+        <Card className="h-full border-zinc-800 bg-zinc-900/50">
           <CardHeader className="pb-3">
             <CardTitle className="font-mono text-sm">{t('dashboard.lastAdded')}</CardTitle>
           </CardHeader>
@@ -445,7 +445,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="h-full border-zinc-800 bg-zinc-900/80 md:col-span-2">
+        <Card className="h-full border-zinc-800 bg-zinc-900/50 md:col-span-2">
           <CardHeader className="pb-3">
             <CardTitle className="font-mono text-sm">{t('dashboard.byGame')}</CardTitle>
           </CardHeader>
@@ -467,7 +467,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="h-full border-zinc-800 bg-zinc-900/80">
+        <Card className="h-full border-zinc-800 bg-zinc-900/50">
           <CardHeader className="pb-3">
             <CardTitle className="font-mono text-sm">{t('dashboard.byCardType')}</CardTitle>
           </CardHeader>
@@ -490,7 +490,7 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <Card className="border-zinc-800 bg-zinc-900/80">
+      <Card className="border-zinc-800 bg-zinc-900/50">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="font-mono text-sm">{t('dashboard.recentTransactions')}</CardTitle>
           <Link href="/transactions">

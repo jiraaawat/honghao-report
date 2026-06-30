@@ -13,7 +13,8 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n/provider'
 import { fetcher, swrOptions } from '@/lib/swr'
 import { GradingSkeleton } from '@/components/grading/grading-skeleton'
-import { Plus, CheckCircle, XCircle, Gem, ArrowRight, ChevronUp, ChevronDown } from 'lucide-react'
+import { EmptyState } from '@/components/ui/empty-state'
+import { Plus, CheckCircle, XCircle, Gem, ChevronUp, ChevronDown } from 'lucide-react'
 
 interface GradingWithCard {
   id: string
@@ -93,7 +94,7 @@ export default function GradingPage() {
     <div className="space-y-4 p-3 md:space-y-6 md:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="font-mono text-2xl font-bold text-zinc-100">$ {t('grading.title')}</h1>
+          <h1 className="truncate font-mono text-2xl font-bold text-zinc-100">$ {t('grading.title')}</h1>
           <p className="font-mono text-sm text-zinc-500">{t('grading.subtitle')}</p>
         </div>
         <Link href="/grading/send">
@@ -104,7 +105,7 @@ export default function GradingPage() {
         </Link>
       </div>
 
-      <Card className="border-zinc-800 bg-zinc-900/80">
+      <Card className="border-zinc-800 bg-zinc-900/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-mono text-sm">
             <Gem className="h-4 w-4 text-orange-600" />
@@ -113,16 +114,12 @@ export default function GradingPage() {
         </CardHeader>
         <CardContent>
           {gradings.length === 0 ? (
-            <div className="py-12 text-center font-mono text-sm text-zinc-500">
-              {t('grading.noCards')}
-              <div className="mt-2">
-                <Link href="/grading/send">
-                  <Button variant="outline" size="sm" className="gap-1">
-                    {t('grading.sendNow')} <ArrowRight className="h-3 w-3" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
+            <EmptyState
+              icon={<Gem className="h-6 w-6" />}
+              title={t('grading.emptyTitle')}
+              description={t('grading.emptyDescription')}
+              action={{ label: t('grading.emptyAction'), href: '/grading/send' }}
+            />
           ) : (
             <div className="space-y-4">
               {gradings.map((g) => (
@@ -207,7 +204,7 @@ export default function GradingPage() {
       </Card>
 
       {completed.length > 0 && (
-        <Card className="border-zinc-800 bg-zinc-900/80">
+        <Card className="border-zinc-800 bg-zinc-900/50">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2 font-mono text-sm">
               <CheckCircle className="h-4 w-4 text-lime-500" />

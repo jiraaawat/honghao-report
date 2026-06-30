@@ -81,11 +81,11 @@ export async function PUT(
     const totalAmount = data.quantity * data.pricePerUnit + shippingCost
 
     await prisma.$transaction(async (tx) => {
-      const card = await tx.card.findFirst({
-        where: { id: transaction.cardId, userId },
+      const card = await tx.card.findUnique({
+        where: { id: transaction.cardId },
         include: { inventory: true },
       })
-      if (!card) {
+      if (!card || card.userId !== userId) {
         throw new Error('Card not found')
       }
 
@@ -177,11 +177,11 @@ export async function DELETE(
 
   try {
     await prisma.$transaction(async (tx) => {
-      const card = await tx.card.findFirst({
-        where: { id: transaction.cardId, userId },
+      const card = await tx.card.findUnique({
+        where: { id: transaction.cardId },
         include: { inventory: true },
       })
-      if (!card) {
+      if (!card || card.userId !== userId) {
         throw new Error('Card not found')
       }
 

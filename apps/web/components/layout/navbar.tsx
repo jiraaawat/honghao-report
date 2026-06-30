@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n/provider'
 import { LanguageToggle } from '@/components/i18n/language-toggle'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
+import { Tooltip } from '@/components/ui/tooltip'
 import { DictionaryKey } from '@/lib/i18n/dictionary'
 
 const navItems: { href: string; label: DictionaryKey; icon: React.ElementType }[] = [
@@ -72,52 +73,50 @@ export function Navbar() {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 h-14 transform-gpu border-b border-zinc-800 bg-zinc-950/80 backdrop-blur">
-        <div className="flex h-full items-center px-4 md:px-6">
-          <div className="hidden flex-1 items-center md:flex">
-            <Link
-              href="/dashboard"
-              className="font-mono text-sm font-bold"
-            >
+        <div className="flex h-full items-center justify-between px-4 md:px-6">
+          <div className="flex w-fit items-center gap-3 md:flex-1">
+            <Link href="/dashboard" className="hidden font-mono text-sm font-bold md:block">
               <span className="bg-gradient-to-r from-lime-300 via-orange-300 to-lime-300 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]">
                 $ honghao
               </span>
             </Link>
+            <div className="flex items-center gap-3 md:hidden">
+              <ThemeToggle />
+              <LanguageToggle />
+            </div>
           </div>
 
-          <div className="relative z-10 flex items-center gap-3 md:hidden">
-            <ThemeToggle />
-            <LanguageToggle />
-          </div>
-
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 md:hidden">
+          <div className="flex min-w-0 flex-1 items-center justify-center md:hidden">
             {titleKey ? (
-              <h2 className="font-mono text-sm font-medium tracking-tight text-zinc-200">{t(titleKey)}</h2>
+              <h2 className="truncate px-2 font-mono text-sm font-medium tracking-tight text-zinc-200">{t(titleKey)}</h2>
             ) : null}
           </div>
 
-          <nav className="hidden flex-1 items-center justify-center gap-1 md:flex">
+          <nav className="hidden flex-1 items-center justify-center gap-1 md:flex lg:gap-1.5">
             {navItems.map((item) => {
               const Icon = item.icon
               const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    'flex items-center gap-2 rounded-md border px-3 py-1.5 font-mono text-xs transition-colors',
-                    isActive
-                      ? 'border-lime-600/50 bg-lime-600/10 text-lime-500'
-                      : 'border-transparent text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100'
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  {t(item.label)}
-                </Link>
+                <Tooltip content={t(item.label)} side="bottom" key={item.href}>
+                  <Link
+                    href={item.href}
+                    aria-label={t(item.label)}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-md border px-2 py-1.5 font-mono text-[10px] transition-colors lg:px-3 lg:text-xs',
+                      isActive
+                        ? 'border-lime-600/50 bg-lime-600/10 text-lime-500'
+                        : 'border-transparent text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100'
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span className="hidden truncate lg:inline">{t(item.label)}</span>
+                  </Link>
+                </Tooltip>
               )
             })}
           </nav>
 
-          <div className="relative z-10 flex flex-1 items-center justify-end gap-3">
+          <div className="flex w-fit items-center justify-end gap-3 md:flex-1">
             <div className="hidden items-center gap-3 md:flex">
               <ThemeToggle />
               <LanguageToggle />
@@ -150,23 +149,23 @@ export function Navbar() {
             const Icon = item.icon
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`)
             return (
-              <li key={item.href} className="flex-1">
+              <li key={item.href} className="min-w-0 flex-1">
                 <Link
                   href={item.href}
                   className={cn(
-                    'flex flex-col items-center gap-1 rounded-xl py-2 text-[10px] font-mono font-bold transition-colors',
+                    'flex flex-col items-center gap-0.5 rounded-xl py-1.5 text-[8px] font-mono font-bold leading-none transition-colors sm:py-2 sm:text-[9px]',
                     active ? 'text-lime-500' : 'text-zinc-500 hover:text-zinc-300'
                   )}
                 >
                   <span
                     className={cn(
-                      'rounded-lg p-1.5 transition-colors',
+                      'rounded-lg p-1 transition-colors sm:p-1.5',
                       active && 'bg-lime-600/15'
                     )}
                   >
-                    <Icon className="h-5 w-5" />
+                    <Icon className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
                   </span>
-                  {t(item.label)}
+                  <span className="w-full truncate px-0.5 text-center">{t(item.label)}</span>
                 </Link>
               </li>
             )

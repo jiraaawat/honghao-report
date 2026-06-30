@@ -79,7 +79,7 @@ export default function RegisterPage() {
         />
       </div>
 
-      <Card className="group relative w-full max-w-md overflow-hidden border-lime-600/30 bg-zinc-900/80 backdrop-blur">
+      <Card className="group relative w-full max-w-md overflow-hidden border-lime-600/30 bg-zinc-900/50 backdrop-blur">
         {/* Foil shimmer */}
         <div className="pointer-events-none absolute inset-0 -translate-x-[150%] bg-gradient-to-r from-transparent via-lime-300/10 via-white/5 to-transparent opacity-0 transition-all duration-1000 ease-in-out group-hover:translate-x-[150%] group-hover:opacity-100" />
 
