@@ -655,6 +655,7 @@ function CardsPageContent() {
                       type="button"
                       size="sm"
                       variant="ghost"
+                      aria-label={t('wishlist.add')}
                       className="h-8 w-8 shrink-0 p-0"
                       onClick={(e) => {
                         e.stopPropagation()

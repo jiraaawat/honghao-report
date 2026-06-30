@@ -42,7 +42,7 @@ function generateMockItems(): TickerItem[] {
 
 function LiveDot() {
   return (
-    <span className="relative flex h-1.5 w-1.5">
+    <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-lime-400 opacity-75" />
       <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-lime-500" />
     </span>
@@ -62,7 +62,7 @@ function MarketTicker() {
   const track = [...repeated, ...repeated]
 
   return (
-    <div className="ticker-box hidden min-w-0 max-w-sm flex-1 items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-2 py-1 xl:flex">
+    <div className="ticker-box hidden min-w-0 max-w-sm flex-1 items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-2 py-1 xl:flex" aria-hidden="true">
       <div className="flex shrink-0 items-center gap-1.5">
         <LiveDot />
         <span className="font-mono text-[9px] font-black uppercase tracking-wider text-zinc-500">live</span>

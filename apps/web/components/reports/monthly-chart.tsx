@@ -1,5 +1,6 @@
 'use client'
 
+import { useId } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useLanguage } from '@/lib/i18n/provider'
 import { formatCurrency } from '@/lib/utils'
@@ -83,6 +84,7 @@ function ChartTooltip({
 
 function ProfitTrendChart({ data }: { data: ChartRow[] }) {
   const { t } = useLanguage()
+  const gradientId = useId()
 
   return (
     <Card className="border-zinc-800 bg-zinc-900/50">
@@ -94,9 +96,9 @@ function ProfitTrendChart({ data }: { data: ChartRow[] }) {
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
               <defs>
-                <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
+                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#84cc16" stopOpacity={0.4} />
+                  <stop offset="95%" stopColor="#84cc16" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
@@ -135,10 +137,10 @@ function ProfitTrendChart({ data }: { data: ChartRow[] }) {
                 type="monotone"
                 dataKey="profit"
                 name={t('common.totalProfit')}
-                stroke="#10b981"
+                stroke="#84cc16"
                 strokeWidth={2}
-                fill="url(#profitGradient)"
-                activeDot={{ r: 5, strokeWidth: 0, fill: '#34d399' }}
+                fill={`url(#${gradientId})`}
+                activeDot={{ r: 5, strokeWidth: 0, fill: '#a3e635' }}
                 animationDuration={1200}
               />
               <Line
@@ -146,10 +148,10 @@ function ProfitTrendChart({ data }: { data: ChartRow[] }) {
                 type="monotone"
                 dataKey="roi"
                 name={t('common.overallRoi')}
-                stroke="#f59e0b"
+                stroke="#f97316"
                 strokeWidth={2}
-                dot={{ r: 3, fill: '#f59e0b', strokeWidth: 0 }}
-                activeDot={{ r: 5, strokeWidth: 0 }}
+                dot={{ r: 3, fill: '#f97316', strokeWidth: 0 }}
+                activeDot={{ r: 5, strokeWidth: 0, fill: '#fb923c' }}
                 animationDuration={1200}
               />
             </ComposedChart>
@@ -162,6 +164,8 @@ function ProfitTrendChart({ data }: { data: ChartRow[] }) {
 
 function BuySellChart({ data }: { data: ChartRow[] }) {
   const { t } = useLanguage()
+  const buyGradientId = useId()
+  const sellGradientId = useId()
 
   return (
     <Card className="border-zinc-800 bg-zinc-900/50">
@@ -173,13 +177,13 @@ function BuySellChart({ data }: { data: ChartRow[] }) {
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
               <defs>
-                <linearGradient id="buyGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.9} />
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.35} />
+                <linearGradient id={buyGradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#f97316" stopOpacity={0.9} />
+                  <stop offset="95%" stopColor="#f97316" stopOpacity={0.35} />
                 </linearGradient>
-                <linearGradient id="sellGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.9} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.35} />
+                <linearGradient id={sellGradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#84cc16" stopOpacity={0.9} />
+                  <stop offset="95%" stopColor="#84cc16" stopOpacity={0.35} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
@@ -207,7 +211,7 @@ function BuySellChart({ data }: { data: ChartRow[] }) {
               <Bar
                 dataKey="buy"
                 name={t('reports.totalBuy')}
-                fill="url(#buyGradient)"
+                fill={`url(#${buyGradientId})`}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={32}
                 animationDuration={1200}
@@ -215,7 +219,7 @@ function BuySellChart({ data }: { data: ChartRow[] }) {
               <Bar
                 dataKey="sell"
                 name={t('reports.totalSell')}
-                fill="url(#sellGradient)"
+                fill={`url(#${sellGradientId})`}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={32}
                 animationDuration={1200}
@@ -224,10 +228,10 @@ function BuySellChart({ data }: { data: ChartRow[] }) {
                 type="monotone"
                 dataKey="profit"
                 name={t('common.totalProfit')}
-                stroke="#f59e0b"
+                stroke="#84cc16"
                 strokeWidth={2}
-                dot={{ r: 3, fill: '#f59e0b', strokeWidth: 0 }}
-                activeDot={{ r: 5, strokeWidth: 0 }}
+                dot={{ r: 3, fill: '#84cc16', strokeWidth: 0 }}
+                activeDot={{ r: 5, strokeWidth: 0, fill: '#a3e635' }}
                 animationDuration={1200}
               />
             </ComposedChart>

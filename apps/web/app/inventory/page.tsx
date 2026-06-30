@@ -39,6 +39,7 @@ import { fetcher, swrOptions } from '@/lib/swr'
 import { InventorySkeleton } from '@/components/inventory/inventory-skeleton'
 import { Tooltip } from '@/components/ui/tooltip'
 import { FlexCardDialog } from '@/components/flex-card-dialog'
+import { compressImage, validateImageFile } from '@/lib/image'
 import {
   Search,
   Package,
@@ -1025,6 +1026,7 @@ export default function InventoryPage() {
               <Tooltip content={t('inventory.listView')} side="bottom">
                 <button
                   type="button"
+                  aria-label={t('inventory.listView')}
                   onClick={() => setViewMode('list')}
                   className={cn(
                     'flex h-8 items-center gap-2 rounded-md px-3 font-mono text-xs font-medium transition-all',
@@ -1039,6 +1041,7 @@ export default function InventoryPage() {
               <Tooltip content={t('inventory.gridView')} side="bottom">
                 <button
                   type="button"
+                  aria-label={t('inventory.gridView')}
                   onClick={() => setViewMode('grid')}
                   className={cn(
                     'flex h-8 items-center gap-2 rounded-md px-3 font-mono text-xs font-medium transition-all',
@@ -1196,6 +1199,7 @@ export default function InventoryPage() {
                                   <Button
                                     variant="outline"
                                     size="icon"
+                                    aria-label={t('common.add')}
                                     onClick={(e) => {
                                       e.stopPropagation()
                                       openAdd(item)
@@ -1209,6 +1213,7 @@ export default function InventoryPage() {
                                   <Button
                                     variant="outline"
                                     size="icon"
+                                    aria-label={t('common.remove')}
                                     onClick={(e) => {
                                       e.stopPropagation()
                                       openRemove(item)
@@ -1219,10 +1224,11 @@ export default function InventoryPage() {
                                   </Button>
                                 </Tooltip>
                                 <Tooltip content={t('common.sendToGrade')} side="left">
-                                  <Link href={`/grading/send?cardId=${item.cardId}`}>
+                                  <Link href={`/grading/send?cardId=${item.cardId}`} aria-label={t('common.sendToGrade')}>
                                     <Button
                                       variant="outline"
                                       size="icon"
+                                      aria-label={t('common.sendToGrade')}
                                       onClick={(e) => e.stopPropagation()}
                                       className="h-7 w-7 shrink-0 border-orange-700/30 text-orange-600 hover:bg-orange-700/10 hover:text-orange-600"
                                     >
@@ -1234,6 +1240,7 @@ export default function InventoryPage() {
                                   <Button
                                     variant="outline"
                                     size="icon"
+                                    aria-label={t('inventory.editCost')}
                                     onClick={(e) => {
                                       e.stopPropagation()
                                       openCost(item)
@@ -1336,14 +1343,20 @@ export default function InventoryPage() {
                           >
                             <Minus className="h-3.5 w-3.5" /> {t('inventoryGridCard.remove')}
                           </Button>
-                          <Link href={`/grading/send?cardId=${item.cardId}`}>
-                            <Button size="sm" variant="outline" className="h-7 px-2 text-orange-600 hover:bg-orange-700/10 hover:text-orange-600">
+                          <Link href={`/grading/send?cardId=${item.cardId}`} aria-label={t('common.sendToGrade')}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              aria-label={t('common.sendToGrade')}
+                              className="h-7 px-2 text-orange-600 hover:bg-orange-700/10 hover:text-orange-600"
+                            >
                               <Gem className="h-3.5 w-3.5" />
                             </Button>
                           </Link>
                           <Button
                             size="sm"
                             variant="outline"
+                            aria-label={t('inventory.editCost')}
                             className="h-7 px-2 text-blue-400 hover:bg-blue-500/10 hover:text-blue-400"
                             onClick={() => openCost(item)}
                           >
@@ -1779,15 +1792,34 @@ export default function InventoryPage() {
                       <label className="font-mono text-xs text-zinc-400">{t('inventory.dialog.add.image')}</label>
                       <input
                         type="file"
-                        accept="image/*"
-                        onChange={(e) => {
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        aria-label={t('inventory.dialog.add.image')}
+                        onChange={async (e) => {
                           const file = e.target.files?.[0] || null
-                          setAddImage(file)
-                          if (file) {
-                            setAddImagePreview(URL.createObjectURL(file))
-                          } else if (addImagePreview) {
+                          if (addImagePreview) {
                             URL.revokeObjectURL(addImagePreview)
                             setAddImagePreview(null)
+                          }
+                          if (!file) {
+                            setAddImage(null)
+                            return
+                          }
+                          const validation = validateImageFile(file)
+                          if (!validation.valid) {
+                            toast({ title: validation.error ?? t('common.error'), variant: 'error' })
+                            setAddImage(null)
+                            return
+                          }
+                          try {
+                            const compressed = await compressImage(file, { maxWidth: 1280, quality: 0.85 })
+                            setAddImage(compressed)
+                            setAddImagePreview(URL.createObjectURL(compressed))
+                          } catch (err) {
+                            toast({
+                              title: err instanceof Error ? err.message : t('common.error'),
+                              variant: 'error',
+                            })
+                            setAddImage(null)
                           }
                         }}
                         className="block w-full font-mono text-xs text-zinc-400 file:mr-3 file:rounded file:border-0 file:bg-lime-600 file:px-3 file:py-1.5 file:text-white"

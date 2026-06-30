@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
 type AdFormat = 'banner' | 'leaderboard' | 'card' | 'sidebar' | 'inline'
@@ -25,6 +27,35 @@ const formatClasses: Record<AdFormat, string> = {
 
 export function AdSlot({ format = 'banner', className, label }: AdSlotProps) {
   const enabled = process.env.NEXT_PUBLIC_ADS_ENABLED === 'true'
+  const isSponsor = format === 'leaderboard' || format === 'banner'
+
+  if (isSponsor) {
+    return (
+      <Link
+        href="https://www.facebook.com/groups/1329363959139210"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block"
+      >
+        <div
+          className={cn(
+            'relative flex flex-col items-center justify-center overflow-hidden text-center',
+            formatClasses[format],
+            className
+          )}
+        >
+          <Image
+            src="/images/sponsor.jpg"
+            alt={label || 'sponsor'}
+            fill
+            sizes="(max-width: 768px) 100vw, 728px"
+            className="object-cover"
+          />
+        </div>
+      </Link>
+    )
+  }
+
   if (!enabled) return null
 
   return (

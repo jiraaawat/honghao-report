@@ -129,6 +129,7 @@ export function Navbar() {
             <Button
               variant="ghost"
               size="sm"
+              aria-label={t('nav.logout')}
               onClick={() => {
                 if (confirm(t('nav.logoutConfirm'))) {
                   signOut({ callbackUrl: '/' })

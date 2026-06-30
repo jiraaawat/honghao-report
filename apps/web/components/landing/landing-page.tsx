@@ -2,15 +2,23 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { Pirata_One } from 'next/font/google'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useLanguage } from '@/lib/i18n/provider'
 import { LanguageToggle } from '@/components/i18n/language-toggle'
+import { cn } from '@/lib/utils'
 import { AdSlot } from '@/components/ads/ad-slot'
 import { AppPreview } from './app-preview'
 import { BoosterLoader } from './booster-loader'
 import { TcgIcon } from './tcg-icon'
 import { ArrowRight, ChevronDown } from 'lucide-react'
+
+const pirata = Pirata_One({
+  weight: '400',
+  subsets: ['latin'],
+  variable: '--font-pirata',
+})
 
 export function LandingPage() {
   const { t } = useLanguage()
@@ -170,10 +178,21 @@ export function LandingPage() {
               <p className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.35em] text-orange-600 drop-shadow-[0_1px_8px_rgba(0,0,0,0.5)] md:text-xs">
                 built for collectors
               </p>
-              <div className="mb-8">
+              <div className="mb-8 flex flex-col items-center text-center">
                 <h1 className="bg-gradient-to-r from-lime-300 via-orange-300 to-lime-300 bg-clip-text font-mono text-5xl font-bold tracking-tighter text-transparent drop-shadow-[0_0_30px_rgba(34,197,94,0.4)] md:text-7xl">
                   $ honghao
                 </h1>
+                <div className="mt-2 flex items-center gap-3 font-mono text-sm text-zinc-400 md:text-base">
+                  <span>x</span>
+                  <span
+                    className={cn(
+                      pirata.className,
+                      'text-2xl uppercase tracking-[0.15em] text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.25)] md:text-4xl'
+                    )}
+                  >
+                    opcg thailand
+                  </span>
+                </div>
               </div>
 
               <p className="mx-auto mt-6 max-w-2xl font-mono text-lg text-zinc-300 drop-shadow-[0_2px_16px_rgba(0,0,0,0.5)] md:text-xl">
