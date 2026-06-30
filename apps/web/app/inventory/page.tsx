@@ -39,6 +39,7 @@ import { fetcher, swrOptions } from '@/lib/swr'
 import { InventorySkeleton } from '@/components/inventory/inventory-skeleton'
 import { Tooltip } from '@/components/ui/tooltip'
 import { FlexCardDialog } from '@/components/flex-card-dialog'
+import { UnrealizedValue } from '@/components/inventory/unrealized-value'
 import { compressImage, validateImageFile } from '@/lib/image'
 import {
   Search,
@@ -92,6 +93,7 @@ export default function InventoryPage() {
       totalValue: 0,
       totalProfit: 0,
       totalInvested: 0,
+      totalBuy: 0,
       totalROI: 0,
     }),
     []
@@ -682,6 +684,10 @@ export default function InventoryPage() {
   }, [filteredItems, sortBy])
 
   const summary = useMemo(() => data.summary, [data.summary])
+  const totalUnrealizedProfit = useMemo(
+    () => data.items.reduce((sum, item) => sum + item.unrealizedProfit, 0),
+    [data.items]
+  )
 
   const changeSortBy = useCallback((value: SortBy) => {
     if (value !== 'userOrder') setReorderDraft(null)
@@ -775,6 +781,13 @@ export default function InventoryPage() {
       color: (summary?.totalProfit ?? 0) >= 0 ? 'text-lime-500' : 'text-red-400',
       isCurrency: true,
     },
+    {
+      label: t('inventory.unrealizedProfit'),
+      value: totalUnrealizedProfit,
+      icon: TrendingUp,
+      color: (totalUnrealizedProfit ?? 0) >= 0 ? 'text-lime-500' : 'text-red-400',
+      isCurrency: true,
+    },
   ]
 
   return (
@@ -798,7 +811,7 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <div className="flex gap-3 overflow-x-auto pb-1">
         {statCards.map((s, i) => {
           const Icon = s.icon
           return (
@@ -807,11 +820,12 @@ export default function InventoryPage() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
+              className="min-w-[10rem] flex-1"
             >
               <Card className="relative h-28 overflow-hidden border-zinc-800/60 bg-zinc-900/50 p-3 transition-colors hover:border-zinc-700/80 hover:bg-zinc-900/70">
                 <div className="grid h-full grid-rows-[auto_1fr_auto] gap-1">
                   <div className="flex items-start justify-between gap-2">
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">{s.label}</span>
+                    <span className="truncate whitespace-nowrap font-mono text-[10px] uppercase tracking-wider text-zinc-500">{s.label}</span>
                     <Icon className={cn('h-4 w-4 shrink-0 opacity-60', s.color)} />
                   </div>
                   <div className="flex min-w-0 items-center">
@@ -1078,6 +1092,7 @@ export default function InventoryPage() {
                       <th className="pb-2 pr-4 text-right">{t('inventory.table.avgCost')}</th>
                       <th className="pb-2 pr-4 text-right">{t('inventory.table.marketValue')}</th>
                       <th className="pb-2 pr-4 text-right">{t('inventory.table.totalValue')}</th>
+                      <th className="pb-2 pr-4 text-right">{t('inventory.table.unrealized')}</th>
                       <th className="pb-2 pr-4 text-right">{t('inventory.table.profit')}</th>
                       <th className="w-28 pb-2">{t('inventory.table.actions')}</th>
                     </tr>
@@ -1180,16 +1195,12 @@ export default function InventoryPage() {
                           {formatCurrency(item.currentValue)}
                         </td>
                         <td className="py-3 pr-4 text-right">
-                          <div className="flex flex-col items-end">
-                            <span className={item.profit >= 0 ? 'text-lime-500' : 'text-red-400'}>
-                              {formatCurrency(item.profit)}
-                            </span>
-                            {item.unrealizedProfit !== 0 && (
-                              <span className="text-[10px] text-zinc-500">
-                                {t('inventoryGridCard.unrealized')} {formatCurrency(item.unrealizedProfit)}
-                              </span>
-                            )}
-                          </div>
+                          <UnrealizedValue value={item.unrealizedProfit} />
+                        </td>
+                        <td className="py-3 pr-4 text-right">
+                          <span className={item.profit >= 0 ? 'text-lime-500' : 'text-red-400'}>
+                            {formatCurrency(item.profit)}
+                          </span>
                         </td>
                         <td className="w-28 py-3">
                           <div className="flex items-center gap-1">
@@ -1316,6 +1327,11 @@ export default function InventoryPage() {
                         <span className={item.profit >= 0 ? 'min-w-0 break-words text-right text-lime-500' : 'min-w-0 break-words text-right text-red-400'}>
                           {formatCurrency(item.profit)}
                         </span>
+                      </div>
+
+                      <div className="mt-1 flex items-center justify-between gap-2 font-mono text-xs">
+                        <span className="text-zinc-500">{t('inventoryGridCard.unrealized')}</span>
+                        <UnrealizedValue value={item.unrealizedProfit} className="text-xs" />
                       </div>
 
                       {item.status === 'in_stock' && item.quantity > 0 && (

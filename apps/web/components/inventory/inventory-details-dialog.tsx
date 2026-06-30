@@ -17,6 +17,7 @@ import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { LanguageBadge } from '@/components/language/language-badge'
 import { useLanguage } from '@/lib/i18n/provider'
 import { Tag, Plus, Minus, Pencil, Gem, Package } from 'lucide-react'
+import { UnrealizedValue } from './unrealized-value'
 
 interface InventoryDetailsDialogProps {
   item: InventoryItem | null
@@ -140,12 +141,29 @@ export function InventoryDetailsDialog({
             <div className="text-zinc-500">{t('inventoryGridCard.totalValue')}</div>
             <div className="text-zinc-300">{formatCurrency(item.currentValue)}</div>
           </div>
-          <div className="col-span-2 rounded-md bg-zinc-950/50 p-2">
-            <div className="flex items-center justify-between">
-              <span className="text-zinc-500">{t('inventoryGridCard.profit')}</span>
-              <span className={cn(item.profit >= 0 ? 'text-lime-500' : 'text-red-400')}>
-                {formatCurrency(item.profit)}
-              </span>
+          <div className="col-span-2 grid grid-cols-2 gap-2">
+            <div className="rounded-md bg-zinc-950/50 p-2">
+              <div className="flex flex-col justify-between gap-0.5">
+                <span className="text-zinc-500">{t('inventoryGridCard.profit')}</span>
+                <span className={cn('font-mono font-semibold', item.profit >= 0 ? 'text-lime-500' : 'text-red-400')}>
+                  {formatCurrency(item.profit)}
+                </span>
+              </div>
+            </div>
+            <div
+              className={cn(
+                'rounded-md border p-2',
+                item.unrealizedProfit >= 0
+                  ? 'border-lime-500/20 bg-lime-500/5'
+                  : item.unrealizedProfit < 0
+                    ? 'border-rose-500/20 bg-rose-500/5'
+                    : 'border-zinc-800 bg-zinc-950/50'
+              )}
+            >
+              <div className="flex flex-col justify-between gap-0.5">
+                <span className="text-zinc-500">{t('inventoryGridCard.unrealized')}</span>
+                <UnrealizedValue value={item.unrealizedProfit} />
+              </div>
             </div>
           </div>
         </div>

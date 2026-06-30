@@ -295,6 +295,10 @@ function CardsPageContent() {
           condition: addForm.condition,
           quantity: Number(addForm.quantity),
           pricePerUnit: Number(addForm.pricePerUnit),
+          marketPrice:
+            card.marketPrice && Number.isFinite(Number(card.marketPrice))
+              ? usdToThb(Number(card.marketPrice))
+              : null,
           date: addForm.date,
           note: addForm.note,
         }),

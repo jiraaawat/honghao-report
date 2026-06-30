@@ -142,6 +142,7 @@ describe('aggregateInventorySummary', () => {
     expect(summary.totalValue).toBe(120)
     expect(summary.totalProfit).toBe(20)
     expect(summary.totalInvested).toBe(100)
-    expect(summary.totalROI).toBe(20)
+    expect(summary.totalBuy).toBe(140)
+    expect(summary.totalROI).toBe((20 / 140) * 100)
   })
 })

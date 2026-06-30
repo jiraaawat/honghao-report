@@ -48,6 +48,7 @@ export interface InventoryItem {
   marketValuePerUnit: number
   currentValue: number
   totalInvested: number
+  totalBuy: number
   totalSold: number
   soldQty: number
   realizedProfit: number
@@ -86,6 +87,10 @@ export function aggregateInventoryItem(card: InventoryCardInput): InventoryItem 
     ? Number(card.inventory.currentValue)
     : avgCost
   const currentValue = quantity * marketValuePerUnit
+  const totalBuy = card.transactions
+    .filter((t) => ['BUY', 'GRADING', 'COST_ADJUSTMENT'].includes(t.type))
+    .reduce((sum, t) => sum + Number(t.totalAmount), 0)
+
   const realizedProfit = totalSellAmount - totalSellQty * avgCost
   const unrealizedProfit =
     effectiveStatus !== 'sold_out' && card.inventory?.currentValue
@@ -112,6 +117,7 @@ export function aggregateInventoryItem(card: InventoryCardInput): InventoryItem 
     marketValuePerUnit,
     currentValue,
     totalInvested: avgCost * quantity,
+    totalBuy,
     totalSold: totalSellAmount,
     soldQty: totalSellQty,
     realizedProfit,
@@ -154,6 +160,7 @@ export function aggregateInventorySummary(items: InventoryItem[]) {
   const allTotalValue = visible.reduce((sum, i) => sum + i.currentValue, 0)
   const allTotalProfit = visible.reduce((sum, i) => sum + i.profit, 0)
   const allTotalInvested = visible.reduce((sum, i) => sum + i.totalInvested, 0)
+  const allTotalBuy = visible.reduce((sum, i) => sum + i.totalBuy, 0)
 
   return {
     totalCards: allInStockQty + allGradingQty,
@@ -163,7 +170,8 @@ export function aggregateInventorySummary(items: InventoryItem[]) {
     soldCards: allSoldOutCount,
     totalValue: allTotalValue,
     totalProfit: allTotalProfit,
-    totalROI: allTotalInvested > 0 ? (allTotalProfit / allTotalInvested) * 100 : 0,
+    totalROI: allTotalBuy > 0 ? (allTotalProfit / allTotalBuy) * 100 : 0,
     totalInvested: allTotalInvested,
+    totalBuy: allTotalBuy,
   }
 }

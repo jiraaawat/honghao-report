@@ -17,6 +17,7 @@ const addSchema = z.object({
   condition: z.string().nullish(),
   quantity: z.coerce.number().int().min(1),
   pricePerUnit: z.coerce.number().min(0),
+  marketPrice: z.coerce.number().min(0).nullish(),
   date: z.string().nullish(),
   note: z.string().nullish(),
 })
@@ -58,7 +59,8 @@ export async function POST(req: NextRequest) {
           quantity: data.quantity,
           averageCost: data.pricePerUnit,
           totalInvested: totalAmount,
-          currentValue: data.pricePerUnit,
+          currentValue:
+            data.marketPrice && Number.isFinite(data.marketPrice) ? data.marketPrice : data.pricePerUnit,
         },
       })
 
@@ -86,6 +88,9 @@ export async function POST(req: NextRequest) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid input', details: error.errors }, { status: 400 })
     }
-    return NextResponse.json({ error: 'Failed to add card' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to add card', message: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    )
   }
 }

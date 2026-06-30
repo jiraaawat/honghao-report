@@ -17,6 +17,7 @@ import { useLanguage } from '@/lib/i18n/provider'
 import { fetcher, swrOptions } from '@/lib/swr'
 import { DashboardSkeleton } from '@/components/dashboard/dashboard-skeleton'
 import { BannerCarousel } from '@/components/ads/banner-carousel'
+import { UnrealizedValue } from '@/components/inventory/unrealized-value'
 
 function SnapshotRow({
   label,
@@ -107,6 +108,8 @@ export default function DashboardPage() {
 
   const periodROI =
     stats && stats.totalSpend > 0 ? (stats.periodProfit / stats.totalSpend) * 100 : 0
+
+  const totalUnrealizedProfit = inventory.reduce((sum, item) => sum + item.unrealizedProfit, 0)
 
   return (
     <div className="space-y-6 p-3 pt-4 md:space-y-8 md:p-6 md:pt-8">
@@ -253,6 +256,10 @@ export default function DashboardPage() {
                 label={t('dashboard.totalProfit')}
                 value={formatCurrency(inventorySummary.totalProfit)}
                 valueClassName={inventorySummary.totalProfit >= 0 ? 'text-lime-500' : 'text-rose-400'}
+              />
+              <SnapshotRow
+                label={t('dashboard.unrealizedProfit')}
+                value={<UnrealizedValue value={totalUnrealizedProfit} className="text-sm" />}
               />
               <SnapshotRow
                 label={t('dashboard.overallRoi')}

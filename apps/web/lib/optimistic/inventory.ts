@@ -9,6 +9,7 @@ interface InventorySummary {
   totalValue: number
   totalProfit: number
   totalInvested: number
+  totalBuy: number
   totalROI: number
 }
 
@@ -18,7 +19,7 @@ export interface InventoryResponse {
 }
 
 function recalcROI(summary: InventorySummary) {
-  summary.totalROI = summary.totalInvested > 0 ? (summary.totalProfit / summary.totalInvested) * 100 : 0
+  summary.totalROI = summary.totalBuy > 0 ? (summary.totalProfit / summary.totalBuy) * 100 : 0
 }
 
 function patchSummary(
@@ -51,6 +52,7 @@ const emptyResponse: InventoryResponse = {
     totalValue: 0,
     totalProfit: 0,
     totalInvested: 0,
+    totalBuy: 0,
     totalROI: 0,
   },
 }
@@ -158,6 +160,7 @@ export function optimisticBuy(
     quantity: newQty,
     averageCost: newAvgCost,
     totalInvested: newTotalInvested,
+    totalBuy: (item.totalBuy ?? 0) + qty * price,
     currentValue: newQty * item.marketValuePerUnit,
     status: newQty > 0 ? 'in_stock' : item.status,
     lastTransaction: now,
@@ -170,6 +173,7 @@ export function optimisticBuy(
       inStock: +qty,
       totalValue: +(qty * item.marketValuePerUnit),
       totalInvested: +(qty * price),
+      totalBuy: +(qty * price),
     }),
   }
 }
@@ -200,6 +204,7 @@ export function optimisticNewCard(
     marketValuePerUnit: price,
     currentValue: qty * price,
     totalInvested: qty * price,
+    totalBuy: qty * price,
     totalSold: 0,
     soldQty: 0,
     realizedProfit: 0,
@@ -219,6 +224,7 @@ export function optimisticNewCard(
       inStock: +qty,
       totalValue: +(qty * price),
       totalInvested: +(qty * price),
+      totalBuy: +(qty * price),
     }),
   }
 }
@@ -248,6 +254,7 @@ export function optimisticCost(
     summary: patchSummary(current, {
       totalProfit: +(newProfit - item.profit),
       totalInvested: +(newTotalInvested - item.totalInvested),
+      totalBuy: +(newTotalInvested - (item.totalInvested ?? 0)),
     }),
   }
 }

@@ -104,6 +104,7 @@ export interface InventoryItem {
   marketValuePerUnit: number
   currentValue: number
   totalInvested: number
+  totalBuy: number
   totalSold: number
   soldQty: number
   realizedProfit: number
