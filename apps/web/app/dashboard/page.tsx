@@ -152,7 +152,7 @@ export default function DashboardPage() {
               image: 'https://scontent.fbkk13-2.fna.fbcdn.net/v/t39.30808-6/732337875_1007437352036796_8474410687784789239_n.jpg?stp=dst-jpg_tt6&cstp=mx2048x1374&ctp=s2048x1374&_nc_cat=111&ccb=1-7&_nc_sid=cc71e4&_nc_ohc=2N-IRgTQl6EQ7kNvwH5ZUrp&_nc_oc=AdoDY6pV3CWn5hMKqiu5FRo6ZbclT7zcXVIpsxHgNWpnGxztjvf3rJKRv52mIMj5A0O58ggUBPSMgscpc4suK-Er&_nc_zt=23&_nc_ht=scontent.fbkk13-2.fna&_nc_gid=YoybU8mmpkSojuDvW5djZQ&_nc_ss=7b2a8&oh=00_AQAgq5Kl_8gW4EiTl1rEc5pzzQSedZvZ5bujsRoPwToTow&oe=6A4983DE',
               alt: 'HONGHAO.Labs',
               label: 'Community',
-              title: 'honghao labs',
+              title: 'HONGHAO.Labs',
               subtitle: 'Facebook page',
             },
             {
