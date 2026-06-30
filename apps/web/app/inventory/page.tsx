@@ -498,10 +498,20 @@ export default function InventoryPage() {
         body: formData,
       })
       if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        toast({
+          variant: 'error',
+          title: err.message || t('inventory.toast.addFailed'),
+        })
         setIsSubmitting(false)
         return
       }
-      const created = await res.json()
+      const created = await res.json().catch(() => null)
+      if (!created?.id) {
+        toast({ variant: 'error', title: t('inventory.toast.addFailed') })
+        setIsSubmitting(false)
+        return
+      }
       newCard = created
       cardId = created.id
       mutateCards()
@@ -547,6 +557,12 @@ export default function InventoryPage() {
         false
       )
       mutateInventory()
+    } else {
+      const err = await res.json().catch(() => ({}))
+      toast({
+        variant: 'error',
+        title: err.message || t('common.error'),
+      })
     }
     setIsSubmitting(false)
   }
