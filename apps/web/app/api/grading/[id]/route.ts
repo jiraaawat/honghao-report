@@ -66,7 +66,7 @@ export async function PATCH(
         })
 
         await recalculateInventoryFromTransactions(tx, grading.cardId, userId)
-      })
+      }, { timeout: 20000, maxWait: 10000 })
 
       return NextResponse.json({ success: true })
     }
@@ -115,7 +115,7 @@ export async function PATCH(
         })
 
         await recalculateInventoryFromTransactions(tx, grading.cardId, userId)
-      })
+      }, { timeout: 20000, maxWait: 10000 })
 
       return NextResponse.json({ success: true })
     }

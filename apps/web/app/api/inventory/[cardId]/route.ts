@@ -90,7 +90,7 @@ export async function POST(
 
       const updated = await tx.cardInventory.findUnique({ where: { cardId } })
       return { quantity: updated?.quantity ?? 0 }
-    })
+    }, { timeout: 20000, maxWait: 10000 })
 
     return NextResponse.json({ success: true, quantity: result.quantity })
   } catch (error) {

@@ -63,7 +63,7 @@ export async function POST(
       })
 
       return recalculateInventoryFromTransactions(tx, cardId, userId)
-    })
+    }, { timeout: 20000, maxWait: 10000 })
 
     return NextResponse.json({
       success: true,

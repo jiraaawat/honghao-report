@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       await tx.cardInventory.deleteMany({ where: { userId } })
       await tx.gradingRecord.deleteMany({ where: { userId } })
       await tx.card.deleteMany({ where: { userId } })
-    })
+    }, { timeout: 20000, maxWait: 10000 })
 
     return NextResponse.json({ success: true })
   } catch (error) {

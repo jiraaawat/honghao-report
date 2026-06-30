@@ -212,7 +212,7 @@ export async function POST(req: NextRequest) {
       await recalculateInventoryFromTransactions(tx, cardId, userId)
 
       return { grading, card }
-    })
+    }, { timeout: 20000, maxWait: 10000 })
 
     return NextResponse.json(result.grading, { status: 201 })
   } catch (error) {

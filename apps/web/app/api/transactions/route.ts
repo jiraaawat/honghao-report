@@ -160,7 +160,7 @@ export async function POST(req: NextRequest) {
       }
 
       return { ...transaction, card: cardWithInventory }
-    })
+    }, { timeout: 20000, maxWait: 10000 })
 
     return NextResponse.json(result, { status: 201 })
   } catch (error) {

@@ -129,7 +129,7 @@ export async function PUT(
 
       await recalculateInventoryFromTransactions(tx, transaction.cardId, userId)
       await syncCardStatus(tx, transaction.cardId)
-    })
+    }, { timeout: 20000, maxWait: 10000 })
 
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -189,7 +189,7 @@ export async function DELETE(
 
       await recalculateInventoryFromTransactions(tx, transaction.cardId, userId)
       await syncCardStatus(tx, transaction.cardId)
-    })
+    }, { timeout: 20000, maxWait: 10000 })
 
     return NextResponse.json({ success: true })
   } catch (error) {
