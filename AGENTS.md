@@ -22,6 +22,12 @@ This is a full-stack monorepo for tracking trading card buy/sell transactions, p
 - API routes should check session with `auth()` from `@/auth`
 - Use `useLanguage()` from `lib/i18n/provider` for all user-facing copy. Add new keys to `lib/i18n/dictionary.ts` with both `en` and `th` translations.
 
+## Theme
+
+- Theme tokens are defined in `apps/web/app/globals.css`.
+- Dark mode keeps the olive (`#0f110a`) developer-terminal aesthetic with lime (`#84cc16`) and terracotta (`#ea580c`) accents.
+- Light mode uses a warm off-white palette (`#f6f5f0` background, `#1a1f13` foreground, `#6b9b23` accent) for better readability. Static Tailwind `zinc-*` utilities are overridden for light mode in the same file, so components can keep using `bg-zinc-900`, `text-zinc-100`, etc.
+
 ## Database
 
 Schema location: `apps/web/prisma/schema.prisma`
